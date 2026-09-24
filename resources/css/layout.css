@@ -1,0 +1,489 @@
+:root {
+    --primary: #ec4899;
+    /* Pink */
+    --primary-dark: #db2777;
+    /* Darker Pink */
+    --secondary: #f43f5e;
+    /* Rose */
+    --dark: #0f172a;
+    /* Deep Slate */
+    --sidebar-bg: #1e293b;
+    /* Slate 800 */
+    --sidebar-accent: #334155;
+    /* Slate 700 */
+    --light: #f8fafc;
+    /* Lightest Gray */
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 70px;
+    --header-height: 60px;
+    /* Updated color variables to match login/roles */
+    --primary-color: var(--primary);
+    --secondary-color: var(--dark);
+    /* Using dark for secondary text */
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light);
+    /* Use light variable */
+}
+
+
+/* Sidebar Styles */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--dark) 100%);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+    height: auto;
+    min-height: var(--header-height);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.sidebar-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 1rem 0 0.5rem 0;
+}
+
+.sidebar-brand {
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-brand-icon {
+    font-size: 1.4rem;
+    margin-right: 0.5rem;
+}
+
+.sidebar-brand-logo {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    padding: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    object-fit: cover;
+}
+
+.sidebar-brand-text {
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-brand-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar.collapsed .sidebar-brand-icon {
+    margin-right: 0;
+    font-size: 1.6rem;
+}
+
+.sidebar-menu {
+    padding: 0.5rem 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-item {
+    padding: 0.5rem 1.5rem;
+    /* Increased horizontal padding */
+    color: rgba(255, 255, 255, 0.9);
+    /* Brighter text */
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    /* Slightly larger font */
+    font-weight: 500;
+}
+
+.sidebar-item:hover {
+    color: white;
+    background: var(--sidebar-hover-bg, var(--sidebar-accent));
+}
+
+.sidebar-item.active {
+    color: white;
+    background: var(--sidebar-active-bg, var(--primary));
+    font-weight: 600;
+}
+
+.sidebar-icon {
+    width: 20px;
+    /* Fixed width for alignment */
+    margin-right: 1rem;
+    /* More space between icon and text */
+    text-align: center;
+    font-size: 1.1rem;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-text {
+    opacity: 0;
+    width: 0;
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-icon {
+    margin-right: 0;
+}
+
+.sidebar.collapsed .sidebar-item {
+    padding: 0.75rem;
+    justify-content: center;
+}
+
+
+/* Header Styles */
+
+.header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: var(--sidebar-width);
+    height: var(--header-height);
+    background: white;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.header.collapsed {
+    left: var(--sidebar-collapsed-width);
+}
+
+.header-content {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+}
+
+.toggle-sidebar {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    /* Use updated secondary color */
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    color: var(--secondary-color);
+    /* Use updated secondary color */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    min-width: 200px;
+    display: none;
+}
+
+.user-dropdown-menu.show {
+    display: block;
+}
+
+.user-dropdown-item {
+    padding: 0.75rem 1rem;
+    color: var(--secondary-color);
+    /* Use updated secondary color */
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.user-dropdown-item:hover {
+    background: var(--light);
+    /* Use light variable */
+}
+
+.user-dropdown-item i {
+    width: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+
+/* Main Content Styles */
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.main-content.expanded {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+
+/* Role-specific colors */
+
+.bg-super-admin {
+    background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--dark) 100%);
+    --sidebar-active-bg: var(--primary);
+    --sidebar-hover-bg: var(--sidebar-accent);
+}
+
+.bg-salon-admin {
+    background: linear-gradient(180deg, #1cc88a 0%, #13855c 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-manager {
+    background: linear-gradient(180deg, #36b9cc 0%, #258391 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-employee {
+    background: linear-gradient(180deg, #f6c23e 0%, #dda20a 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.3);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.2);
+}
+
+.bg-customer {
+    background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-receptionist {
+    background: linear-gradient(180deg, #858796 0%, #60616f 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-staff {
+    background: linear-gradient(180deg, #1cc88a 0%, #13855c 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-pos-staff {
+    background: linear-gradient(180deg, #36b9cc 0%, #258391 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+.bg-inventory-staff {
+    background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+
+/* Add these styles to your existing CSS */
+
+.sidebar-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-section-header {
+    padding: 0.5rem 1.5rem;
+    /* Match sidebar-item horizontal padding */
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.sidebar-section-header .sidebar-icon {
+    width: 20px;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+.sidebar-section .sidebar-item {
+    padding-left: 1.5rem;
+    /* Reset to standard padding, no indentation needed if headers are distinct */
+}
+
+/* Collapsed state for sub-items */
+.sidebar.collapsed .sub-item {
+    padding: 0.75rem 0 !important;
+    justify-content: center !important;
+}
+
+.sidebar.collapsed .sub-item .sidebar-icon {
+    margin-right: 0 !important;
+}
+
+.sidebar.collapsed .sub-item .sidebar-text {
+    display: none !important;
+}
+
+/* Hide chevrons in collapsed state */
+.sidebar.collapsed .chevron,
+.sidebar.collapsed .sidebar-divider {
+    display: none !important;
+}
+
+/* Adjust padding for collapse containers in collapsed state */
+.sidebar.collapsed .collapse>div {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    background: rgba(0, 0, 0, 0.1);
+    /* Slight darken for sub-menu background */
+}
+
+/* Notification System Styles */
+.notification-container {
+    pointer-events: none;
+    z-index: 9999 !important;
+}
+
+.notification {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    width: 350px;
+    pointer-events: auto;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #f1f5f9;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 0.75rem;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification.success .notification-icon { background: #dcfce7; color: #10b981; }
+.notification.error .notification-icon { background: #fee2e2; color: #ef4444; }
+.notification.warning .notification-icon { background: #fef3c7; color: #f59e0b; }
+.notification.info .notification-icon { background: #dbeafe; color: #3b82f6; }
+
+.notification-message {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.notification-close:hover {
+    color: #64748b;
+}
+
+.notification-progress {
+    height: 3px;
+    background: #f1f5f9;
+    width: 100%;
+}
+
+.notification-progress-bar {
+    height: 100%;
+    width: 0%;
+}
+
+.notification.success .notification-progress-bar { background: #10b981; }
+.notification.error .notification-progress-bar { background: #ef4444; }
+.notification.warning .notification-progress-bar { background: #f59e0b; }
+.notification.info .notification-progress-bar { background: #3b82f6; }

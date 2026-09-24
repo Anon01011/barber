@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Booking;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+use App\Mail\Traits\UsesEmailTemplates;
+
+class BookingStatusUpdatedMail extends Mailable
+{
+    use Queueable, SerializesModels, UsesEmailTemplates;
+
+    public $booking;
+
+    /**
+     * Create a new message instance.
+     */
+    public function __construct(Booking $booking)
+    {
+        $this->booking = $booking;
+    }
+
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope
+    {
+        $defaultSubject = 'Booking Status Update - ' . ucfirst($this->booking->status);
+        
+        return new Envelope(
+            subject: $this->getEmailSubject('booking_status_updated', $defaultSubject),
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return $this->getEmailContent('booking_status_updated', 'emails.bookings.status_updated');
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+}

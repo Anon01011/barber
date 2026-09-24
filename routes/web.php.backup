@@ -1,0 +1,367 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\BranchController;
+use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Appointments\AppointmentsController as AppointmentController;
+use App\Http\Controllers\POS\PosController as POSController;
+use App\Http\Controllers\Services\ServicesController as ServiceController;
+use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Customer\AppointmentController as CustomerAppointmentController;
+use App\Http\Controllers\Customer\ServiceController as CustomerServiceController;
+use App\Http\Controllers\Admin\ServiceCategoryController;
+use App\Models\Service;
+
+// Default root route for customers
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
+
+// Auth routes
+Route::get('/admin/login', [App\Http\Controllers\Auth\LoginController::class, 'showAdminLoginForm'])->name('admin.login');
+Route::post('/admin/login', [App\Http\Controllers\Auth\LoginController::class, 'adminLogin']);
+Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+
+// Common dashboard route for all authenticated users
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard Routes for all roles
+    Route::middleware(['role:super_admin|admin|salon_admin|manager|employee|customer'])->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    });
+
+    // Employee Routes
+    Route::middleware(['role:employee'])->group(function () {
+        // Appointments
+        Route::get('/employee/appointments', [App\Http\Controllers\Staff\ScheduleController::class, 'appointments'])->name('employee.appointments.index');
+        Route::get('/employee/appointments/today', [App\Http\Controllers\Staff\ScheduleController::class, 'today'])->name('employee.appointments.today');
+        Route::get('/employee/appointments/upcoming', [App\Http\Controllers\Staff\ScheduleController::class, 'upcoming'])->name('employee.appointments.upcoming');
+        Route::get('/employee/appointments/completed', [App\Http\Controllers\Staff\ScheduleController::class, 'completed'])->name('employee.appointments.completed');
+        
+        // Booking Actions
+        Route::post('/employee/bookings/{booking}/accept', [App\Http\Controllers\Staff\ScheduleController::class, 'acceptBooking'])
+            ->name('employee.bookings.accept');
+        Route::post('/employee/bookings/{booking}/reject', [App\Http\Controllers\Staff\ScheduleController::class, 'rejectBooking'])
+            ->name('employee.bookings.reject');
+        
+        // Services
+        // Route::get('/employee/services', [App\Http\Controllers\Staff\ServiceController::class, 'index'])->name('employee.services.index');
+        
+        // Profile
+        Route::get('/employee/profile', [App\Http\Controllers\Staff\ProfileController::class, 'edit'])->name('employee.profile.edit');
+        Route::put('/employee/profile', [App\Http\Controllers\Staff\ProfileController::class, 'update'])->name('employee.profile.update');
+        
+        // Earnings
+        Route::get('/employee/earnings', [App\Http\Controllers\Staff\ScheduleController::class, 'earnings'])->name('employee.earnings');
+    });
+});
+
+// Admin routes
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    // Recent bookings for stats
+    Route::get('/bookings/recent', [BookingController::class, 'getRecentBookings'])->name('bookings.recent');
+    
+    // Admin routes that don't require specific roles
+    Route::middleware([])->group(function () {
+        // Add any admin routes that should be accessible to all admin users here
+    });
+    // POS Routes
+    Route::prefix('pos')->name('pos.')->group(function () {
+        // Main POS interface
+        Route::get('/', [POSController::class, 'index'])->name('index');
+        
+        // Cart operations
+        Route::post('/add-to-cart', [POSController::class, 'addToCart'])->name('add-to-cart');
+        Route::post('/update-cart', [POSController::class, 'updateCart'])->name('update-cart');
+        Route::post('/remove-from-cart', [POSController::class, 'removeFromCart'])->name('remove-from-cart');
+        Route::post('/clear-cart', [POSController::class, 'clearCart'])->name('clear-cart');
+        
+        // Customer operations
+        Route::get('/customers/search', [POSController::class, 'searchCustomers'])->name('customers.search');
+        Route::post('/customers', [POSController::class, 'storeCustomer'])->name('customers.store');
+        Route::get('/customers/{customer}', [POSController::class, 'getCustomer'])->name('customers.show');
+        
+        // Product/Services operations
+        Route::get('/products/search', [POSController::class, 'searchProducts'])->name('products.search');
+        Route::get('/services/search', [POSController::class, 'searchServices'])->name('services.search');
+        
+        // General search endpoint that searches both products and services
+        Route::get('/search', [POSController::class, 'search'])->name('search');
+        
+        // Checkout and payment
+        Route::post('/store', [POSController::class, 'store'])->name('store');
+        Route::post('/checkout', [POSController::class, 'checkout'])->name('checkout');
+        Route::post('/process-payment', [POSController::class, 'processPayment'])->name('process-payment');
+        Route::get('/receipt/{sale}', [POSController::class, 'receipt'])->name('receipt');
+        
+        // Sales history and management
+        Route::get('/sales', [POSController::class, 'sales'])->name('sales.index');
+        Route::get('/sales/{sale}', [POSController::class, 'showSale'])->name('sales.show');
+        Route::post('/sales/{sale}/refund', [POSController::class, 'processRefund'])->name('sales.refund');
+        Route::post('/sales/{sale}/void', [POSController::class, 'voidSale'])->name('sales.void');
+        
+        // Reports
+        Route::get('/reports/daily-sales', [POSController::class, 'dailySalesReport'])->name('reports.daily-sales');
+        Route::get('/reports/product-sales', [POSController::class, 'productSalesReport'])->name('reports.product-sales');
+        Route::get('/reports/service-sales', [POSController::class, 'serviceSalesReport'])->name('reports.service-sales');
+        
+        // Settings
+        Route::get('/settings', [POSController::class, 'settings'])->name('settings');
+        Route::post('/settings', [POSController::class, 'updateSettings'])->name('settings.update');
+        
+        // Receipt templates
+        Route::get('/receipt-templates', [POSController::class, 'receiptTemplates'])->name('receipt-templates');
+        Route::post('/receipt-templates', [POSController::class, 'updateReceiptTemplate'])->name('receipt-templates.update');
+    })->middleware(['auth', 'permission:pos.view']);
+
+    // Common admin routes (accessible by any admin role)
+    
+    // Customer management routes
+    Route::prefix('customers')
+        ->name('customers.')
+        ->middleware(['role:super_admin|salon_admin|manager'])
+        ->group(function () {
+            Route::get('/', [CustomerController::class, 'index'])->name('index');
+            Route::get('/export', [CustomerController::class, 'export'])->name('export');
+            Route::get('/create', [CustomerController::class, 'create'])->name('create');
+            Route::post('/', [CustomerController::class, 'store'])->name('store');
+            Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+            Route::get('/{customer}/details', [CustomerController::class, 'showDetails'])->name('details');
+            Route::post('/{customer}/notes', [CustomerController::class, 'addNote'])->name('notes.store');
+            Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+            Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
+        });
+    
+    // Bookings routes
+    Route::prefix('bookings')
+        ->name('bookings.')
+        ->middleware(['role:super_admin|salon_admin|manager|employee'])
+        ->group(function () {
+            Route::get('/', [BookingController::class, 'index'])->name('index');
+            Route::get('/stats', [BookingController::class, 'stats'])->name('stats');
+            Route::get('/create', [BookingController::class, 'create'])->name('create');
+            Route::post('/', [BookingController::class, 'store'])->name('store');
+            Route::get('/{booking}', [BookingController::class, 'show'])->name('show');
+            Route::get('/{booking}/edit', [BookingController::class, 'edit'])->name('edit');
+            Route::put('/{booking}', [BookingController::class, 'update'])->name('update');
+            Route::delete('/{booking}', [BookingController::class, 'destroy'])->name('destroy');
+        });
+    
+    // API Routes for Bookings
+    Route::prefix('api')
+        ->name('api.')
+        ->group(function () {
+            Route::get('/bookings', [BookingController::class, 'getBookings'])->name('bookings.list');
+            Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('bookings.show');
+            Route::get('/customers', [BookingController::class, 'getCustomers'])->name('customers');
+            Route::get('/services', [BookingController::class, 'getServices'])->name('services');
+            Route::get('/staff', [BookingController::class, 'getStaff'])->name('staff');
+        });
+
+    // Available slots for admin booking assignment
+    Route::get('/bookings/available-slots', [BookingController::class, 'getAvailableSlots'])->name('admin.bookings.available-slots');
+
+    // Appointments
+    Route::resource('appointments', AppointmentController::class)
+        ->middleware('permission:appointments.view');
+
+    // Services
+    Route::resource('services/categories', \App\Http\Controllers\Admin\ServiceCategoryController::class)
+        ->names([
+            'index' => 'services.categories.index',
+            'create' => 'services.categories.create',
+            'store' => 'services.categories.store',
+            'show' => 'services.categories.show',
+            'edit' => 'services.categories.edit',
+            'update' => 'services.categories.update',
+            'destroy' => 'services.categories.destroy',
+        ])
+        ->middleware('permission:services.view');
+
+    // New route for creating services within a category
+    Route::post('services/categories/{category}/services', [ServiceCategoryController::class, 'storeService'])
+        ->name('admin.services.categories.services.store');
+
+    // New routes for service management
+    Route::get('services/{service}', [ServiceCategoryController::class, 'showService'])
+        ->name('admin.services.show');
+    Route::put('services/{service}', [ServiceCategoryController::class, 'updateService'])
+        ->name('admin.services.update');
+    Route::delete('services/{service}', [ServiceCategoryController::class, 'destroyService'])
+        ->name('admin.services.destroy');
+
+    // Inventory Management
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        // Inventory Categories
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'store'])->name('store');
+            Route::put('/{category}', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'destroy'])->name('destroy');
+            Route::get('/active', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'getActiveCategories'])->name('active');
+        });
+
+        // Inventory Items
+        Route::get('/', [\App\Http\Controllers\Inventory\InventoryController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Inventory\InventoryController::class, 'store'])->name('store');
+        Route::put('/{inventory}', [\App\Http\Controllers\Inventory\InventoryController::class, 'update'])->name('update');
+        Route::delete('/{inventory}', [\App\Http\Controllers\Inventory\InventoryController::class, 'destroy'])->name('destroy');
+        
+        // Stock Management
+        Route::post('/{inventory}/stock', [\App\Http\Controllers\Inventory\InventoryController::class, 'updateStock'])->name('stock.update');
+        Route::get('/{inventory}/transactions', [\App\Http\Controllers\Inventory\InventoryController::class, 'transactions'])->name('transactions');
+        
+        // Stock Reports
+        Route::get('/low-stock', [\App\Http\Controllers\Inventory\InventoryController::class, 'lowStock'])->name('low-stock');
+        Route::get('/out-of-stock', [\App\Http\Controllers\Inventory\InventoryController::class, 'outOfStock'])->name('out-of-stock');
+        
+        // Utilities
+        Route::get('/generate-sku', [\App\Http\Controllers\Inventory\InventoryController::class, 'generateSku'])->name('generate-sku');
+        
+        // Categories
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'store'])->name('store');
+            Route::put('/{category}', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'destroy'])->name('destroy');
+            Route::get('/active', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'getActiveCategories'])->name('active');
+        });
+    })->middleware('permission:inventory.view');
+
+    // Staff
+    Route::resource('staff', StaffController::class)
+        ->middleware('permission:staff.view');
+});
+
+    // System Management routes (super admin only)
+    Route::middleware(['auth', 'verified', 'role:super_admin'])->group(function () {
+        // Roles & Permissions
+        Route::resource('roles', RoleController::class)
+            ->middleware('permission:system.manage_roles');
+        Route::get('/roles/templates', [RoleController::class, 'getTemplates'])
+            ->middleware('permission:system.manage_roles')
+            ->name('roles.templates');
+        Route::post('/roles/{role}/toggle-status', [RoleController::class, 'toggleStatus'])
+            ->middleware('permission:system.manage_roles')
+            ->name('roles.toggle-status');
+        
+        // System Settings
+        Route::get('/settings', [SettingsController::class, 'index'])
+            ->middleware('permission:system.manage_settings')
+            ->name('settings.index');
+        Route::put('/settings', [SettingsController::class, 'update'])
+            ->middleware('permission:system.manage_settings')
+            ->name('settings.update');
+        
+        // Employees
+        Route::resource('employees', EmployeeController::class)
+            ->middleware('permission:system.manage_employees');
+            
+        // Employee Bookings - Accessible by admin, manager, and super_admin roles
+        Route::get('employees/{employee}/bookings', [EmployeeController::class, 'bookings'])
+            ->name('employees.bookings')
+            ->middleware(['auth', 'verified', 'role:admin,manager,super_admin']);
+    });
+
+    // Salon Management routes (salon admin and manager)
+    Route::middleware(['auth', 'verified', 'role:salon_admin|manager'])->group(function () {
+        // Salon Settings
+        Route::get('/salon-settings', [SettingsController::class, 'salonIndex'])
+            ->middleware('permission:salon.manage_settings')
+            ->name('salon-settings.index');
+        Route::put('/salon-settings', [SettingsController::class, 'salonUpdate'])
+            ->middleware('permission:salon.manage_settings')
+            ->name('salon-settings.update');
+        
+        // Branches
+        Route::resource('branches', BranchController::class)
+            ->middleware('permission:salon.manage_branches');
+    });
+
+    // Role User Management Routes
+    Route::get('/roles/{role}/users', [RoleController::class, 'getUsers'])->name('roles.users');
+    Route::get('/roles/{role}/available-users', [RoleController::class, 'getAvailableUsers'])->name('roles.available-users');
+    Route::post('/roles/{role}/users', [RoleController::class, 'addUser'])->name('roles.add-user');
+    Route::delete('/roles/{role}/users/{user}', [RoleController::class, 'removeUser'])->name('roles.remove-user');
+
+    // Role Hierarchy Routes
+    Route::get('/roles/hierarchy', [RoleController::class, 'getHierarchy'])->name('roles.hierarchy');
+});
+
+// Common routes for all authenticated users
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Add assign booking route for admin
+    Route::post('/admin/bookings/{booking}/assign', [\App\Http\Controllers\Admin\BookingController::class, 'assign'])->name('admin.bookings.assign');
+    
+    // Default profile routes (for non-employee users)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Customer Routes
+Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
+    // Appointments
+    Route::get('/appointments', [CustomerAppointmentController::class, 'index'])->name('appointments.index');
+    Route::post('/appointments/{booking}/rate', [CustomerAppointmentController::class, 'rate'])->name('appointments.rate');
+    Route::get('/appointments/create', [CustomerAppointmentController::class, 'create'])->name('appointments.create');
+    Route::get('/appointments/calendar', [CustomerAppointmentController::class, 'calendar'])->name('appointments.calendar');
+    Route::post('/appointments', [CustomerAppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/appointments/{booking}', [CustomerAppointmentController::class, 'show'])->name('appointments.show');
+    Route::delete('/appointments/{booking}', [CustomerAppointmentController::class, 'destroy'])->name('appointments.destroy');
+    Route::get('/appointments/events', [CustomerAppointmentController::class, 'index'])->name('appointments.events');  // Added route for calendar events
+
+    // API Routes
+    Route::get('/api/available-slots', [CustomerAppointmentController::class, 'getAvailableSlots'])->name('api.appointments.available-slots');
+    Route::get('/api/services', [CustomerAppointmentController::class, 'getServices'])->name('api.services');
+    Route::get('/api/staff', [CustomerAppointmentController::class, 'getStaff'])->name('api.staff');
+
+    // New API route for fetching confirmed appointments for calendar
+    Route::get('/api/appointments', [CustomerAppointmentController::class, 'apiAppointments'])->name('api.appointments.index');
+});
+
+// Add this route to fetch services for customers
+Route::get('/customer/services', function () {
+    $services = Service::select('id', 'name', 'price')->where('is_active', true)->get(); // Adjust query as needed
+    return response()->json($services);
+})->name('customer.services.index');
+
+// Employee Routes
+Route::middleware(['auth', 'verified'])->prefix('employee')->name('employee.')->group(function () {
+    // Role check in controller instead of middleware
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\Staff\ScheduleController::class, 'index'])->name('dashboard');
+    
+    // Appointments
+    Route::get('/appointments', [App\Http\Controllers\Staff\ScheduleController::class, 'appointments'])->name('appointments.index');
+    Route::get('/appointments/today', [App\Http\Controllers\Staff\ScheduleController::class, 'today'])->name('appointments.today');
+    Route::get('/appointments/upcoming', [App\Http\Controllers\Staff\ScheduleController::class, 'upcoming'])->name('appointments.upcoming');
+    Route::get('/appointments/completed', [App\Http\Controllers\Staff\ScheduleController::class, 'completed'])->name('appointments.completed');
+    
+    // Booking actions
+    Route::get('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'index'])->name('employee.bookings.index');
+    Route::get('/bookings/{booking}', [App\Http\Controllers\Admin\BookingController::class, 'show'])->name('employee.bookings.show');
+    
+    // Appointment actions
+    Route::get('/appointments/{id}', [App\Http\Controllers\Employee\AppointmentController::class, 'show'])->name('appointments.show');
+    Route::get('/appointments/{id}/check-slot', [App\Http\Controllers\Employee\AppointmentController::class, 'checkSlot'])->name('appointments.check-slot');
+    Route::post('/appointments/{id}/accept', [App\Http\Controllers\Employee\AppointmentController::class, 'accept'])->name('appointments.accept');
+    Route::post('/appointments/{id}/reject', [App\Http\Controllers\Employee\AppointmentController::class, 'reject'])->name('appointments.reject');
+    Route::post('/appointments/{id}/complete', [App\Http\Controllers\Employee\AppointmentController::class, 'complete'])->name('appointments.complete');
+    
+    // Employee Profile
+    Route::get('/profile', [App\Http\Controllers\Staff\ProfileController::class, 'edit'])->name('employee.profile.edit');
+    Route::patch('/profile', [App\Http\Controllers\Staff\ProfileController::class, 'update'])->name('employee.profile.update');
+    Route::delete('/profile', [App\Http\Controllers\Staff\ProfileController::class, 'destroy'])->name('employee.profile.destroy');
+});
+
+require __DIR__.'/auth.php';
+

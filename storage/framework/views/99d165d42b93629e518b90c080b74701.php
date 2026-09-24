@@ -1,0 +1,1 @@
+<?php /**PATH D:\FSQTAR-PROJECTS\salon-multi-options\resources\views\saas\settings\mail.blade.php ENDPATH**/ ?>

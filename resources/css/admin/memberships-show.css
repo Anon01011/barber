@@ -1,0 +1,209 @@
+/* Membership Show Styles */
+.hero-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 4rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.hero-header .membership-name {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hero-header .membership-badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+}
+
+.metric-card {
+    background: linear-gradient(135deg, #5a67d8 0%, #4c51bf 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(90, 103, 216, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0.95;
+    z-index: -1;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+}
+
+.metric-card .card-body {
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.metric-card h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.metric-card small {
+    font-size: 0.95rem;
+    opacity: 0.95;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.services-table {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.services-table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+.services-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.services-table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+.services-table .service-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.services-table .badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+}
+
+.status-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(66, 153, 225, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0.95;
+    z-index: -1;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+}
+
+.summary-card .card-body {
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.summary-card h4 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.summary-card small {
+    font-size: 0.95rem;
+    opacity: 0.95;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-modern {
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.alert-modern {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #667eea, #764ba2);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background: #667eea;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #667eea;
+}

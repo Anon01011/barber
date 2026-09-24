@@ -1,0 +1,383 @@
+<?php $settings = app('App\Services\SettingsService'); ?>
+
+
+<?php $__env->startSection('content'); ?>
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1 fw-bold text-gray-800">
+                                    <i class="fas fa-list me-2 text-primary"></i>All Appointments
+                                </h4>
+                                <p class="text-muted mb-0">Manage all your scheduled appointments</p>
+                            </div>
+                            <div class="btn-group shadow-sm">
+                                <a href="<?php echo e(route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug])); ?>"
+                                    class="btn btn-primary">
+                                    <i class="fas fa-list me-2"></i>All
+                                </a>
+                                <a href="<?php echo e(route('employee.appointments.today', ['salon_slug' => optional(auth()->user()->salon)->slug])); ?>"
+                                    class="btn btn-outline-primary bg-white">
+                                    <i class="fas fa-calendar-day me-2"></i>Today
+                                </a>
+                                <a href="<?php echo e(route('employee.appointments.upcoming', ['salon_slug' => optional(auth()->user()->salon)->slug])); ?>"
+                                    class="btn btn-outline-primary bg-white">
+                                    <i class="fas fa-calendar-week me-2"></i>Upcoming
+                                </a>
+                                <a href="<?php echo e(route('employee.appointments.completed', ['salon_slug' => optional(auth()->user()->salon)->slug])); ?>"
+                                    class="btn btn-outline-primary bg-white">
+                                    <i class="fas fa-check-circle me-2"></i>Completed
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                        <form
+                            action="<?php echo e(route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug])); ?>"
+                            method="GET" class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label for="status"
+                                    class="form-label text-xs text-uppercase text-muted fw-bold">Status</label>
+                                <select name="status" id="status" class="form-select border-light bg-light">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending" <?php echo e(request('status') === 'pending' ? 'selected' : ''); ?>>Pending
+                                    </option>
+                                    <option value="confirmed" <?php echo e(request('status') === 'confirmed' ? 'selected' : ''); ?>>
+                                        Confirmed</option>
+                                    <option value="completed" <?php echo e(request('status') === 'completed' ? 'selected' : ''); ?>>
+                                        Completed</option>
+                                    <option value="cancelled" <?php echo e(request('status') === 'cancelled' ? 'selected' : ''); ?>>
+                                        Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_from" class="form-label text-xs text-uppercase text-muted fw-bold">From
+                                    Date</label>
+                                <input type="date" class="form-control border-light bg-light" id="date_from"
+                                    name="date_from" value="<?php echo e(request('date_from')); ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_to" class="form-label text-xs text-uppercase text-muted fw-bold">To
+                                    Date</label>
+                                <input type="date" class="form-control border-light bg-light" id="date_to" name="date_to"
+                                    value="<?php echo e(request('date_to')); ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-2"></i>Apply Filters
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <?php if($appointments->count() > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-3 border-0 text-uppercase text-secondary text-xs font-weight-bolder opacity-7">
+                                                Date & Time</th>
+                                            <th
+                                                class="py-3 border-0 text-uppercase text-secondary text-xs font-weight-bolder opacity-7">
+                                                Customer</th>
+                                            <th
+                                                class="py-3 border-0 text-uppercase text-secondary text-xs font-weight-bolder opacity-7">
+                                                Service</th>
+                                            <th
+                                                class="py-3 border-0 text-uppercase text-secondary text-xs font-weight-bolder opacity-7">
+                                                Status</th>
+                                            <th
+                                                class="py-3 border-0 text-uppercase text-secondary text-xs font-weight-bolder opacity-7 text-end px-4">
+                                                Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $__currentLoopData = $appointments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $appointment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                    <tr>
+                                                                        <td class="px-4 py-3">
+                                                                            <div class="d-flex flex-column">
+                                                                                <span
+                                                                                    class="fw-bold text-dark"><?php echo e($appointment->start_time->format('M d, Y')); ?></span>
+                                                                                <span
+                                                                                    class="text-muted small"><?php echo e($appointment->start_time->format('h:i A')); ?></span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td class="py-3">
+                                                                            <div class="d-flex align-items-center">
+                                                                                <img src="https://ui-avatars.com/api/?name=<?php echo e(urlencode($appointment->customer->name ?? 'Guest')); ?>&background=random&size=32"
+                                                                                    alt="<?php echo e($appointment->customer->name ?? 'Guest'); ?>"
+                                                                                    class="rounded-circle me-2 shadow-sm"
+                                                                                    style="width: 32px; height: 32px;">
+                                                                                <div>
+                                                                                    <div class="fw-bold text-dark">
+                                                                                        <?php echo e($appointment->customer->name ?? 'Guest'); ?></div>
+                                                                                    <div class="text-muted small"><?php echo e($appointment->customer->email ?? ''); ?>
+
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td class="py-3">
+                                                                            <div class="d-flex flex-column">
+                                                                                <span class="fw-semibold text-dark"><?php echo e($appointment->service->name); ?></span>
+                                                                                <?php if($appointment->package): ?>
+                                                                                    <span
+                                                                                        class="badge bg-purple-subtle text-purple-emphasis rounded-pill mt-1 w-auto align-self-start"
+                                                                                        style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.7em;">
+                                                                                        <i class="fas fa-box me-1"></i><?php echo e($appointment->package->name); ?>
+
+                                                                                    </span>
+                                                                                <?php endif; ?>
+                                                                                <span class="text-muted small mt-1"><?php echo e(currency_symbol()); ?>
+
+                                                                                    <?php echo e(number_format($appointment->amount, 2)); ?></span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td class="py-3">
+                                                                            <?php
+                                                                                $statusClass = match ($appointment->status) {
+                                                                                    'confirmed' => 'success',
+                                                                                    'pending' => 'warning',
+                                                                                    'completed' => 'info',
+                                                                                    'cancelled' => 'danger',
+                                                                                    default => 'secondary'
+                                                                                };
+                                                                            ?>
+                                             <span
+                                                                                class="badge bg-<?php echo e($statusClass); ?>-subtle text-<?php echo e($statusClass); ?> border border-<?php echo e($statusClass); ?>-subtle rounded-pill">
+                                                                                <?php echo e(ucfirst($appointment->status)); ?>
+
+                                                                            </span>
+                                                                        </td>
+                                                                        <td class="py-3 text-end px-4">
+                                                                            <button type="button" class="btn btn-sm btn-light text-primary hover-shadow"
+                                                                                onclick="viewAppointment(<?php echo e($appointment->id); ?>)" title="View Details">
+                                                                                <i class="fas fa-eye"></i>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top bg-light-subtle">
+                                <div class="text-muted small">
+                                    Showing <?php echo e($appointments->firstItem() ?? 0); ?> to <?php echo e($appointments->lastItem() ?? 0); ?> of
+                                    <?php echo e($appointments->total()); ?> entries
+                                </div>
+                                <div>
+                                    <?php echo e($appointments->withQueryString()->links('pagination::bootstrap-4')); ?>
+
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-5">
+                                <div class="mb-3">
+                                    <div class="avatar avatar-xl bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                        style="width: 80px; height: 80px;">
+                                        <i class="fas fa-calendar fa-3x text-muted opacity-50"></i>
+                                    </div>
+                                </div>
+                                <h5 class="text-muted fw-normal">No appointments found</h5>
+                                <p class="text-muted small">Try adjusting your filters.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Appointment Modal -->
+    <div class="modal fade" id="viewAppointmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Appointment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="appointmentModalBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php $__env->startPush('styles'); ?>
+        <style>
+            .hover-shadow:hover {
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+                transform: translateY(-1px);
+            }
+
+            .text-xs {
+                font-size: 0.75rem;
+            }
+
+            .bg-purple-subtle {
+                background-color: #f3e8ff !important;
+            }
+
+            .text-purple-emphasis {
+                color: #7c3aed !important;
+            }
+
+            .border-light {
+                border-color: #e3e6f0 !important;
+            }
+        </style>
+    <?php $__env->stopPush(); ?>
+
+    <?php $__env->startPush('scripts'); ?>
+        <script>
+            function getSalonSlug() {
+                const userSalonSlug = '<?php echo e(auth()->user()->salon->slug ?? ""); ?>';
+                if (userSalonSlug) return userSalonSlug;
+                const pathParts = window.location.pathname.split('/').filter(p => p);
+                return pathParts[0] || '';
+            }
+
+            const currencySymbol = "<?php echo e($settings->get('currency_symbol', '$', auth()->user()->salon_id)); ?>";
+
+            function viewAppointment(id) {
+                const modal = new bootstrap.Modal(document.getElementById('viewAppointmentModal'));
+                const modalBody = document.getElementById('appointmentModalBody');
+
+                modalBody.innerHTML = `
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading details...</p>
+                            </div>
+                        `;
+
+                modal.show();
+                const salonSlug = getSalonSlug();
+
+                fetch(`/${salonSlug}/employee/appointments/${id}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.success) throw new Error(res.message || 'Failed to load');
+
+                        const data = res.data;
+                        const serviceName = data.service?.name || 'N/A';
+                        const customerName = data.customer?.name || 'N/A';
+                        const startTime = new Date(data.start_time).toLocaleString();
+
+                        const html = `
+                                <div class="row g-4">
+                                    <div class="col-12 text-center pb-3 border-bottom">
+                                        <div class="mb-2">
+                                            <span class="badge bg-${getStatusColor(data.status)} rounded-pill fs-6 px-3 py-2">
+                                                ${data.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <h4 class="mb-0 fw-bold">${serviceName}</h4>
+                                        <p class="text-muted mb-0">${startTime}</p>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-3 text-muted text-uppercase small fw-bold">Customer</h6>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-md bg-white rounded-circle shadow-sm p-2 me-3 text-primary d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                                        <i class="fas fa-user"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold fs-5">${customerName}</div>
+                                                        <div class="text-muted small">${data.customer?.email || ''}</div>
+                                                        <div class="text-muted small">${data.customer?.phone || ''}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-3 text-muted text-uppercase small fw-bold">Service Details</h6>
+                                                <ul class="list-unstyled mb-0">
+                                                    <li class="mb-2 d-flex justify-content-between">
+                                                        <span class="text-muted">Price:</span>
+                                                        <span class="fw-bold">${currencySymbol}${parseFloat(data.service?.price || 0).toFixed(2)}</span>
+                                                    </li>
+                                                    <li class="mb-2 d-flex justify-content-between">
+                                                        <span class="text-muted">Duration:</span>
+                                                        <span class="fw-bold">${data.service?.duration || 0} mins</span>
+                                                    </li>
+                                                    <li class="d-flex justify-content-between">
+                                                        <span class="text-muted">Total Amount:</span>
+                                                        <span class="fw-bold text-primary">${currencySymbol}${parseFloat(data.amount || 0).toFixed(2)}</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-muted text-uppercase small fw-bold">Notes</h6>
+                                                <p class="mb-0 text-muted fst-italic">${data.notes || 'No notes provided.'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        modalBody.innerHTML = html;
+                    })
+                    .catch(err => {
+                        modalBody.innerHTML = `
+                                <div class="text-center text-danger py-4">
+                                    <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                                    <p>Failed to load details. Please try again.</p>
+                                </div>
+                            `;
+                    });
+            }
+
+            function getStatusColor(status) {
+                const colors = { 'pending': 'warning', 'confirmed': 'success', 'completed': 'info', 'cancelled': 'danger' };
+                return colors[status?.toLowerCase()] || 'secondary';
+            }
+        </script>
+    <?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\FSQTAR-PROJECTS\salon-multi-options\resources\views\staff\appointments\index.blade.php ENDPATH**/ ?>

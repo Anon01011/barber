@@ -1,0 +1,297 @@
+/* Fonts */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+/* Base Styles */
+
+.font-playfair {
+    font-family: 'Playfair Display', serif;
+}
+
+.font-poppins {
+    font-family: 'Poppins', sans-serif;
+}
+
+
+/* Gradients */
+
+.hero-gradient {
+    background: linear-gradient(135deg, #FFE5E5 0%, #FFF0F5 100%);
+}
+
+.feature-gradient {
+    background: linear-gradient(135deg, #FFF5F5 0%, #FFF0F5 100%);
+}
+
+
+/* Buttons */
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background-color: #f43f5e;
+    color: white;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: all 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #e11d48;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background-color: white;
+    color: #f43f5e;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: all 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #fecdd3;
+}
+
+.btn-secondary:hover {
+    background-color: #fff1f2;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-booking {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    color: white;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: all 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-booking::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-booking:hover::before {
+    left: 100%;
+}
+
+.btn-booking:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Cards */
+
+.feature-card {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #f43f5e, #e11d48);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover::before {
+    transform: scaleX(1);
+}
+
+.feature-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+}
+
+
+/* Navigation */
+
+.nav-link {
+    color: #4b5563;
+    transition: color 0.3s;
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #f43f5e;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+.nav-link:hover {
+    color: #f43f5e;
+}
+
+
+/* Animations */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-booking {
+        width: 100%;
+        text-align: center;
+    }
+    .hero-image {
+        margin-top: 2rem;
+    }
+}
+
+
+/* Hero Section */
+
+.hero-image {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.hero-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 100%);
+}
+
+
+/* Testimonial Cards */
+
+.testimonial-card {
+    background: linear-gradient(135deg, #fff5f5 0%, #fff0f5 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.testimonial-card::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 20px;
+    font-size: 120px;
+    color: rgba(244, 63, 94, 0.1);
+    font-family: 'Playfair Display', serif;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Floating Elements */
+
+.floating {
+    animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+
+/* Glass Effect */
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+
+/* Stats Counter */
+
+.stats-counter {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #f43f5e;
+    margin-bottom: 0.5rem;
+}
+
+.stats-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
