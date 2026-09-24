@@ -146,6 +146,9 @@ class RegisterController extends Controller
                 'trial_ends_at' => $trialDays > 0 ? now()->addDays($trialDays) : null,
             ]);
 
+            // Bind newly created salon to app container for subsequent model creations
+            app()->instance('current_salon', $salon);
+
             \Illuminate\Support\Facades\Log::info('Salon object after creation:', $salon->toArray());
 
             // Sync localization settings to the settings table

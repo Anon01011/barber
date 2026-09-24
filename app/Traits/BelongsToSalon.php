@@ -21,10 +21,15 @@ trait BelongsToSalon
                 return;
             }
 
+            // If salon_id is already explicitly provided on the model, preserve it
+            if (!empty($model->salon_id)) {
+                return;
+            }
+
             // Only use app('current_salon') as single source of truth
             // This prevents inconsistencies from multiple fallback sources
-            if (app()->bound('current_salon')) {
-                $model->salon_id = app()->bound('current_salon') ? app('current_salon')->id : null;
+            if (app()->bound('current_salon') && app('current_salon')) {
+                $model->salon_id = app('current_salon')->id;
             } elseif (auth()->check() && auth()->user()->salon_id) {
                 // Fallback to authenticated user's salon_id
                 $model->salon_id = auth()->user()->salon_id;
@@ -35,7 +40,7 @@ trait BelongsToSalon
             } else {
                 // If no salon context is available, throw exception
                 // This prevents orphaned records with null salon_id
-                throw new \Exception('Cannot create model without salon context. Ensure middleware sets current_salon.');
+                throw new \Exception('Cannot create model without salon context. Ensure middleware sets current_salon or specify salon_id explicitly.');
             }
         });
     }
