@@ -37,6 +37,11 @@ class DashboardController extends Controller
             return $this->customerDashboard($user);
         }
 
+        // If barber plan/business, redirect to terminal screen unless dashboard view is explicitly requested
+        if ($user->salon && $user->salon->isBarber() && !$request->has('view') && !$request->has('mode')) {
+            return redirect()->route('admin.pos.index', ['salon_slug' => $user->salon->slug]);
+        }
+
         // Default to Admin/Manager Dashboard
         return $this->adminDashboard($user, $request);
     }

@@ -184,7 +184,7 @@ class PosController extends Controller
         if ($salon && $salon->business_type === 'both') {
             $viewName = ($viewParam === 'barber') ? 'pos.barber' : 'pos.index';
         } else {
-            $viewName = ($salon && $salon->business_type === 'barber') ? 'pos.barber' : 'pos.index';
+            $viewName = ($salon && (method_exists($salon, 'isBarber') ? $salon->isBarber() : $salon->business_type === 'barber')) ? 'pos.barber' : 'pos.index';
         }
 
         return view($viewName, compact('services', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton'));

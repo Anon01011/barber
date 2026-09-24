@@ -119,6 +119,31 @@ class Salon extends Model
         return $this->activeSubscription ? $this->activeSubscription->plan : null;
     }
 
+    /**
+     * Check if the salon operates as a barber or has a barber plan
+     */
+    public function isBarber(): bool
+    {
+        if (strtolower((string)$this->business_type) === 'barber') {
+            return true;
+        }
+
+        $plan = $this->plan;
+        if ($plan) {
+            if (strtolower((string)$plan->business_type) === 'barber') {
+                return true;
+            }
+            if (!empty($plan->name) && stripos($plan->name, 'barber') !== false) {
+                return true;
+            }
+            if (!empty($plan->slug) && stripos($plan->slug, 'barber') !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);
