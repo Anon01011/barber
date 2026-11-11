@@ -237,7 +237,9 @@
                                 </div>
                             </div>
                         @else
-                            <a href="{{ route('booking.guest') }}" class="btn-primary">Book Now</a>
+                            @if (!empty($salon?->slug))
+                                <a href="{{ route('booking.guest', ['salon_slug' => $salon->slug]) }}" class="btn-primary">Book Now</a>
+                            @endif
                             <a href="{{ route('login') }}" class="btn-secondary">Login</a>
                             @if (Route::has('register'))
                                 <a href="{{ route('register') }}" class="btn-secondary">Register</a>
@@ -252,6 +254,7 @@
     <!-- Main Content -->
     <main class="pt-16 min-h-screen bg-gray-50">
         @yield('content')
+        {{ $slot ?? '' }}
     </main>
 
     <!-- Footer -->

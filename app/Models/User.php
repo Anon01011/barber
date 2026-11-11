@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Support\Facades\Log;
 use App\Traits\BelongsToSalon;
+use App\Notifications\PasswordResetNotification;
 
 /**
  * User Model
@@ -219,5 +220,17 @@ class User extends Authenticatable
     public function absences()
     {
         return $this->hasMany(StaffAbsence::class, 'staff_id');
+    }
+
+    /**
+     * Send the password reset notification.
+     * Always uses the SaaS platform SMTP and custom branded email template.
+     *
+     * @param string $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new PasswordResetNotification($token));
     }
 }
