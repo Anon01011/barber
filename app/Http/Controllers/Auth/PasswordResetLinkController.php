@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\GlobalMailConfigService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -10,16 +11,28 @@ use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
 {
+    protected GlobalMailConfigService $mailConfig;
+
+    public function __construct(GlobalMailConfigService $mailConfig)
+    {
+        $this->mailConfig = $mailConfig;
+    }
+
     /**
      * Display the password reset link request view.
      */
     public function create(): View
     {
-        return view('auth.forgot-password');
+        $appName = app(\App\Services\SettingsService::class)->get('app_name', config('app.name'));
+        return view('auth.forgot-password', compact('appName'));
     }
 
     /**
      * Handle an incoming password reset link request.
+     *
+     * Apply the super-admin configured SMTP settings from the database before
+     * sending the reset link so the email goes through the configured mail provider
+     * rather than falling back to the .env log driver.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -29,9 +42,9 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
+        // Apply global SMTP config from super-admin DB settings.
+        $this->mailConfig->apply();
+
         $status = Password::sendResetLink(
             $request->only('email')
         );
