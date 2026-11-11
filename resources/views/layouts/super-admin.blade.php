@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ app(\App\Services\SettingsService::class)->get('app_name', config('app.name', 'Laravel')) }} - Super Admin
@@ -197,6 +197,8 @@
                 </a>
             </div>
         </div>
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
         <!-- Header -->
         <div class="header" id="header">
@@ -259,6 +261,29 @@
                 @yield('content')
             </div>
         </div>
+        <!-- Mobile Bottom Navigation Bar (Super Admin) -->
+        <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
+            <a href="{{ route('admin.super.dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.super.dashboard') ? 'active' : '' }}">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ route('admin.salons.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.salons.*') ? 'active' : '' }}">
+                <i class="fas fa-store"></i>
+                <span>Salons</span>
+            </a>
+            <a href="{{ route('admin.plans.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
+                <i class="fas fa-tags"></i>
+                <span>Plans</span>
+            </a>
+            <a href="{{ route('admin.subscriptions.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
+                <i class="fas fa-crown"></i>
+                <span>Subs</span>
+            </a>
+            <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+                <span>Menu</span>
+            </a>
+        </nav>
     @endauth
 
     <!-- Bootstrap Bundle with Popper -->
@@ -272,26 +297,74 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-        // Toggle Sidebar
+        // Responsive Sidebar & Drawer Logic
         const sidebar = document.getElementById('sidebar');
         const header = document.getElementById('header');
         const mainContent = document.getElementById('mainContent');
         const toggleSidebar = document.getElementById('toggleSidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+        function isMobile() {
+            return window.innerWidth < 992;
+        }
+
+        function openMobileSidebar() {
+            if (sidebar) sidebar.classList.add('mobile-show');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('show');
+            document.body.classList.add('mobile-drawer-open');
+        }
+
+        function closeMobileSidebar() {
+            if (sidebar) sidebar.classList.remove('mobile-show');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
+            document.body.classList.remove('mobile-drawer-open');
+        }
 
         // Check if sidebar was previously collapsed
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        if (!isMobile() && localStorage.getItem('sidebarCollapsed') === 'true') {
             sidebar?.classList.add('collapsed');
             header?.classList.add('collapsed');
             mainContent?.classList.add('expanded');
         }
 
-        toggleSidebar?.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            header.classList.toggle('collapsed');
-            mainContent.classList.toggle('expanded');
+        toggleSidebar?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isMobile()) {
+                if (sidebar?.classList.contains('mobile-show')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            } else {
+                sidebar?.classList.toggle('collapsed');
+                header?.classList.toggle('collapsed');
+                mainContent?.classList.toggle('expanded');
+                localStorage.setItem('sidebarCollapsed', sidebar?.classList.contains('collapsed') ? 'true' : 'false');
+            }
+        });
 
-            // Save state to localStorage
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        mobileMenuBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openMobileSidebar();
+        });
+
+        sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+
+        if (sidebar) {
+            sidebar.querySelectorAll('.sidebar-item:not([data-bs-toggle="collapse"])').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (isMobile()) closeMobileSidebar();
+                });
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            if (!isMobile() && sidebar?.classList.contains('mobile-show')) {
+                closeMobileSidebar();
+            }
         });
 
         // User Dropdown
@@ -299,7 +372,7 @@
         const userDropdownMenu = document.getElementById('userDropdownMenu');
 
         userDropdownToggle?.addEventListener('click', () => {
-            userDropdownMenu.classList.toggle('show');
+            userDropdownMenu?.classList.toggle('show');
         });
 
         // Close dropdown when clicking outside

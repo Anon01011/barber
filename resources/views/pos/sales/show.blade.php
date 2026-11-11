@@ -43,9 +43,11 @@
                             <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-default btn-sm">
                                 <i class="fas fa-arrow-left"></i> Back to Sales
                             </a>
+                            @can('pos.edit_sale')
                             <a href="{{ route('admin.pos.sales.edit', $sale->id) }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit"></i> Edit Sale
                             </a>
+                            @endcan
                             <a href="{{ route('admin.pos.receipt', $sale->id) }}" class="btn btn-info btn-sm"
                                 target="_blank">
                                 <i class="fas fa-print"></i> Print Receipt
@@ -307,17 +309,21 @@
                                         </div>
                                     </div>
                                 @else
+                                    @can('pos.process_refunds')
                                     @if(in_array($sale->status, ['completed', 'partially_refunded']) && $sale->payment_status !== 'refunded')
                                         <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                                             data-bs-target="#refundModal">
                                             <i class="fas fa-undo"></i> Process Refund
                                         </button>
                                     @endif
+                                    @endcan
 
+                                    @can('pos.delete_sale')
                                     <button type="button" class="btn btn-danger" data-bs-toggle="modal"
                                         data-bs-target="#voidModal">
                                         <i class="fas fa-ban"></i> Void Sale
                                     </button>
+                                    @endcan
                                 @endif
                             </div>
                             <div class="col-md-6 text-right">

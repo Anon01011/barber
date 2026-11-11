@@ -82,5 +82,7 @@ class Kernel extends HttpKernel
         'set.branch.context' => \App\Http\Middleware\SetBranchContext::class,
         'subscription' => \App\Http\Middleware\SubscriptionMiddleware::class,
         'module' => \App\Http\Middleware\CheckModuleEnabled::class,
+        // Security: block direct platform-admin write mutations on tenant routes
+        'restrict.admin.writes' => \App\Http\Middleware\RestrictPlatformAdminWrites::class,
     ];
 }

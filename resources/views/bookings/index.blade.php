@@ -6,12 +6,15 @@
     <!-- Global Notification Container -->
 
 
-    <div class="container-fluid px-3 py-2 d-flex flex-column" style="height: calc(100vh - 70px); overflow: hidden;">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+    {{-- Mobile-App Bookings Page Wrapper --}}
+    <div class="bk-page-wrap container-fluid px-3 py-2 d-flex flex-column">
+
+        {{-- ====== DESKTOP CONTROLS (hidden on mobile) ====== --}}
+        <div class="d-none d-md-flex flex-md-row justify-content-between align-items-center mb-3">
             <div>
                 <h2 class="h5 mb-0 text-dark fw-semibold">Booking Calendar</h2>
             </div>
-            <div class="d-flex gap-2 mt-3 mt-md-0 align-items-center">
+            <div class="d-flex gap-2 align-items-center">
                 <a href="{{ route('admin.bookings.settings') }}" class="btn btn-outline-secondary"
                     title="Calendar Settings">
                     <i class="fas fa-cog"></i>
@@ -22,14 +25,13 @@
                     <label class="btn btn-outline-primary" for="calendarView">
                         <i class="fas fa-calendar-alt me-1"></i> Calendar
                     </label>
-
                     <input type="radio" class="btn-check" name="viewType" id="listView" autocomplete="off">
                     <label class="btn btn-outline-primary" for="listView">
                         <i class="fas fa-list me-1"></i> List
                     </label>
                 </div>
 
-                <div class="dropdown ms-2" style="width: 250px;">
+                <div class="dropdown" style="width: 220px;">
                     <button
                         class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
                         type="button" id="staffFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -40,14 +42,10 @@
                         <li>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="all" id="staffFilterAll" checked>
-                                <label class="form-check-label w-100 " for="staffFilterAll">
-                                    Select All
-                                </label>
+                                <label class="form-check-label w-100" for="staffFilterAll">Select All</label>
                             </div>
                         </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+                        <li><hr class="dropdown-divider"></li>
                         @foreach($staffMembers as $staff)
                             <li>
                                 <div class="form-check">
@@ -62,7 +60,6 @@
                     </ul>
                 </div>
 
-                <!-- List View Specific Filters -->
                 <div id="listViewFilters" class="d-none d-flex gap-2 align-items-center">
                     <select id="statusFilter" class="form-select" style="width: 150px;">
                         <option value="">All Status</option>
@@ -73,7 +70,6 @@
                         <option value="cancelled">Cancelled</option>
                         <option value="no_show">No Show</option>
                     </select>
-
                     <select id="sortFilter" class="form-select" style="width: 150px;">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
@@ -82,15 +78,100 @@
                     </select>
                 </div>
 
-                <div class="ms-2 d-none" id="datePickerContainer">
+                <div class="d-none" id="datePickerContainer">
                     <input type="date" id="calendarDatePicker" class="form-control"
                         value="{{ \Carbon\Carbon::now(salon_timezone())->format('Y-m-d') }}">
                 </div>
             </div>
         </div>
 
+        {{-- ====== MOBILE APP HEADER (hidden on desktop) ====== --}}
+        <div class="bk-mobile-header d-flex d-md-none align-items-center mb-2">
+            <div class="bk-mobile-header-title">
+                <div class="bk-badge-dot"></div>
+                <span>Appointments</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                {{-- Mobile Staff Filter --}}
+                <div class="dropdown">
+                    <button class="bk-icon-btn" type="button" id="mobileStaffFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Filter by Staff">
+                        <i class="fas fa-users"></i>
+                        <span class="bk-icon-btn-badge d-none" id="mobileStaffBadge">•</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end p-2 shadow-lg border-0 rounded-4" aria-labelledby="mobileStaffFilterDropdown"
+                        style="max-height: 300px; overflow-y: auto; min-width: 200px;">
+                        <li class="px-1 pb-2">
+                            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.1em;">Filter by Staff</span>
+                        </li>
+                        <li>
+                            <div class="form-check px-2 py-1">
+                                <input class="form-check-input" type="checkbox" value="all" id="mobileStaffFilterAll" checked>
+                                <label class="form-check-label w-100 fw-semibold" for="mobileStaffFilterAll">All Staff</label>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        @foreach($staffMembers as $staff)
+                            <li>
+                                <div class="form-check px-2 py-1">
+                                    <input class="form-check-input mobile-staff-filter-checkbox" type="checkbox"
+                                        value="{{ $staff->id }}" id="mobileStaffFilter{{ $staff->id }}" checked>
+                                    <label class="form-check-label w-100" for="mobileStaffFilter{{ $staff->id }}">
+                                        {{ $staff->name }}
+                                    </label>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                {{-- Settings --}}
+                <a href="{{ route('admin.bookings.settings') }}" class="bk-icon-btn" title="Settings">
+                    <i class="fas fa-sliders-h"></i>
+                </a>
+            </div>
+        </div>
+
+        {{-- ====== MOBILE SEGMENTED TOGGLE (hidden on desktop) ====== --}}
+        <div class="bk-segment-wrap d-flex d-md-none mb-3">
+            <div class="bk-segment">
+                <button class="bk-seg-btn active" id="mobileCalendarToggle" onclick="switchMobileView('calendar')">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Calendar</span>
+                </button>
+                <button class="bk-seg-btn" id="mobileListToggle" onclick="switchMobileView('list')">
+                    <i class="fas fa-list-ul"></i>
+                    <span>List</span>
+                </button>
+            </div>
+            {{-- Mobile Date Picker --}}
+            <div class="bk-mobile-date-wrap ms-auto" id="mobileDatePickerContainer">
+                <input type="date" id="mobileCalendarDatePicker" class="bk-date-input"
+                    value="{{ \Carbon\Carbon::now(salon_timezone())->format('Y-m-d') }}">
+            </div>
+        </div>
+
+        {{-- ====== MOBILE LIST FILTERS (shown only in list mode on mobile) ====== --}}
+        <div class="d-none d-md-none" id="mobileListFiltersBar">
+            <div class="bk-filter-row mb-2">
+                <select id="mobileStatusFilter" class="bk-filter-pill-select">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="staff_completed">Staff Done</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="no_show">No Show</option>
+                </select>
+                <select id="mobileSortFilter" class="bk-filter-pill-select">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="alpha_asc">A→Z</option>
+                    <option value="alpha_desc">Z→A</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Calendar View -->
-        <div id="calendarViewContainer" class="flex-grow-1" style="overflow: hidden;">
+        <div id="calendarViewContainer" class="bk-view-container flex-grow-1" style="overflow: hidden;">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-0 h-100">
                     <div id="calendar" class="h-100"></div>
@@ -99,12 +180,12 @@
         </div>
 
         <!-- List View -->
-        <div id="listViewContainer" class="flex-grow-1" style="display: none; overflow: hidden;">
+        <div id="listViewContainer" class="bk-view-container flex-grow-1" style="display: none; overflow: hidden;">
             <div class="card border-0 shadow-sm h-100 d-flex flex-column">
                 <div class="card-body p-0 flex-grow-1 d-flex flex-column" style="overflow: hidden;">
                     <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
+                        <table class="table table-hover align-middle mb-0" id="bookingsTable">
+                            <thead class="bg-light bk-table-head">
                                 <tr>
                                     <th class="ps-3">Appt. Nr</th>
                                     <th>Customer</th>
@@ -132,7 +213,15 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        {{-- ====== FLOATING ACTION BUTTON (mobile only) ====== --}}
+        <button class="bk-fab d-md-none" id="mobileFabBtn"
+            onclick="if(window.openNewBookingModal) window.openNewBookingModal(); else { var m=document.getElementById('bookingModal'); if(m) new bootstrap.Modal(m).show(); }"
+            title="New Appointment">
+            <i class="fas fa-plus"></i>
+        </button>
+
+    </div>{{-- end bk-page-wrap --}}
 
     @include('components.past-time-modal')
     @include('admin.bookings.partials.payment_modal')
@@ -162,6 +251,233 @@
 
 
 
+    <style>
+        /* ============================================================
+           MOBILE APP STYLES — Bookings Page
+           All rules below @media(max-width:767.98px) are mobile-only.
+           Desktop styles are unchanged above that breakpoint.
+        ============================================================ */
+
+        /* Page wrapper: auto height on mobile, fixed on desktop */
+        .bk-page-wrap {
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        @media (max-width: 767.98px) {
+            .bk-page-wrap {
+                height: auto;
+                overflow: visible;
+                padding-bottom: 90px !important; /* space for FAB */
+            }
+        }
+
+        /* --- Mobile Header ----------------------------------------- */
+        .bk-mobile-header {
+            padding: 4px 0 6px;
+        }
+        .bk-mobile-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+        }
+        .bk-badge-dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+        }
+
+        /* Icon action buttons in mobile header */
+        .bk-icon-btn {
+            position: relative;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+        .bk-icon-btn:hover { background: #e2e8f0; color: #1e293b; }
+        .bk-icon-btn-badge {
+            position: absolute;
+            top: 4px; right: 4px;
+            width: 8px; height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 1.5px solid #fff;
+        }
+
+        /* --- Segmented Toggle -------------------------------------- */
+        .bk-segment-wrap {
+            align-items: center;
+            gap: 10px;
+        }
+        .bk-segment {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 14px;
+            padding: 3px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .bk-seg-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 11px;
+            border: none;
+            background: transparent;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(.4,0,.2,1);
+            white-space: nowrap;
+        }
+        .bk-seg-btn.active {
+            background: #ffffff;
+            color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.15), 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .bk-seg-btn i { font-size: 0.8rem; }
+
+        /* --- Mobile date picker ------------------------------------ */
+        .bk-mobile-date-wrap { flex-shrink: 0; }
+        .bk-date-input {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 7px 10px;
+            font-size: 0.8rem;
+            color: #475569;
+            background: #fff;
+            outline: none;
+            max-width: 130px;
+        }
+        .bk-date-input:focus { border-color: #6366f1; }
+
+        /* --- Mobile Filter Pills ----------------------------------- */
+        .bk-filter-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding: 2px 0;
+        }
+        .bk-filter-row::-webkit-scrollbar { display: none; }
+        .bk-filter-pill-select {
+            flex-shrink: 0;
+            border-radius: 20px;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            color: #475569;
+            font-weight: 500;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            outline: none;
+        }
+        .bk-filter-pill-select:focus { border-color: #6366f1; }
+
+        /* --- Calendar & List view containers ----------------------- */
+        .bk-view-container { flex: 1 1 auto; }
+        @media (max-width: 767.98px) {
+            .bk-view-container {
+                height: calc(100svh - 220px);
+                min-height: 400px;
+                overflow: hidden;
+            }
+            /* Hide desktop table thead on mobile */
+            #bookingsTable .bk-table-head { display: none; }
+        }
+
+        /* --- Floating Action Button -------------------------------- */
+        .bk-fab {
+            position: fixed;
+            /* Sit above the mobile bottom-nav (58px) + 16px breathing room + safe-area */
+            bottom: calc(58px + 16px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+            width: 58px; height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.45), 0 2px 8px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            cursor: pointer;
+            z-index: 1050; /* above bottom-nav z-index 1045 */
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        .bk-fab:hover { transform: scale(1.08); box-shadow: 0 12px 32px rgba(99,102,241,0.55); }
+        .bk-fab:active { transform: scale(0.95); }
+
+
+        /* --- Mobile calendar toolbar tweaks ----------------------- */
+        @media (max-width: 767.98px) {
+            .fc-header-toolbar {
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+                padding: 6px 8px !important;
+            }
+            .fc-toolbar-chunk { gap: 4px !important; }
+            .fc .fc-button {
+                padding: 0.2rem 0.45rem !important;
+                font-size: 0.75rem !important;
+            }
+            .fc-toolbar-title {
+                font-size: 0.88rem !important;
+                font-weight: 700 !important;
+            }
+            .fc .fc-prev-button,
+            .fc .fc-next-button {
+                width: 30px !important;
+                height: 30px !important;
+            }
+            .fc-col-header-cell-cushion {
+                font-size: 0.75rem !important;
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+        }
+
+        /* --- Mobile: Hide table, show cards ----------------------- */
+        @media (max-width: 767.98px) {
+            #bookingsList tr.bk-card-row {
+                display: block;
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+                margin: 0 0 12px 0;
+                padding: 14px 14px 10px;
+                border: none;
+                transition: box-shadow 0.18s;
+            }
+            #bookingsList tr.bk-card-row:hover {
+                box-shadow: 0 6px 20px rgba(99,102,241,0.12), 0 2px 6px rgba(0,0,0,0.08);
+            }
+            #bookingsList td {
+                display: block;
+                border: none !important;
+                padding: 0 !important;
+            }
+            #bookingsList td.bk-td-hidden { display: none !important; }
+            /* tbody needs to be a block container on mobile */
+            #bookingsList { display: block; padding: 4px 2px; }
+        }
+
+    </style>
     <style>
         @keyframes slideIn {
             from {
@@ -2419,4 +2735,113 @@
             </div>
         </div>
     </div>
+@endpush
+
+@push('scripts')
+<script>
+// -------------------------------------------------------
+// switchMobileView - drives the segmented toggle on mobile
+// -------------------------------------------------------
+function switchMobileView(mode) {
+    var calendarContainer = document.getElementById('calendarViewContainer');
+    var listContainer     = document.getElementById('listViewContainer');
+    var mobileListFilters = document.getElementById('mobileListFiltersBar');
+    var mobileDateWrap    = document.getElementById('mobileDatePickerContainer');
+    var calBtn = document.getElementById('mobileCalendarToggle');
+    var lstBtn = document.getElementById('mobileListToggle');
+
+    if (mode === 'calendar') {
+        if (calendarContainer) calendarContainer.style.display = '';
+        if (listContainer)     listContainer.style.display     = 'none';
+        if (calBtn) calBtn.classList.add('active');
+        if (lstBtn) lstBtn.classList.remove('active');
+        if (mobileListFilters) mobileListFilters.classList.add('d-none');
+        if (mobileDateWrap)    mobileDateWrap.style.display = '';
+        // Trigger desktop radio change so existing JS switches view
+        var desktopRadio = document.getElementById('calendarView');
+        if (desktopRadio) { desktopRadio.checked = true; desktopRadio.dispatchEvent(new Event('change')); }
+    } else {
+        if (calendarContainer) calendarContainer.style.display = 'none';
+        if (listContainer)     listContainer.style.display     = '';
+        if (calBtn) calBtn.classList.remove('active');
+        if (lstBtn) lstBtn.classList.add('active');
+        if (mobileListFilters) mobileListFilters.classList.remove('d-none');
+        if (mobileDateWrap)    mobileDateWrap.style.display = 'none';
+        var desktopRadio = document.getElementById('listView');
+        if (desktopRadio) { desktopRadio.checked = true; desktopRadio.dispatchEvent(new Event('change')); }
+    }
+}
+
+// -------------------------------------------------------
+// window.openNewBookingModal — called from FAB button
+// -------------------------------------------------------
+window.openNewBookingModal = function () {
+    var modalEl = document.getElementById('bookingModal');
+    if (!modalEl) return;
+    var bookingIdInput = document.getElementById('booking_id');
+    if (bookingIdInput) bookingIdInput.value = '';
+    var titleEl = document.getElementById('bookingModalTitleText');
+    if (titleEl) titleEl.textContent = 'Create New Appointment';
+    var iconEl = document.getElementById('bookingModalIcon');
+    if (iconEl) { iconEl.classList.remove('fa-edit'); iconEl.classList.add('fa-plus'); }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Mobile date picker → sync to desktop calendarDatePicker
+    var mobilePicker  = document.getElementById('mobileCalendarDatePicker');
+    var desktopPicker = document.getElementById('calendarDatePicker');
+    if (mobilePicker && desktopPicker) {
+        mobilePicker.addEventListener('change', function () {
+            desktopPicker.value = this.value;
+            desktopPicker.dispatchEvent(new Event('change'));
+        });
+    }
+
+    // Mobile staff checkboxes → sync to desktop checkboxes
+    document.querySelectorAll('.mobile-staff-filter-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var desktopCb = document.getElementById('staffFilter' + this.value);
+            if (desktopCb) {
+                desktopCb.checked = this.checked;
+                desktopCb.dispatchEvent(new Event('change'));
+            }
+            var anyUnchecked = document.querySelectorAll('.mobile-staff-filter-checkbox:not(:checked)').length > 0;
+            var badge = document.getElementById('mobileStaffBadge');
+            if (badge) badge.classList.toggle('d-none', !anyUnchecked);
+        });
+    });
+
+    var mobileAllCb = document.getElementById('mobileStaffFilterAll');
+    if (mobileAllCb) {
+        mobileAllCb.addEventListener('change', function () {
+            var checked = this.checked;
+            document.querySelectorAll('.mobile-staff-filter-checkbox').forEach(function(cb) { cb.checked = checked; });
+            var desktopAll = document.getElementById('staffFilterAll');
+            if (desktopAll) { desktopAll.checked = checked; desktopAll.dispatchEvent(new Event('change')); }
+            var badge = document.getElementById('mobileStaffBadge');
+            if (badge) badge.classList.toggle('d-none', checked);
+        });
+    }
+
+    // Mobile list filters → sync to desktop filters
+    var mobileStatus  = document.getElementById('mobileStatusFilter');
+    var desktopStatus = document.getElementById('statusFilter');
+    if (mobileStatus && desktopStatus) {
+        mobileStatus.addEventListener('change', function () {
+            desktopStatus.value = this.value;
+            desktopStatus.dispatchEvent(new Event('change'));
+        });
+    }
+    var mobileSort  = document.getElementById('mobileSortFilter');
+    var desktopSort = document.getElementById('sortFilter');
+    if (mobileSort && desktopSort) {
+        mobileSort.addEventListener('change', function () {
+            desktopSort.value = this.value;
+            desktopSort.dispatchEvent(new Event('change'));
+        });
+    }
+});
+</script>
 @endpush

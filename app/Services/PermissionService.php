@@ -20,6 +20,7 @@ class PermissionService
                 'system.manage_roles',
                 'system.view_logs',
                 'system.manage_backups',
+                'system.manage_employees',
             ],
             'appointments' => [
                 'bookings.view',
@@ -92,6 +93,7 @@ class PermissionService
                 'customers.manage_loyalty',
                 'customers.import',
                 'customers.export',
+                'view_unmasked_customer_data',
             ],
             'pos' => [
                 'pos.view',
@@ -342,6 +344,7 @@ class PermissionService
                         'customers.view_history',
                         'pos.view',
                         'pos.create_sale',
+                        'pos.manage_payment',
                         'inventory.view',
                         'reports.view',
                     ];
@@ -351,16 +354,19 @@ class PermissionService
             ],
             'employee' => [
                 'display_name' => 'Employee',
-                'description' => 'Employee with access to their own schedule',
+                'description' => 'Employee with access to their own schedule and POS sales',
                 'level' => 30,
                 'permissions' => $filter(function ($permission) {
                     $allowed = [
                         'system.view_dashboard',
                         'bookings.view',
                         'appointments.view',
-                        'staff.view',
-                        'staff.view_performance',
                         'services.view',
+                        'pos.view',
+                        'pos.create_sale',
+                        'pos.manage_payment',
+                        'customers.view',
+                        'customers.create',
                     ];
                     return in_array($permission, $allowed);
                 })
@@ -376,6 +382,7 @@ class PermissionService
                         'pos.create_sale',
                         'pos.edit_sale',
                         'pos.manage_discounts',
+                        'pos.manage_payment',
                         'customers.view',
                         'customers.create',
                         'inventory.view',
@@ -424,6 +431,7 @@ class PermissionService
             'system.manage_roles' => 'Manage Roles & Permissions',
             'system.view_logs' => 'View System Logs',
             'system.manage_backups' => 'Manage Backups',
+            'system.manage_employees' => 'Manage Employees',
 
             // Appointments / Bookings
             'bookings.view' => 'View Bookings',
@@ -499,6 +507,7 @@ class PermissionService
             'customers.manage_loyalty' => 'Manage Loyalty Program',
             'customers.import' => 'Import Customers',
             'customers.export' => 'Export Customers',
+            'view_unmasked_customer_data' => 'View Unmasked Customer Data',
 
             // POS
             'pos.view' => 'Access POS System',

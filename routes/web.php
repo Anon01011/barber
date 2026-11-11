@@ -128,6 +128,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
             Route::put('/{salon}', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'update'])->name('update');
             Route::post('/{salon}/approve', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'approve'])->name('approve');
             Route::post('/{salon}/impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'impersonate'])->name('impersonate');
+            Route::post('/stop-impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'stopImpersonate'])->name('stop-impersonate');
             Route::delete('/{salon}', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'destroy'])->name('destroy');
         });
 
@@ -296,7 +297,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 
 
         // Salon Admin Routes
-        Route::prefix('admin')->name('admin.')->middleware('subscription')->group(function () {
+        Route::prefix('admin')->name('admin.')->middleware(['subscription', 'restrict.admin.writes'])->group(function () {
             // Recent bookings
             Route::get('/bookings/recent', [BookingController::class, 'getRecentBookings'])->name('bookings.recent');
             Route::get('/bookings/employee/{employeeId}', [BookingController::class, 'getEmployeeBookings'])->name('bookings.employee');

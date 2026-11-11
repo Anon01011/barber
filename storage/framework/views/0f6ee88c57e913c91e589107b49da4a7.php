@@ -1,0 +1,1 @@
+<?php /**PATH C:\Ketan\projects\barber\resources\views\saas\settings\mail.blade.php ENDPATH**/ ?>

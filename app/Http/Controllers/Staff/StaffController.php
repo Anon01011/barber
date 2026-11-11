@@ -17,6 +17,17 @@ use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = auth()->user();
+            if ($user && $user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+                abort(403, 'Employees are not authorized to view or manage staff.');
+            }
+            return $next($request);
+        });
+    }
+
     /**
      * Display a listing of the staff.
      */
@@ -346,7 +357,7 @@ class StaffController extends Controller
                 'phone' => $staff->phone,
                 'address' => $staff->address,
                 'status' => $staff->status,
-                'role' => $staff->roles->first()?->name ?? '',
+                'role' => $staff->roles->where('name', '!=', 'employee')->first()?->name ?? $staff->roles->first()?->name ?? 'employee',
                 'branch_id' => $staff->branch_id,
                 'commission_profile_id' => $staff->commission_profile_id,
                 'allow_login' => !str_contains($staff->email, '.local'),

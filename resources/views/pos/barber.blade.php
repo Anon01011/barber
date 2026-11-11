@@ -488,6 +488,11 @@
         }
 
         /* Ensure the row fills available height */
+        .pos-terminal-container {
+            height: calc(100vh - var(--header-height) - 15px);
+            overflow: hidden;
+        }
+
         .pos-main-row {
             flex: 1 1 0;
             min-height: 0;
@@ -504,12 +509,114 @@
             flex: 1 1 0;
             min-height: 0;
         }
+
+        /* Mobile Segmented Switcher & Touch Responsive Styles */
+        @media (max-width: 991.98px) {
+            .pos-terminal-container {
+                height: auto !important;
+                min-height: calc(100vh - 60px) !important;
+                overflow: visible !important;
+                padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            .pos-main-row {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                flex: none !important;
+            }
+
+            .pos-main-row .col-lg-8,
+            .pos-main-row .col-lg-4 {
+                height: auto !important;
+                flex: none !important;
+                width: 100% !important;
+            }
+
+            .pos-main-row .col-lg-8>.card,
+            .pos-main-row .col-lg-4>.card {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                flex: none !important;
+                margin-bottom: 1rem;
+            }
+
+            .items-grid-container {
+                max-height: none !important;
+                height: auto !important;
+                overflow-y: visible !important;
+            }
+
+            .grid-section .row {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+
+            .item-card {
+                padding: 10px 6px !important;
+                min-height: 75px !important;
+            }
+
+            .pos-mobile-segment {
+                display: flex !important;
+                background: #f1f5f9;
+                border-radius: 50px;
+                padding: 4px;
+                margin-bottom: 10px;
+                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .pos-segment-btn {
+                flex: 1;
+                border: none;
+                background: transparent;
+                padding: 8px 12px;
+                border-radius: 50px;
+                font-size: 0.825rem;
+                font-weight: 600;
+                color: #64748b;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .pos-segment-btn.active {
+                background: #ffffff;
+                color: var(--theme-color, #b45309);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .pos-mobile-sticky-checkout {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+                z-index: 1040;
+                animation: slideUp 0.3s ease-out;
+            }
+
+            @keyframes slideUp {
+                from { transform: translateY(100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        }
+
+        @media (min-width: 992px) {
+            .pos-mobile-segment {
+                display: none !important;
+            }
+            .pos-mobile-sticky-checkout {
+                display: none !important;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 py-1 bg-light d-flex flex-column"
-        style="height: calc(100vh - var(--header-height) - 15px); overflow: hidden;">
+    <div class="container-fluid px-3 py-1 bg-light d-flex flex-column pos-terminal-container">
         <!-- Page Header -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-2 pb-2 border-bottom">
             <div class="mb-1 mb-md-0">
@@ -526,14 +633,16 @@
             </div>
             <div class="col-md-6">
                 <div class="d-flex justify-content-md-end gap-2">
-                    @if(optional(auth()->user()->salon)->business_type === 'both')
+                    @if(optional(auth()->user()->salon)->business_type === 'both' && !auth()->user()->hasRole('employee'))
                         <a href="{{ route('admin.pos.index', ['view' => 'salon']) }}" class="btn btn-sm btn-outline-warning">
                             <i class="fas fa-exchange-alt me-1"></i> Switch to Salon POS
                         </a>
                     @endif
+                    @can('pos.view_reports')
                     <a href="{{ route('admin.pos.analytics.index') }}" class="btn btn-sm btn-outline-info">
                         <i class="fas fa-chart-line me-1"></i> Analytics
                     </a>
+                    @endcan
                     <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-history me-1"></i> Sales History
                     </a>
@@ -545,9 +654,20 @@
         </div>
         <!-- End of Page Header -->
 
-        <div class="row g-2 pb-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0; overflow: hidden;">
+        <!-- Mobile POS Segmented Switcher (Visible on mobile/tablet screens < 992px) -->
+        <div class="pos-mobile-segment d-flex d-lg-none">
+            <button type="button" class="pos-segment-btn active" id="mobileTabCatalog">
+                <i class="fas fa-scissors me-1"></i> Catalog & Items
+            </button>
+            <button type="button" class="pos-segment-btn position-relative" id="mobileTabCart">
+                <i class="fas fa-shopping-cart me-1"></i> Cart & Pay
+                <span class="badge bg-danger rounded-pill ms-1 d-none" id="mobileCartBadge">0</span>
+            </button>
+        </div>
+
+        <div class="row g-2 pb-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0;">
             <!-- Left Column - Products/Services -->
-            <div class="col-lg-8">
+            <div class="col-lg-8 pos-catalog-column">
                 <div class="card shadow-sm" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Card Header with Tabs -->
                     <div class="card-header bg-white py-2 border-bottom">
@@ -577,23 +697,30 @@
 
                     </div>
                     <div class="card-body p-3 flex-grow-1 d-flex flex-column" style="overflow: hidden; min-height: 0;">
+                        @php
+                            $salon = auth()->user()->salon;
+                            $canProducts = $salon && ($salon->canUseFeature('Inventory Management') || $salon->canUseFeature('Products')) && \App\Helpers\ModuleHelper::inventoryEnabled();
+                            $canPackages = $salon && $salon->canUseFeature('Packages') && \App\Helpers\ModuleHelper::packagesEnabled();
+                            $canMemberships = $salon && $salon->canUseFeature('Memberships') && \App\Helpers\ModuleHelper::membershipsEnabled();
+                        @endphp
+
                         <!-- Tabs & Live Filter Search Bar Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex flex-wrap gap-2" id="posActionButtons">
                                 <button class="btn btn-outline-primary active" data-form="services">
                                     <i class="fas fa-scissors me-1"></i> Services
                                 </button>
-                                @if(optional(auth()->user()->salon)->canUseFeature('Inventory Management'))
+                                @if($canProducts)
                                     <button class="btn btn-outline-success" data-form="products">
                                         <i class="fas fa-box me-1"></i> Products
                                     </button>
                                 @endif
-                                @if(optional(auth()->user()->salon)->canUseFeature('Packages'))
+                                @if($canPackages)
                                     <button class="btn btn-outline-info" data-form="packages">
                                         <i class="fas fa-gift me-1"></i> Packages
                                     </button>
                                 @endif
-                                @if(optional(auth()->user()->salon)->canUseFeature('Memberships'))
+                                @if($canMemberships)
                                     <button class="btn btn-outline-secondary" data-form="memberships">
                                         <i class="fas fa-star me-1"></i> Memberships
                                     </button>
@@ -637,6 +764,7 @@
                                 </div>
                             </div>
 
+                            @if($canProducts)
                             <!-- Products Grid Section -->
                             <div class="grid-section d-none" id="productsGridSection">
                                 <div class="row g-2">
@@ -658,7 +786,9 @@
                                     @endforeach
                                 </div>
                             </div>
+                            @endif
 
+                            @if($canPackages)
                             <!-- Packages Grid Section -->
                             <div class="grid-section d-none" id="packagesGridSection">
                                 <div class="row g-2">
@@ -680,7 +810,9 @@
                                     @endforeach
                                 </div>
                             </div>
+                            @endif
 
+                            @if($canMemberships)
                             <!-- Memberships Grid Section -->
                             <div class="grid-section d-none" id="membershipsGridSection">
                                 <div class="row g-2">
@@ -705,6 +837,7 @@
                                     @endforeach
                                 </div>
                             </div>
+                            @endif
 
                         </div>
 
@@ -739,7 +872,7 @@
             </div>
 
             <!-- Right Column - Billing Summary -->
-            <div class="col-lg-4">
+            <div class="col-lg-4 pos-cart-column d-none d-lg-flex">
                 <div class="card border-0 shadow-sm"
                     style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
                     <div class="card-header bg-white py-1">
@@ -785,11 +918,13 @@
                                                 <small id="membershipDates" class="ms-1"></small>
                                             </small>
                                         </div>
+                                        @if($canMemberships)
                                         <div id="assignMembershipSection" class="mt-2 d-none">
                                             <button class="btn btn-sm btn-outline-primary" id="assignMembershipBtn">
                                                 <i class="fas fa-plus me-1"></i>Assign Membership
                                             </button>
                                         </div>
+                                        @endif
                                     </div>
                                     <div class="d-flex gap-1">
                                         <button class="btn btn-sm btn-outline-secondary" id="manageMembershipBtn"
@@ -1024,6 +1159,20 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Mobile Floating Sticky Checkout Bar (Visible only on mobile when items in cart) -->
+    <div id="posMobileStickyBar" class="pos-mobile-sticky-checkout" style="display: none;">
+        <button type="button" class="btn btn-warning w-100 py-2 px-3 d-flex justify-content-between align-items-center fw-bold rounded-4 shadow-lg" id="btnStickyCheckout" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: none; font-size: 0.95rem;">
+            <span class="d-flex align-items-center">
+                <span class="badge bg-white text-dark rounded-pill me-2 px-2 py-1" id="mobileStickyItemCount">0 Items</span>
+                <span id="mobileStickyTotal">$0.00</span>
+            </span>
+            <span>
+                <span>Checkout</span>
+                <i class="fas fa-arrow-right ms-2"></i>
+            </span>
+        </button>
     </div>
 
     <!-- New Customer Modal -->
@@ -1272,6 +1421,10 @@
             }
 
             $(document).ready(function () {
+                // Current user and role info
+                const currentUserId = {{ auth()->id() ?? 'null' }};
+                const isEmployeeUser = @json(auth()->check() && auth()->user()->hasRole('employee'));
+
                 // Staff list for JS
                 const staffList = @json($staff->map(function ($staff) {
                     return [
@@ -1427,7 +1580,7 @@
                         name: name,
                         price: finalPrice,
                         quantity: 1,
-                        staff_id: null,
+                        staff_id: (typeof isEmployeeUser !== 'undefined' && isEmployeeUser) ? currentUserId : null,
                         discount_amount: 0,
                         notes: notes,
                         package_id: packageId
@@ -1921,6 +2074,7 @@
                         name: name,
                         price: finalPrice,
                         quantity: 1,
+                        staff_id: (typeof isEmployeeUser !== 'undefined' && isEmployeeUser) ? currentUserId : null,
                         package_id: packageId,
                         notes: notes
                     });
@@ -1954,11 +2108,12 @@
                             }
                         }
                     } else {
+                        const defaultStaffId = (typeof isEmployeeUser !== 'undefined' && isEmployeeUser) ? currentUserId : null;
                         const cartItem = {
                             ...item,
                             quantity: item.quantity || 1,
                             total: (item.price || 0) * (item.quantity || 1),
-                            staff_id: item.staff_id || null,
+                            staff_id: item.staff_id || defaultStaffId,
                             discount_amount: item.discount_amount || 0,
                             notes: item.notes || '',
                             editable: true,
@@ -2025,7 +2180,10 @@
 
                         $staffSelect.find('option:not(:first)').remove();
 
-                        const list = typeof staffList !== 'undefined' ? staffList : [];
+                        let list = typeof staffList !== 'undefined' ? staffList : [];
+                        if (typeof isEmployeeUser !== 'undefined' && isEmployeeUser && typeof currentUserId !== 'undefined' && currentUserId) {
+                            list = list.filter(staff => String(staff.id) === String(currentUserId));
+                        }
                         if (!serviceIds || serviceIds.length === 0) {
                             list.forEach(staff => {
                                 $staffSelect.append(`<option value="${staff.id}">${staff.name}</option>`);
@@ -2043,6 +2201,8 @@
 
                         if (currentVal && $staffSelect.find(`option[value="${currentVal}"]`).length > 0) {
                             $staffSelect.val(currentVal);
+                        } else if (typeof isEmployeeUser !== 'undefined' && isEmployeeUser && $staffSelect.find(`option[value="${currentUserId}"]`).length > 0) {
+                            $staffSelect.val(currentUserId);
                         } else {
                             $staffSelect.val('');
                         }
@@ -2255,8 +2415,14 @@
                         const parentPackage = cart.find(i => i.type === 'package' && i.id == item.package_id);
                         if (item.package_id && item.price === 0 && parentPackage) return;
 
+                        if (!item.staff_id && typeof isEmployeeUser !== 'undefined' && isEmployeeUser && typeof currentUserId !== 'undefined' && currentUserId) {
+                            item.staff_id = currentUserId;
+                        }
+
                         let filteredStaffList = typeof staffList !== 'undefined' ? staffList : [];
-                        if (item.type === 'service') {
+                        if (typeof isEmployeeUser !== 'undefined' && isEmployeeUser && typeof currentUserId !== 'undefined' && currentUserId) {
+                            filteredStaffList = filteredStaffList.filter(staff => String(staff.id) === String(currentUserId));
+                        } else if (item.type === 'service') {
                             filteredStaffList = filteredStaffList.filter(staff =>
                                 (staff.service_ids && staff.service_ids.map(String).includes(String(item.id))) ||
                                 (item.staff_id && String(staff.id) === String(item.staff_id))
@@ -2336,8 +2502,13 @@
                             const packageServices = cart.filter(i => i.type === 'service' && i.package_id == item.id && i.price === 0);
                             packageServices.forEach(subItem => {
                                 const subIndex = cart.indexOf(subItem);
+                                if (!subItem.staff_id && typeof isEmployeeUser !== 'undefined' && isEmployeeUser && typeof currentUserId !== 'undefined' && currentUserId) {
+                                    subItem.staff_id = currentUserId;
+                                }
                                 let filteredSubStaffList = typeof staffList !== 'undefined' ? staffList : [];
-                                if (subItem.type === 'service') {
+                                if (typeof isEmployeeUser !== 'undefined' && isEmployeeUser && typeof currentUserId !== 'undefined' && currentUserId) {
+                                    filteredSubStaffList = filteredSubStaffList.filter(staff => String(staff.id) === String(currentUserId));
+                                } else if (subItem.type === 'service') {
                                     filteredSubStaffList = filteredSubStaffList.filter(staff =>
                                         (staff.service_ids && staff.service_ids.map(String).includes(String(subItem.id))) ||
                                         (subItem.staff_id && String(staff.id) === String(subItem.staff_id))
@@ -2515,6 +2686,20 @@
                     }
 
                     $('#payableAmount').text(formatCurrency(Math.max(0, payable)));
+
+                    // Sync mobile cart badge and floating sticky checkout bar
+                    const totalItemsCount = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+                    if (totalItemsCount > 0) {
+                        $('#mobileCartBadge').text(totalItemsCount).removeClass('d-none');
+                        $('#mobileStickyItemCount').text(totalItemsCount + (totalItemsCount === 1 ? ' Item' : ' Items'));
+                        $('#mobileStickyTotal').text(formatCurrency(Math.max(0, payable)));
+                        if ($('#mobileTabCatalog').hasClass('active') && window.innerWidth < 992) {
+                            $('#posMobileStickyBar').fadeIn(150);
+                        }
+                    } else {
+                        $('#mobileCartBadge').addClass('d-none');
+                        $('#posMobileStickyBar').fadeOut(150);
+                    }
 
                     // Sync amounts based on selected method
                     const method = $('input[name="payment_method"]:checked').val();
@@ -3575,6 +3760,32 @@
                 $('#receiptModal').on('hidden.bs.modal', function () {
                     // Reload the page to reset the POS for the next sale
                     window.location.reload();
+                });
+
+                // Mobile Segmented Switcher & Sticky Checkout Listeners
+                $('#mobileTabCatalog').on('click', function () {
+                    $(this).addClass('active');
+                    $('#mobileTabCart').removeClass('active');
+                    $('.pos-catalog-column').removeClass('d-none');
+                    $('.pos-cart-column').addClass('d-none d-lg-flex');
+                    if (cart.length > 0) {
+                        $('#posMobileStickyBar').fadeIn(150);
+                    }
+                });
+
+                $('#mobileTabCart').on('click', function () {
+                    $(this).addClass('active');
+                    $('#mobileTabCatalog').removeClass('active');
+                    $('.pos-catalog-column').addClass('d-none');
+                    $('.pos-cart-column').removeClass('d-none');
+                    $('#posMobileStickyBar').fadeOut(150);
+                });
+
+                $('#btnStickyCheckout').on('click', function () {
+                    $('#mobileTabCart').trigger('click');
+                    $('html, body').animate({
+                        scrollTop: $('.pos-cart-column').offset() ? $('.pos-cart-column').offset().top - 65 : 0
+                    }, 200);
                 });
 
                 // Helper function to format currency

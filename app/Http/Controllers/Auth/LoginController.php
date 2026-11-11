@@ -47,6 +47,10 @@ class LoginController extends Controller
                 if (env('SINGLE_SALON_MODE', false)) {
                     $slug = env('SINGLE_SALON_SLUG', 'intranet');
                     if ($user->hasRole('employee')) {
+                        $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                        if ($canUsePos) {
+                            return redirect()->route('admin.pos.index', ['salon_slug' => $slug, 'view' => 'barber']);
+                        }
                         return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
                     }
                     return redirect()->route('dashboard', ['salon_slug' => $slug]);
@@ -93,8 +97,12 @@ class LoginController extends Controller
                     return back()->withErrors(['email' => 'Your account is not properly configured.']);
                 }
 
-                // Redirect employees to employee dashboard
+                // Redirect employees to POS barber screen
                 if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'manager', 'receptionist'])) {
+                    $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                    if ($canUsePos) {
+                        return redirect()->route('admin.pos.index', ['salon_slug' => $user->salon->slug, 'view' => 'barber']);
+                    }
                     return redirect()->route('employee.dashboard', ['salon_slug' => $user->salon->slug]);
                 }
 
@@ -132,6 +140,10 @@ class LoginController extends Controller
             if (env('SINGLE_SALON_MODE', false)) {
                 $slug = env('SINGLE_SALON_SLUG', 'intranet');
                 if ($user->hasRole('employee')) {
+                    $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                    if ($canUsePos) {
+                        return redirect()->route('admin.pos.index', ['salon_slug' => $slug, 'view' => 'barber']);
+                    }
                     return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
                 }
                 return redirect()->route('dashboard', ['salon_slug' => $slug]);
@@ -181,8 +193,12 @@ class LoginController extends Controller
                 return back()->withErrors(['email' => 'Your account is not properly configured.']);
             }
 
-            // Redirect employees to employee dashboard
+            // Redirect employees to POS barber screen
             if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'manager', 'receptionist'])) {
+                $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                if ($canUsePos) {
+                    return redirect()->route('admin.pos.index', ['salon_slug' => $user->salon->slug, 'view' => 'barber']);
+                }
                 return redirect()->route('employee.dashboard', ['salon_slug' => $user->salon->slug]);
             }
 

@@ -15,9 +15,11 @@
                     style="background-color: #ec4899; color: #fff;">
                     <i class="fas fa-calendar-week me-2"></i>View Schedules
                 </a>
+                @can('staff.create')
                 <button type="button" class="btn btn-staff-outline" data-bs-toggle="modal" data-bs-target="#addStaffModal">
                     <i class="fas fa-plus me-2"></i>Add New Staff
                 </button>
+                @endcan
             </div>
         </div>
 
@@ -90,10 +92,14 @@
                                         </div>
                                     </td>
                                     <td class="py-3">
-                                        @foreach($member->roles as $role)
-                                            <span
-                                                class="badge bg-light text-dark border fw-normal">{{ ucfirst(str_replace('_', ' ', $role->name)) }}</span>
-                                        @endforeach
+                                        @php
+                                            $primaryRole = $member->roles->where('name', '!=', 'employee')->first() ?? $member->roles->first();
+                                        @endphp
+                                        @if($primaryRole)
+                                            <span class="badge bg-light text-dark border fw-normal">{{ ucfirst(str_replace('_', ' ', $primaryRole->name)) }}</span>
+                                        @else
+                                            <span class="badge bg-light text-muted border fw-normal">Staff</span>
+                                        @endif
                                     </td>
                                     <td class="py-3">
                                         @if($member->status == 'active')
@@ -106,16 +112,21 @@
                                     </td>
                                     <td class="px-4 py-3 text-end">
                                         <div class="btn-group">
+                                            @can('staff.edit')
                                             <button class="btn btn-sm btn-light text-muted"
                                                 onclick="editStaff({{ $member->id }})" data-bs-toggle="tooltip"
                                                 title="Edit Details">
                                                 <i class="fas fa-edit"></i>
                                             </button>
+                                            @endcan
+                                            @can('staff.manage_schedule')
                                             <button class="btn btn-sm btn-light text-muted"
                                                 onclick="manageSchedule({{ $member->id }}, '{{ $member->name }}')"
                                                 data-bs-toggle="tooltip" title="Manage Schedule">
                                                 <i class="fas fa-calendar-alt"></i>
                                             </button>
+                                            @endcan
+                                            @can('staff.delete')
                                             <form action="{{ route('admin.staff.destroy', $member->id) }}" method="POST"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Are you sure you want to delete this staff member?');">
@@ -126,6 +137,7 @@
                                                     <i class="fas fa-trash-alt"></i>
                                                 </button>
                                             </form>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>

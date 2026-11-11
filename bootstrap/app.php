@@ -35,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'check.salon.approval' => \App\Http\Middleware\CheckSalonApproval::class,
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            // Security: block direct platform-admin write mutations on tenant routes (Vuln 2)
+            'restrict.admin.writes' => \App\Http\Middleware\RestrictPlatformAdminWrites::class,
         ]);
 
         // Exclude Stripe webhook from CSRF protection

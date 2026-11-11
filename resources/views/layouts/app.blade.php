@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="salon-slug" content="{{ request()->current_salon->slug ?? request()->segment(1) }}">
 
@@ -436,7 +436,7 @@
                         @endrole
 
                         <!-- Admin/Manager Menu Items -->
-                        {{-- @role('super_admin|salon_admin|manager') --}}
+                        @if(!auth()->user()->hasRole('employee') && !auth()->user()->hasRole('customer'))
 
                         <!-- Bookings Section -->
                         @can('bookings.view')
@@ -563,7 +563,7 @@
 
                         <!-- Staff & Commissions -->
                         @can('staff.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Staff Management') && \App\Helpers\ModuleHelper::staffEnabled())
+                            @if(optional(auth()->user()->salon)->canUseFeature('Staff Management') && \App\Helpers\ModuleHelper::staffEnabled() && !auth()->user()->hasRole('employee'))
                                 <a href="{{ route('admin.staff.index', ['salon_slug' => $salonSlug]) }}"
                                     class="sidebar-item {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}" data-bs-toggle="tooltip"
                                     data-bs-placement="right" title="Staff">
@@ -750,10 +750,24 @@
                                 @endif
                             </div>
                         @endcanany
-                        {{-- @endrole --}}
+                        @endif
 
                         <!-- Employee Menu Items -->
                         @role('employee')
+                        @can('pos.view')
+                            <a href="{{ route('admin.pos.index', ['salon_slug' => optional(auth()->user()->salon)->slug, 'view' => 'barber']) }}"
+                                class="sidebar-item {{ request()->routeIs('admin.pos.index') ? 'active' : '' }}"
+                                data-bs-toggle="tooltip" data-bs-placement="right" title="POS">
+                                <i class="fas fa-cash-register sidebar-icon"></i>
+                                <span class="sidebar-text">POS</span>
+                            </a>
+                            <a href="{{ route('admin.pos.sales.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
+                                class="sidebar-item {{ request()->routeIs('admin.pos.sales.*') ? 'active' : '' }}"
+                                data-bs-toggle="tooltip" data-bs-placement="right" title="Sales History">
+                                <i class="fas fa-receipt sidebar-icon"></i>
+                                <span class="sidebar-text">Sales History</span>
+                            </a>
+                        @endcan
                         @can('bookings.view')
                             <a href="{{ route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
                                 class="sidebar-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}"
@@ -871,6 +885,8 @@
                     </div>
                 </div>
             @endauth
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Header -->
     <div class="header" id="header">
@@ -1096,16 +1112,15 @@
                             @endphp
 
                             @if($showWarning)
-                                <div class="me-3">
+                                <div class="me-2 me-md-3">
                                     <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}"
-                                        class="text-decoration-none">
-                                        <div class="alert alert-warning mb-0 py-2 px-3 d-flex align-items-center"
-                                            style="font-size: 0.85rem; border-radius: 8px;">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                        class="text-decoration-none" title="Plan expires in {{ $daysRemaining }} {{ Str::plural('day', $daysRemaining) }}">
+                                        <div class="alert alert-warning mb-0 py-1 py-md-2 px-2 px-md-3 d-flex align-items-center text-nowrap"
+                                            style="font-size: 0.82rem; border-radius: 8px; white-space: nowrap;">
+                                            <i class="fas fa-exclamation-triangle me-1 me-md-2 text-warning-emphasis"></i>
                                             <span class="fw-semibold">
-                                                Plan expires in
-                                                <span class="badge bg-warning text-dark">{{ $daysRemaining }}
-                                                    {{ Str::plural('day', $daysRemaining) }}</span>
+                                                <span class="d-none d-md-inline">Plan expires in </span>
+                                                <span class="badge bg-warning text-dark">{{ $daysRemaining }}<span class="d-none d-md-inline"> {{ Str::plural('day', $daysRemaining) }}</span><span class="d-inline d-md-none">d</span></span>
                                             </span>
                                         </div>
                                     </a>
@@ -1116,7 +1131,7 @@
 
                         <!-- Notification Bell -->
                         @if(isset($system_notifications))
-                            <div class="notification-dropdown dropdown me-3">
+                            <div class="notification-dropdown dropdown me-2 me-md-3">
                                 <a href="#" class="text-dark position-relative" id="notificationDropdown" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     <i class="fas fa-bell fa-lg"></i>
@@ -1180,12 +1195,12 @@
                         @endif
 
                         <div class="user-dropdown">
-                            <div class="user-dropdown-toggle" id="userDropdownToggle">
+                            <div class="user-dropdown-toggle p-1 p-md-2" id="userDropdownToggle">
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
-                                    alt="{{ auth()->user()->name }}" class="rounded-circle me-2"
-                                    style="width: 32px; height: 32px;">
-                                <span class="me-2">{{ auth()->user()->name }}</span>
-                                <i class="fas fa-chevron-down"></i>
+                                    alt="{{ auth()->user()->name }}" class="rounded-circle me-1 me-md-2"
+                                    style="width: 32px; height: 32px; min-width: 32px;">
+                                <span class="me-2 d-none d-md-inline text-truncate" style="max-width: 140px;">{{ auth()->user()->name }}</span>
+                                <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
                             </div>
                             <div class="user-dropdown-menu" id="userDropdownMenu">
                                 <a href="{{ route('profile.edit') }}" class="user-dropdown-item">
@@ -1255,8 +1270,168 @@
                 </div>
             @endif
         </div>
+
+        {{-- ═══════════════════════════════════════════════════════════════════
+             SECURITY: Impersonation Banner (Vulnerability 2 Fix – CWE-862)
+             Shown when a Super Admin is impersonating a salon owner.
+             Provides mandatory "Return to Platform Admin" exit mechanism.
+             ═══════════════════════════════════════════════════════════════════ --}}
+        @if(session()->has('impersonator_id'))
+            @php
+                $impersonatedSalonName = session('impersonated_salon_name', 'a Salon');
+                $impersonatorName      = session('impersonator_name', 'Super Admin');
+            @endphp
+            <div id="impersonationBanner" style="
+                position: sticky;
+                top: 0;
+                z-index: 1999;
+                background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+                color: #fff;
+                padding: 10px 20px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 3px 10px rgba(220,53,69,0.45);
+                border-bottom: 2px solid #a21c28;
+                font-family: 'Inter', sans-serif;
+            ">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span style="background:rgba(255,255,255,0.2); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="fas fa-user-secret" style="font-size:16px;"></i>
+                    </span>
+                    <div>
+                        <strong style="font-size:0.95rem;">
+                            ⚠️ Impersonation Mode Active
+                        </strong>
+                        <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">
+                            You (<strong>{{ e($impersonatorName) }}</strong>) are currently acting as the owner of
+                            <strong>{{ e($impersonatedSalonName) }}</strong>.
+                            All actions are logged in the audit trail.
+                        </div>
+                    </div>
+                </div>
+                <form method="POST" action="{{ route('admin.salons.stop-impersonate') }}" style="flex-shrink:0; margin-left:16px;">
+                    @csrf
+                    <button type="submit" id="stopImpersonateBtn" style="
+                        background: #fff;
+                        color: #dc3545;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 8px 16px;
+                        font-weight: 600;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        white-space: nowrap;
+                        transition: box-shadow 0.2s;
+                    " onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.25)'"
+                       onmouseout="this.style.boxShadow='none'">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Return to Platform Admin
+                    </button>
+                </form>
+            </div>
+        @endif
+
         @yield('content')
     </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible on mobile/tablet screens) -->
+    @auth
+        <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
+            @if(auth()->user()->hasRole('super_admin'))
+                <a href="{{ route('admin.super.dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.super.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ route('admin.salons.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.salons.*') ? 'active' : '' }}">
+                    <i class="fas fa-store"></i>
+                    <span>Salons</span>
+                </a>
+                <a href="{{ route('admin.plans.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
+                    <i class="fas fa-tags"></i>
+                    <span>Plans</span>
+                </a>
+                <a href="{{ route('admin.subscriptions.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
+                    <i class="fas fa-crown"></i>
+                    <span>Subs</span>
+                </a>
+                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                    <span>Menu</span>
+                </a>
+            @elseif(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
+                <a href="{{ route('home.dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                @can('pos.view')
+                    <a href="{{ route('admin.pos.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Terminal</span>
+                    </a>
+                @endcan
+                @can('bookings.view')
+                    <a href="{{ route('admin.bookings.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Bookings</span>
+                    </a>
+                @endcan
+                @can('customers.view')
+                    <a href="{{ route('admin.customers.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                        <i class="fas fa-users"></i>
+                        <span>Clients</span>
+                    </a>
+                @endcan
+                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                    <span>Menu</span>
+                </a>
+            @elseif(auth()->user()->hasRole('employee'))
+                @can('pos.view')
+                    <a href="{{ route('admin.pos.index', ['salon_slug' => optional(auth()->user()->salon)->slug, 'view' => 'barber']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i>
+                        <span>POS</span>
+                    </a>
+                @endcan
+                <a href="{{ route('employee.dashboard', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Appts</span>
+                </a>
+                <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                    <span>Menu</span>
+                </a>
+            @elseif(auth()->user()->hasRole('customer'))
+                <a href="{{ route('customer.appointments.index', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('customer.appointments.index') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>My Appts</span>
+                </a>
+                <a href="{{ route('customer.appointments.create', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('customer.appointments.create') ? 'active' : '' }}">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Book</span>
+                </a>
+                <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                    <span>Menu</span>
+                </a>
+            @endif
+        </nav>
+    @endauth
 
     <!-- Scripts -->
     <!-- jQuery -->
@@ -1270,29 +1445,84 @@
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        // Toggle Sidebar
+        // Responsive Sidebar & Drawer Logic
         const sidebar = document.getElementById('sidebar');
         const header = document.getElementById('header');
         const mainContent = document.getElementById('mainContent');
         const toggleSidebar = document.getElementById('toggleSidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 
-        // Check if sidebar was previously collapsed
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-            header.classList.add('collapsed');
-            mainContent.classList.add('expanded');
+        function isMobile() {
+            return window.innerWidth < 992;
         }
 
-        toggleSidebar.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            header.classList.toggle('collapsed');
-            mainContent.classList.toggle('expanded');
+        function openMobileSidebar() {
+            if (sidebar) sidebar.classList.add('mobile-show');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('show');
+            document.body.classList.add('mobile-drawer-open');
+        }
 
-            // Save state to localStorage
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        function closeMobileSidebar() {
+            if (sidebar) sidebar.classList.remove('mobile-show');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
+            document.body.classList.remove('mobile-drawer-open');
+        }
 
-            // Toggle tooltips based on sidebar state
-            toggleTooltips();
+        // Check if sidebar was previously collapsed on desktop
+        if (!isMobile() && localStorage.getItem('sidebarCollapsed') === 'true') {
+            if (sidebar) sidebar.classList.add('collapsed');
+            if (header) header.classList.add('collapsed');
+            if (mainContent) mainContent.classList.add('expanded');
+        }
+
+        if (toggleSidebar) {
+            toggleSidebar.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isMobile()) {
+                    if (sidebar && sidebar.classList.contains('mobile-show')) {
+                        closeMobileSidebar();
+                    } else {
+                        openMobileSidebar();
+                    }
+                } else {
+                    if (sidebar) sidebar.classList.toggle('collapsed');
+                    if (header) header.classList.toggle('collapsed');
+                    if (mainContent) mainContent.classList.toggle('expanded');
+
+                    localStorage.setItem('sidebarCollapsed', sidebar ? sidebar.classList.contains('collapsed') : 'false');
+                    toggleTooltips();
+                }
+            });
+        }
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openMobileSidebar();
+            });
+        }
+
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+        }
+
+        // Close mobile drawer when clicking a non-collapsible link
+        if (sidebar) {
+            sidebar.querySelectorAll('.sidebar-item:not([data-bs-toggle="collapse"])').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (isMobile()) closeMobileSidebar();
+                });
+            });
+        }
+
+        // Responsive resize listener
+        window.addEventListener('resize', () => {
+            if (!isMobile() && sidebar && sidebar.classList.contains('mobile-show')) {
+                closeMobileSidebar();
+            }
         });
 
         // Initialize Bootstrap tooltips
@@ -1305,18 +1535,17 @@
 
         // Toggle tooltips based on sidebar state
         function toggleTooltips() {
+            if (!sidebar) return;
             const tooltipTriggerList = document.querySelectorAll('.sidebar-item[data-bs-toggle="tooltip"]');
             tooltipTriggerList.forEach(function (element) {
                 const tooltip = bootstrap.Tooltip.getInstance(element);
-                if (sidebar.classList.contains('collapsed')) {
-                    // Enable tooltips when collapsed
+                if (sidebar.classList.contains('collapsed') && !isMobile()) {
                     if (!tooltip) {
                         new bootstrap.Tooltip(element);
                     } else {
                         tooltip.enable();
                     }
                 } else {
-                    // Disable tooltips when expanded
                     if (tooltip) {
                         tooltip.disable();
                     }
@@ -1326,24 +1555,23 @@
 
         // Initialize tooltips on page load
         initTooltips();
-
-        // Set initial tooltip state based on sidebar
         toggleTooltips();
 
         // User Dropdown
         const userDropdownToggle = document.getElementById('userDropdownToggle');
         const userDropdownMenu = document.getElementById('userDropdownMenu');
 
-        userDropdownToggle.addEventListener('click', () => {
-            userDropdownMenu.classList.toggle('show');
-        });
+        if (userDropdownToggle && userDropdownMenu) {
+            userDropdownToggle.addEventListener('click', () => {
+                userDropdownMenu.classList.toggle('show');
+            });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!userDropdownToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-                userDropdownMenu.classList.remove('show');
-            }
-        });
+            document.addEventListener('click', (e) => {
+                if (!userDropdownToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                    userDropdownMenu.classList.remove('show');
+                }
+            });
+        }
 
         // Set role-specific background as default
         @auth
@@ -1583,6 +1811,20 @@
                 background: #4f46e5;
                 color: #ffffff;
                 border-color: #4f46e5;
+            }
+            @media (max-width: 991.98px) {
+                #floatingAiBtn {
+                    bottom: calc(58px + 16px + env(safe-area-inset-bottom, 0px)) !important;
+                    left: 20px !important;
+                    right: auto !important;
+                }
+                #floatingAiModal {
+                    bottom: calc(58px + 80px + env(safe-area-inset-bottom, 0px)) !important;
+                    left: 12px !important;
+                    right: 12px !important;
+                    width: calc(100vw - 24px) !important;
+                    max-width: 420px !important;
+                }
             }
         </style>
         <button id="floatingAiBtn" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; z-index: 9999; border: 2px solid #818cf8; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: transform 0.2s ease;" onclick="toggleFloatingAiModal()">

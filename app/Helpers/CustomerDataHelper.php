@@ -20,14 +20,33 @@ class CustomerDataHelper
             return true;
         }
 
+        // SECURITY FIX (Vuln 1 – CWE-200, CWE-862):
+        // Super Admin in a DIRECT platform session (not impersonating a salon owner)
+        // must NEVER receive unmasked tenant customer PII.
+        // We detect "direct session" by checking that the user is super_admin AND
+        // does NOT have a salon_id (i.e. is not logged in as an impersonated tenant user).
+        if ($user->hasRole('super_admin') && !$user->salon_id) {
+            // Not impersonating — always mask to prevent cross-tenant PII exposure.
+            return true;
+        }
+
         // Salon admins always see unmasked data
         if ($user->hasRole('salon_admin')) {
             return false;
         }
 
+        // Determine the correct salon ID for settings lookup:
+        // Prefer the currently-bound salon context over the user's own salon_id
+        // so that impersonation sessions use the impersonated salon's settings.
+        $salonId = null;
+        if (app()->bound('current_salon') && app('current_salon')) {
+            $salonId = app('current_salon')->id;
+        } else {
+            $salonId = $user->salon_id;
+        }
+
         // Check if masking is enabled in settings
         $settingsService = app(SettingsService::class);
-        $salonId = $user->salon_id;
 
         $maskingEnabled = $settingsService->get('customer_data_masking_enabled', false, $salonId);
 
@@ -66,7 +85,10 @@ class CustomerDataHelper
 
         // Check if phone masking is enabled
         $settingsService = app(SettingsService::class);
-        $salonId = Auth::user()->salon_id ?? null;
+        // Use current_salon context for settings so impersonation sessions work correctly
+        $salonId = (app()->bound('current_salon') && app('current_salon'))
+            ? app('current_salon')->id
+            : (Auth::user()->salon_id ?? null);
 
         $phonesMaskingEnabled = $settingsService->get('mask_customer_phone', false, $salonId);
 
@@ -100,7 +122,10 @@ class CustomerDataHelper
 
         // Check if email masking is enabled
         $settingsService = app(SettingsService::class);
-        $salonId = Auth::user()->salon_id ?? null;
+        // Use current_salon context for settings so impersonation sessions work correctly
+        $salonId = (app()->bound('current_salon') && app('current_salon'))
+            ? app('current_salon')->id
+            : (Auth::user()->salon_id ?? null);
 
         $emailMaskingEnabled = $settingsService->get('mask_customer_email', false, $salonId);
 

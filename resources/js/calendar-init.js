@@ -733,7 +733,10 @@ document.addEventListener('DOMContentLoaded', function () {
             calendarSettings = settings;
 
             // Fetch calendar view preference
-            const defaultView = settings.calendar_default_view || 'timeGridWeek';
+            const isMobile = window.innerWidth < 768;
+            const savedView = settings.calendar_default_view || 'timeGridWeek';
+            // On mobile: always start in day view for readability
+            const defaultView = isMobile ? 'resourceTimeGridDay' : savedView;
 
             // Get timezone: use salon timezone with fallback to browser timezone
             const calendarTimezone = getCalendarTimezone(settings.timezone);
@@ -765,7 +768,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     hour12: true,
                     meridiem: 'short'
                 },
-                headerToolbar: {
+                headerToolbar: isMobile ? {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: 'today'
+                } : {
                     left: 'prev,next today timeGridWeek,resourceTimeGridDay',
                     center: '',
                     right: 'title'
@@ -1350,20 +1357,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             tooltipInstance.hide();
                         }, 4000);
                     });
-
-                    // Add click event listener to past time slots to show modal
-                    const eventEnd = new Date(info.event.end);
-                    const now = new Date();
-                    if (eventEnd < now) {
-                        info.el.style.cursor = 'pointer';
-                        info.el.addEventListener('click', () => {
-                            const pastTimeModal = new bootstrap.Modal(document.getElementById('pastTimeModal'));
-                            pastTimeModal.show();
-                        });
-                    }
                 },
                 select: function (info) {
 
+                    // On mobile: do NOT open new booking on empty cell tap.
+                    // Users should use the FAB (+) button instead.
+                    if (window.innerWidth < 768) {
+                        if (calendar) calendar.unselect();
+                        return;
+                    }
 
                     // Prevent selection of past time cells
                     const selectedTime = new Date(info.startStr);

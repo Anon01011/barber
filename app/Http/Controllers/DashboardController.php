@@ -29,7 +29,13 @@ class DashboardController extends Controller
             return redirect()->route('admin.super.dashboard');
         }
 
-        if ($user->hasRole('employee')) {
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'admin', 'manager', 'receptionist'])) {
+            if (!$request->has('view') && !$request->has('mode')) {
+                $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                if ($canUsePos) {
+                    return redirect()->route('admin.pos.index', ['salon_slug' => $user->salon->slug, 'view' => 'barber']);
+                }
+            }
             return $this->employeeDashboard($user);
         }
 

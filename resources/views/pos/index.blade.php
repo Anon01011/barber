@@ -4,11 +4,18 @@
 
 @push('styles')
     <style>
-        body {
-            overflow: hidden !important;
+        @media (min-width: 992px) {
+            body {
+                overflow: hidden !important;
+            }
         }
 
         /* Tight layout styles to make everything fit */
+        .pos-terminal-container {
+            height: calc(100vh - var(--header-height) - 15px);
+            overflow: hidden;
+        }
+
         .card-body {
             padding: 0.5rem !important;
         }
@@ -83,11 +90,103 @@
             flex: 1 1 0;
             min-height: 0;
         }
+
+        /* Mobile Segmented Switcher & Touch Responsive Styles */
+        @media (max-width: 991.98px) {
+            .pos-terminal-container {
+                height: auto !important;
+                min-height: calc(100vh - 60px) !important;
+                overflow: visible !important;
+                padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            .pos-main-row {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                flex: none !important;
+            }
+
+            .pos-main-row .col-lg-8,
+            .pos-main-row .col-lg-4 {
+                height: auto !important;
+                flex: none !important;
+                width: 100% !important;
+            }
+
+            .pos-main-row .col-lg-8 > .card,
+            .pos-main-row .col-lg-4 > .card {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                flex: none !important;
+                margin-bottom: 1rem;
+            }
+
+            .pos-cart {
+                height: auto !important;
+                max-height: 350px !important;
+            }
+
+            .pos-mobile-segment {
+                display: flex !important;
+                background: #f1f5f9;
+                border-radius: 50px;
+                padding: 4px;
+                margin-bottom: 10px;
+                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .pos-segment-btn {
+                flex: 1;
+                border: none;
+                background: transparent;
+                padding: 8px 12px;
+                border-radius: 50px;
+                font-size: 0.825rem;
+                font-weight: 600;
+                color: #64748b;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .pos-segment-btn.active {
+                background: #ffffff;
+                color: #0d6efd;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .pos-mobile-sticky-checkout {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+                z-index: 1040;
+                animation: slideUp 0.3s ease-out;
+            }
+
+            @keyframes slideUp {
+                from { transform: translateY(100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        }
+
+        @media (min-width: 992px) {
+            .pos-mobile-segment {
+                display: none !important;
+            }
+            .pos-mobile-sticky-checkout {
+                display: none !important;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 py-1 bg-light d-flex flex-column" style="height: calc(100vh - var(--header-height) - 15px); overflow: hidden;">
+    <div class="container-fluid px-3 py-1 bg-light d-flex flex-column pos-terminal-container">
         <!-- Page Header -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-2 pb-2 border-bottom">
             <div class="mb-1 mb-md-0">
@@ -123,9 +222,20 @@
         </div>
         <!-- End of Page Header -->
 
-        <div class="row g-2 pb-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0; overflow: hidden;">
+        <!-- Mobile POS Segmented Switcher (Visible on mobile/tablet screens < 992px) -->
+        <div class="pos-mobile-segment d-flex d-lg-none">
+            <button type="button" class="pos-segment-btn active" id="mobileTabCatalog">
+                <i class="fas fa-store me-1"></i> Catalog & Items
+            </button>
+            <button type="button" class="pos-segment-btn position-relative" id="mobileTabCart">
+                <i class="fas fa-shopping-cart me-1"></i> Cart & Pay
+                <span class="badge bg-danger rounded-pill ms-1 d-none" id="mobileCartBadge">0</span>
+            </button>
+        </div>
+
+        <div class="row g-2 pb-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0;">
         <!-- Left Column - Products/Services -->
-        <div class="col-lg-8">
+        <div class="col-lg-8 pos-catalog-column">
             <div class="card shadow-sm" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
                 <!-- Card Header with Tabs -->
                 <div class="card-header bg-white py-2 border-bottom">
@@ -153,21 +263,34 @@
                         </div>
                     </div>
 
+                    @php
+                        $salon = auth()->user()->salon;
+                        $canProducts = $salon && ($salon->canUseFeature('Inventory Management') || $salon->canUseFeature('Products')) && \App\Helpers\ModuleHelper::inventoryEnabled();
+                        $canPackages = $salon && $salon->canUseFeature('Packages') && \App\Helpers\ModuleHelper::packagesEnabled();
+                        $canMemberships = $salon && $salon->canUseFeature('Memberships') && \App\Helpers\ModuleHelper::membershipsEnabled();
+                    @endphp
+
                     <!-- Action Buttons -->
                     <div class="d-flex flex-wrap gap-2 mt-3" id="posActionButtons">
                         <button class="btn btn-outline-primary active" data-form="services">
                             <i class="fas fa-spa me-1"></i> Services
                         </button>
+                        @if($canProducts)
                         <button class="btn btn-outline-success" data-form="products">
                             <i class="fas fa-box me-1"></i> Products
                         </button>
+                        @endif
+                        @if($canPackages)
                         <button class="btn btn-outline-info" data-form="packages">
                             <i class="fas fa-gift me-1"></i> Packages
                         </button>
+                        @endif
+                        @if($canMemberships)
                         <button class="btn btn-outline-secondary" data-form="memberships">
                             <i class="fas fa-star me-1"></i> Memberships
                         </button>
-                </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="card-body p-2 flex-grow-1 d-flex flex-column" style="overflow: hidden; min-height: 0;">
                     <!-- Dynamic Form Container -->
@@ -235,6 +358,7 @@
                             </div>
                         </div>
 
+                        @if($canProducts)
                         <!-- Products Form -->
                         <div class="pos-form d-none" id="productsForm">
                             <div class="row g-3">
@@ -282,7 +406,9 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
+                        @if($canPackages)
                         <!-- Packages Form -->
                         <div class="pos-form d-none" id="packagesForm">
                             <div class="row g-3">
@@ -330,7 +456,9 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
+                        @if($canMemberships)
                         <!-- Memberships Form -->
                         <div class="pos-form d-none" id="membershipsForm">
                             <div class="row g-3">
@@ -369,6 +497,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Unified Cart Table -->
@@ -401,7 +530,7 @@
         </div>
 
         <!-- Right Column - Billing Summary -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 pos-cart-column d-none d-lg-flex">
             <div class="card border-0 shadow-sm" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="card-header bg-white py-1">
                     <h5 class="card-title mb-0" style="font-size: 0.95rem;">
@@ -673,6 +802,20 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Mobile Floating Sticky Checkout Bar (Visible only on mobile when items in cart) -->
+    <div id="posMobileStickyBar" class="pos-mobile-sticky-checkout" style="display: none;">
+        <button type="button" class="btn btn-primary w-100 py-2 px-3 d-flex justify-content-between align-items-center fw-bold rounded-4 shadow-lg" id="btnStickyCheckout" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%); color: #fff; border: none; font-size: 0.95rem;">
+            <span class="d-flex align-items-center">
+                <span class="badge bg-white text-dark rounded-pill me-2 px-2 py-1" id="mobileStickyItemCount">0 Items</span>
+                <span id="mobileStickyTotal">$0.00</span>
+            </span>
+            <span>
+                <span>Checkout</span>
+                <i class="fas fa-arrow-right ms-2"></i>
+            </span>
+        </button>
     </div>
 
     <!-- New Customer Modal -->
@@ -2089,6 +2232,20 @@
 
                     $('#payableAmount').text(formatCurrency(Math.max(0, payable)));
 
+                    // Sync mobile cart badge and floating sticky checkout bar
+                    const totalItemsCount = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+                    if (totalItemsCount > 0) {
+                        $('#mobileCartBadge').text(totalItemsCount).removeClass('d-none');
+                        $('#mobileStickyItemCount').text(totalItemsCount + (totalItemsCount === 1 ? ' Item' : ' Items'));
+                        $('#mobileStickyTotal').text(formatCurrency(Math.max(0, payable)));
+                        if ($('#mobileTabCatalog').hasClass('active') && window.innerWidth < 992) {
+                            $('#posMobileStickyBar').fadeIn(150);
+                        }
+                    } else {
+                        $('#mobileCartBadge').addClass('d-none');
+                        $('#posMobileStickyBar').fadeOut(150);
+                    }
+
                     // Sync amounts based on selected method
                     const method = $('input[name="payment_method"]:checked').val();
                     if (method === 'cash') {
@@ -3143,6 +3300,32 @@
                 $('#receiptModal').on('hidden.bs.modal', function () {
                     // Reload the page to reset the POS for the next sale
                     window.location.reload();
+                });
+
+                // Mobile Segmented Switcher & Sticky Checkout Listeners
+                $('#mobileTabCatalog').on('click', function () {
+                    $(this).addClass('active');
+                    $('#mobileTabCart').removeClass('active');
+                    $('.pos-catalog-column').removeClass('d-none');
+                    $('.pos-cart-column').addClass('d-none d-lg-flex');
+                    if (cart.length > 0) {
+                        $('#posMobileStickyBar').fadeIn(150);
+                    }
+                });
+
+                $('#mobileTabCart').on('click', function () {
+                    $(this).addClass('active');
+                    $('#mobileTabCatalog').removeClass('active');
+                    $('.pos-catalog-column').addClass('d-none');
+                    $('.pos-cart-column').removeClass('d-none');
+                    $('#posMobileStickyBar').fadeOut(150);
+                });
+
+                $('#btnStickyCheckout').on('click', function () {
+                    $('#mobileTabCart').trigger('click');
+                    $('html, body').animate({
+                        scrollTop: $('.pos-cart-column').offset() ? $('.pos-cart-column').offset().top - 65 : 0
+                    }, 200);
                 });
 
                 // Helper function to format currency

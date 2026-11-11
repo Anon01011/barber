@@ -36,10 +36,32 @@ class PosController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // 2. Optimize Services: Select only needed columns
+        // 2. Optimize Services: Select needed columns, eager load category and staff
         $services = Service::active()
             ->where('salon_id', $salonId)
-            ->select('id', 'name', 'price', 'salon_id')
+            ->with([
+                'category:id,name',
+                'staff:users.id,users.name'
+            ])
+            ->select('id', 'name', 'duration', 'price', 'category_id', 'salon_id')
+            ->get();
+
+        $categories = \App\Models\ServiceCategory::where('salon_id', $salonId)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->select('id', 'name', 'salon_id')
+            ->get();
+
+        $todayBookings = \App\Models\Booking::with([
+                'customer:id,name,phone',
+                'service:id,name,duration,price',
+                'staff:id,name'
+            ])
+            ->where('salon_id', $salonId)
+            ->whereDate('start_time', today())
+            ->whereNotIn('status', ['cancelled'])
+            ->orderBy('start_time')
+            ->limit(40)
             ->get();
 
         // 3. Optimize Products: Select only needed columns and eager load category with limit
@@ -107,11 +129,24 @@ class PosController extends Controller
 
         $staff = $staffQuery->with([
                 'services' => function ($query) {
-                    $query->select('services.id');
+                    $query->select('services.id', 'services.name');
+                },
+                'employee' => function ($query) {
+                    $query->select('id', 'user_id', 'avatar');
                 }
             ])
             ->select('id', 'name', 'salon_id', 'branch_id')
             ->get();
+
+        if (auth()->check() && $staff->doesntContain('id', auth()->id())) {
+            $currentUser = auth()->user();
+            if ($currentUser->hasRole('employee') || $currentUser->hasRole('barber') || $currentUser->hasRole('stylist') || $currentUser->hasRole('staff')) {
+                $currentUser->loadMissing(['services' => function ($q) {
+                    $q->select('services.id');
+                }]);
+                $staff->push($currentUser);
+            }
+        }
 
         // 6. Optimized Customer Query
         $customersQuery = Customer::with('user')->where('salon_id', $salonId)->where('status', 'active');
@@ -181,13 +216,14 @@ class PosController extends Controller
         $posReceiptArabicButton = $settings->get('pos_receipt_arabic_button', true, $salonId);
 
         $viewParam = request()->query('view');
-        if ($salon && $salon->business_type === 'both') {
-            $viewName = ($viewParam === 'barber') ? 'pos.barber' : 'pos.index';
+        $isEmployee = auth()->check() && auth()->user()->hasRole('employee');
+        if ($isEmployee || $viewParam === 'barber' || ($salon && (method_exists($salon, 'isBarber') ? $salon->isBarber() : $salon->business_type === 'barber'))) {
+            $viewName = 'pos.barber';
         } else {
-            $viewName = ($salon && (method_exists($salon, 'isBarber') ? $salon->isBarber() : $salon->business_type === 'barber')) ? 'pos.barber' : 'pos.index';
+            $viewName = 'pos.index';
         }
 
-        return view($viewName, compact('services', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton'));
+        return view($viewName, compact('services', 'categories', 'todayBookings', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton'));
     }
 
     /**
@@ -642,7 +678,7 @@ class PosController extends Controller
                             $lineGross = 0;
                             $lineTax = 0;
                             $lineDiscount = $item['discount_amount'] ?? 0;
-                            $staffId = $item['staff_id'] ?? null;
+                            $staffId = !empty($item['staff_id']) ? $item['staff_id'] : (auth()->check() && auth()->user()->hasRole('employee') ? auth()->id() : null);
                             $packageId = $item['package_id'] ?? null;
 
                             // Apply membership discount if applicable
@@ -2023,6 +2059,21 @@ class PosController extends Controller
      */
     public function search(Request $request)
     {
+        // SECURITY FIX (Vuln 1 – CWE-862): resolve salon from middleware-bound context,
+        // not from user->salon_id which is null for platform admins.
+        $salon = app()->bound('current_salon') ? app('current_salon') : null;
+
+        // Block direct platform-admin sessions from querying tenant product/service data
+        if (!$salon) {
+            abort(403, 'Salon context required.');
+        }
+
+        // Additional guard: super_admin not in an impersonation session cannot query tenant data
+        $user = auth()->user();
+        if ($user->hasRole('super_admin') && !$user->salon_id) {
+            abort(403, 'Platform administrators must use impersonation to access tenant POS search.');
+        }
+
         $query = $request->input('q', '');
 
         $services = [];
@@ -2030,10 +2081,13 @@ class PosController extends Controller
         $packages = [];
 
         if (!empty($query)) {
-            // Search services
+            // Search services scoped to the salon
             $services = Service::active()
-                ->where('name', 'like', "%{$query}%")
-                ->orWhere('description', 'like', "%{$query}%")
+                ->where('salon_id', $salon->id)
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('description', 'like', "%{$query}%");
+                })
                 ->get()
                 ->map(function ($service) {
                     return [
@@ -2047,8 +2101,9 @@ class PosController extends Controller
                     ];
                 });
 
-            // Search products
+            // Search products scoped to the salon
             $products = InventoryItem::with('category')
+                ->where('salon_id', $salon->id)
                 ->where('is_active', true)
                 ->where('quantity_in_stock', '>', 0)
                 ->where(function ($q) use ($query) {
@@ -2071,10 +2126,13 @@ class PosController extends Controller
                     ];
                 });
 
-            // Search packages
+            // Search packages scoped to the salon
             $packages = Package::active()
-                ->where('name', 'like', "%{$query}%")
-                ->orWhere('description', 'like', "%{$query}%")
+                ->where('salon_id', $salon->id)
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('description', 'like', "%{$query}%");
+                })
                 ->get()
                 ->map(function ($package) {
                     return [
@@ -2089,10 +2147,13 @@ class PosController extends Controller
                     ];
                 });
 
-            // Search memberships
+            // Search memberships scoped to the salon
             $memberships = Membership::active()
-                ->where('name', 'like', "%{$query}%")
-                ->orWhere('description', 'like', "%{$query}%")
+                ->where('salon_id', $salon->id)
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('description', 'like', "%{$query}%");
+                })
                 ->get()
                 ->map(function ($membership) {
                     return [
@@ -2124,8 +2185,31 @@ class PosController extends Controller
      */
     public function searchCustomerByMobile(Request $request)
     {
+        // SECURITY FIX (Vuln 1 – CWE-200, CWE-862):
+        // Resolve salon from middleware-bound context (set by CheckSalonSlug).
+        // NEVER fall back to auth()->user()->salon_id for this endpoint because
+        // super_admin has salon_id = null and would otherwise receive cross-tenant PII.
+        $salon = app()->bound('current_salon') ? app('current_salon') : null;
+
+        if (!$salon) {
+            abort(403, 'Salon context required.');
+        }
+
+        // Block direct platform-admin sessions (not impersonating)
+        $user = auth()->user();
+        if ($user->hasRole('super_admin') && !$user->salon_id) {
+            \App\Models\SuperAdminAuditLog::logAction(
+                'BLOCKED_POS_CUSTOMER_SEARCH_DIRECT_SESSION',
+                $salon->id,
+                null,
+                null,
+                ['query' => $request->input('q', ''), 'ip' => $request->ip()]
+            );
+            abort(403, 'Platform administrators must use impersonation to access tenant customer data.');
+        }
+
         $query = $request->input('q', '');
-        $salonId = auth()->user()->salon_id;
+        $salonId = $salon->id;
 
         $customers = Customer::with('user')
             ->where('salon_id', $salonId)
@@ -2256,8 +2340,22 @@ class PosController extends Controller
      */
     public function sales(Request $request)
     {
-        $query = PosSale::with(['customer', 'employee'])
+        $user = auth()->user();
+        $salonId = $user->salon_id;
+        $query = PosSale::where('salon_id', $salonId)
+            ->with(['customer', 'employee'])
             ->withCount('items');
+
+        // Restrict employees to only their own sales
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            $employeeId = $user->id;
+            $query->where(function ($q) use ($employeeId) {
+                $q->where('employee_id', $employeeId)
+                  ->orWhereHas('items', function ($itemQ) use ($employeeId) {
+                      $itemQ->where('staff_id', $employeeId);
+                  });
+            });
+        }
 
         // Date Filter
         if ($request->filled('start_date')) {
@@ -2304,8 +2402,16 @@ class PosController extends Controller
      */
     public function showSale($id)
     {
-        $salonId = auth()->user()->salon_id;
+        $user = auth()->user();
+        $salonId = $user->salon_id;
         $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff'])->where('salon_id', $salonId)->findOrFail($id);
+
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            $isOwnSale = ($sale->employee_id == $user->id) || $sale->items->contains('staff_id', $user->id);
+            if (!$isOwnSale) {
+                abort(403, 'Unauthorized to view sales made by other staff members.');
+            }
+        }
 
         $salon = auth()->user()->salon;
         $settings = app(\App\Services\SettingsService::class);
@@ -2332,7 +2438,12 @@ class PosController extends Controller
      */
     public function editSale($id)
     {
-        $salonId = auth()->user()->salon_id;
+        $user = auth()->user();
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            abort(403, 'Employees are not authorized to edit sales.');
+        }
+
+        $salonId = $user->salon_id;
         $sale = PosSale::with(['customer', 'items.item', 'items.staff', 'items.booking'])->where('salon_id', $salonId)->findOrFail($id);
 
         $hasFutureBooking = $sale->items->whereNotNull('booking_id')->some(function ($item) {
@@ -2354,7 +2465,12 @@ class PosController extends Controller
      */
     public function updateSale(Request $request, $id)
     {
-        $salonId = auth()->user()->salon_id;
+        $user = auth()->user();
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            abort(403, 'Employees are not authorized to update sales.');
+        }
+
+        $salonId = $user->salon_id;
         $sale = PosSale::where('salon_id', $salonId)->findOrFail($id);
 
         // Capture old state for total_spent adjustment
@@ -2663,6 +2779,11 @@ class PosController extends Controller
      */
     public function processRefund(Request $request, $id)
     {
+        $user = auth()->user();
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            abort(403, 'Employees are not authorized to process refunds.');
+        }
+
         $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'reason' => 'required|string|max:1000',
@@ -2825,7 +2946,12 @@ class PosController extends Controller
      */
     public function voidSale($id, Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $user = auth()->user();
+        if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            abort(403, 'Employees are not authorized to void sales.');
+        }
+
+        $salonId = $user->salon_id;
         $sale = PosSale::where('salon_id', $salonId)->findOrFail($id);
 
         // Check if sale can be voided

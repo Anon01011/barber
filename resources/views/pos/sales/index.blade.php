@@ -165,10 +165,12 @@
                                                     title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
+                                                @can('pos.edit_sale')
                                                 <a href="{{ route('admin.pos.sales.edit', $sale->id) }}" class="btn"
                                                     title="Edit Sale">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endcan
                                                 <a href="{{ route('admin.pos.receipt', $sale->id) }}" class="btn"
                                                     target="_blank" title="View Receipt">
                                                     <i class="fas fa-receipt"></i>

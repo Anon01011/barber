@@ -34,6 +34,10 @@ class DashboardRedirectController extends Controller
                 if ($user->salon && !empty(trim($user->salon->slug))) {
                     $slug = trim($user->salon->slug);
                     if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'manager', 'receptionist'])) {
+                        $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                        if ($canUsePos) {
+                            return redirect()->route('admin.pos.index', ['salon_slug' => $slug, 'view' => 'barber']);
+                        }
                         return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
                     }
 

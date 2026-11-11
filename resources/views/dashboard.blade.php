@@ -464,19 +464,126 @@
         }
 
         @media (max-width: 991px) {
+            .filter-wrapper {
+                top: 0.5rem;
+                margin-bottom: 1.25rem;
+            }
+
             .filter-glass-card {
-                border-radius: 20px;
-                padding: 1rem;
+                border-radius: 16px;
+                padding: 0.75rem;
             }
 
             .period-pill-group {
-                flex-wrap: wrap;
-                background: transparent;
-                padding: 0;
+                display: flex;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                background: rgba(0, 0, 0, 0.04);
+                padding: 0.25rem;
+                border-radius: 50px;
+                gap: 0.35rem;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+                width: 100%;
+            }
+
+            .period-pill-group::-webkit-scrollbar {
+                display: none;
             }
 
             .period-pill {
-                background: rgba(0, 0, 0, 0.04);
+                padding: 0.45rem 0.95rem;
+                font-size: 0.8rem;
+                flex-shrink: 0;
+                border-radius: 50px;
+            }
+
+            .custom-range-integrated.show {
+                max-width: 100%;
+                margin-left: 0;
+                margin-top: 0.75rem;
+                padding-left: 0;
+                border-left: none;
+                flex-direction: column;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .integrated-input-wrapper {
+                width: 100%;
+            }
+
+            .integrated-input {
+                width: 100%;
+            }
+
+            .btn-apply-integrated {
+                width: 100%;
+                margin-left: 0;
+                padding: 8px 16px;
+            }
+
+            .welcome-card {
+                padding: 1rem;
+                border-radius: 14px;
+            }
+
+            .stat-card {
+                padding: 0.85rem !important;
+                border-radius: 14px !important;
+            }
+
+            .stat-icon {
+                width: 36px !important;
+                height: 36px !important;
+                font-size: 16px !important;
+            }
+
+            .stat-card .h5 {
+                font-size: 1.15rem !important;
+            }
+
+            .nav-tabs-modern {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                padding: 0.25rem 0.5rem 0;
+                scrollbar-width: none;
+            }
+
+            .nav-tabs-modern::-webkit-scrollbar {
+                display: none;
+            }
+
+            .nav-tabs-modern .nav-link {
+                padding: 0.6rem 0.9rem;
+                font-size: 0.825rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .dashboard-container {
+                padding: 0.75rem 0;
+            }
+
+            .welcome-card img {
+                width: 48px !important;
+                height: 48px !important;
+            }
+
+            .welcome-card h4 {
+                font-size: 1.1rem;
+            }
+
+            .welcome-card p {
+                font-size: 0.8rem;
+            }
+
+            .section-gap {
+                margin-bottom: 1.25rem;
             }
         }
     </style>
@@ -570,7 +677,7 @@
         @can('salon.view')
             @if(isset($salon_quick_stats))
                 <div class="row section-gap animate-fade-in">
-                    <div class="col-xl col-md-6 mb-3">
+                    <div class="col-6 col-md-6 col-xl mb-3">
                         <div class="stat-card gradient-card-primary card-modern p-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -583,7 +690,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl col-md-6 mb-3">
+                    <div class="col-6 col-md-6 col-xl mb-3">
                         <div class="stat-card gradient-card-success card-modern p-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -598,7 +705,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl col-md-6 mb-3">
+                    <div class="col-6 col-md-6 col-xl mb-3">
                         <div class="stat-card gradient-card-warning card-modern p-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -611,7 +718,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl col-md-6 mb-3">
+                    <div class="col-6 col-md-6 col-xl mb-3">
                         <div class="stat-card gradient-card-info card-modern p-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -975,12 +1082,11 @@
                                             @endif
 
                                             <!-- Sales Summary Cards -->
-                                            <!-- Sales Summary Cards -->
-                                            <div class="row g-4 mb-4">
-                                                <div class="col-xl-3 col-md-6">
+                                            <!-- Sales Summary Cards                                             <div class="row g-2 g-md-4 mb-4">
+                                                <div class="col-6 col-md-6 col-xl-3">
                                                     <div class="card-modern h-100"
                                                         style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-                                                        <div class="card-body p-4">
+                                                        <div class="card-body p-3 p-md-4">
                                                             <div class="d-flex justify-content-between align-items-center">
                                                                 <div>
                                                                     <div class="text-uppercase small fw-bold text-primary mb-1">Bill
@@ -994,10 +1100,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-xl-3 col-md-6">
+                                                <div class="col-6 col-md-6 col-xl-3">
                                                     <div class="card-modern h-100"
                                                         style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-                                                        <div class="card-body p-4">
+                                                        <div class="card-body p-3 p-md-4">
                                                             <div class="d-flex justify-content-between align-items-center">
                                                                 <div>
                                                                     <div class="text-uppercase small fw-bold text-success mb-1">Net
@@ -1013,10 +1119,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-xl-3 col-md-6">
+                                                <div class="col-6 col-md-6 col-xl-3">
                                                     <div class="card-modern h-100"
                                                         style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-                                                        <div class="card-body p-4">
+                                                        <div class="card-body p-3 p-md-4">
                                                             <div class="d-flex justify-content-between align-items-center">
                                                                 <div>
                                                                     <div class="text-uppercase small fw-bold text-info mb-1">Avg. Bill
@@ -1032,10 +1138,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-xl-3 col-md-6">
+                                                <div class="col-6 col-md-6 col-xl-3">
                                                     <div class="card-modern h-100"
                                                         style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-                                                        <div class="card-body p-4">
+                                                        <div class="card-body p-3 p-md-4">
                                                             <div class="d-flex justify-content-between align-items-center">
                                                                 <div>
                                                                     <div class="text-uppercase small fw-bold text-warning mb-1">Unpaid

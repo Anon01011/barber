@@ -545,9 +545,32 @@ class SalonManagementController extends Controller
             return back()->with('error', 'This salon does not have an owner assigned.');
         }
 
-        // Store current admin ID in session to allow returning
-        session(['impersonator_id' => auth()->id()]);
-        session(['impersonator_name' => auth()->user()->name]);
+        $adminUser = auth()->user();
+        $adminId   = $adminUser->id;
+        $adminName = $adminUser->name;
+
+        // Log the impersonation start BEFORE switching identities
+        SuperAdminAuditLog::logAction(
+            'IMPERSONATION_STARTED',
+            $salon->id,
+            \App\Models\User::class,
+            $salon->owner->id,
+            [
+                'salon_name'       => $salon->name,
+                'salon_slug'       => $salon->slug,
+                'owner_id'         => $salon->owner->id,
+                'owner_name'       => $salon->owner->name,
+                'admin_id'         => $adminId,
+                'admin_name'       => $adminName,
+                'ip'               => request()->ip(),
+            ]
+        );
+
+        // Store current admin ID in session to allow returning (BEFORE login())
+        session(['impersonator_id'   => $adminId]);
+        session(['impersonator_name' => $adminName]);
+        session(['impersonated_salon_id'   => $salon->id]);
+        session(['impersonated_salon_name' => $salon->name]);
 
         // Login as salon owner and regenerate session to prevent session fixation
         \Illuminate\Support\Facades\Auth::login($salon->owner);
@@ -556,4 +579,58 @@ class SalonManagementController extends Controller
         return redirect()->route('home.dashboard')
             ->with('success', 'You are now logged in as ' . e($salon->owner->name) . ' (Owner of ' . e($salon->name) . ')');
     }
+
+    /**
+     * Stop impersonation and return to the platform Super Admin session.
+     *
+     * SECURITY FIX (Vuln 2 – CWE-862): provides the required "Return to Platform Admin"
+     * mechanism so impersonation sessions cannot get stuck.
+     */
+    public function stopImpersonate()
+    {
+        $adminId = session('impersonator_id');
+
+        if (!$adminId) {
+            return redirect()->route('login')
+                ->with('error', 'No active impersonation session found.');
+        }
+
+        $admin = \App\Models\User::find($adminId);
+
+        if (!$admin) {
+            session()->forget(['impersonator_id', 'impersonator_name', 'impersonated_salon_id', 'impersonated_salon_name']);
+            return redirect()->route('login')
+                ->with('error', 'Original admin account not found. Please log in again.');
+        }
+
+        // Capture info before wiping session
+        $salonId   = session('impersonated_salon_id');
+        $salonName = session('impersonated_salon_name');
+
+        // Clear impersonation keys first, then restore admin
+        session()->forget(['impersonator_id', 'impersonator_name', 'impersonated_salon_id', 'impersonated_salon_name']);
+
+        // Log the exit (using admin_id directly since we're switching back)
+        SuperAdminAuditLog::create([
+            'admin_id'   => $adminId,
+            'action'     => 'IMPERSONATION_ENDED',
+            'salon_id'   => $salonId,
+            'target_type' => null,
+            'target_id'  => null,
+            'data'       => [
+                'salon_name' => $salonName,
+                'ip'         => request()->ip(),
+            ],
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
+        // Re-login as the original admin and regenerate session
+        \Illuminate\Support\Facades\Auth::login($admin);
+        session()->regenerate();
+
+        return redirect()->route('admin.super.dashboard')
+            ->with('success', 'You have exited impersonation and returned to the Platform Admin dashboard.');
+    }
 }
+

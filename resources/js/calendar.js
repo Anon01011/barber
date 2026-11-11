@@ -318,6 +318,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     return true;
                 },
                 dateClick: function (info) {
+                    if (window.innerWidth < 768) {
+                        return;
+                    }
                     const clickedDate = info.date;
                     const now = new Date();
 

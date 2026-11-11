@@ -42,49 +42,49 @@
         <div class="container-fluid px-4 py-4">
 
             <!-- Customer Segmentation Cards -->
-            <div class="row g-4 mb-4">
+            <div class="row g-2 g-md-4 mb-4">
                 <!-- Total Customers -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-md-6 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm segment-card active" data-segment=""
                         style="border-top: 4px solid #667eea !important; background-color: #f8f9fa;">
-                        <div class="card-body text-center py-4">
-                            <h2 class="display-4 fw-bold mb-1" style="color: #333;">{{ $counts['total'] ?? 0 }}</h2>
-                            <p class="text-muted mb-0 fw-semibold">Total Customers</p>
+                        <div class="card-body text-center py-3 py-md-4 px-2">
+                            <h2 class="h2 fw-bold mb-1" style="color: #333;">{{ $counts['total'] ?? 0 }}</h2>
+                            <p class="text-muted mb-0 fw-semibold small">Total Customers</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Active Customers -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-md-6 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm segment-card" data-segment="active"
                         style="border-top: 4px solid #198754 !important; background-color: #e8f5e9;">
-                        <div class="card-body text-center py-4">
-                            <h2 class="display-4 fw-bold mb-1" style="color: #333;">{{ $counts['active'] ?? 0 }}</h2>
-                            <p class="text-success mb-0 fw-semibold">Active Customers</p>
+                        <div class="card-body text-center py-3 py-md-4 px-2">
+                            <h2 class="h2 fw-bold mb-1" style="color: #333;">{{ $counts['active'] ?? 0 }}</h2>
+                            <p class="text-success mb-0 fw-semibold small">Active Customers</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Churn Prediction -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-md-6 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm segment-card" data-segment="churn"
                         style="border-top: 4px solid #ffc107 !important; background-color: #fffde7;">
-                        <div class="card-body text-center py-4">
-                            <h2 class="display-4 fw-bold mb-1" style="color: #333;">{{ $counts['churn'] ?? 0 }}</h2>
-                            <p class="text-warning mb-0 fw-semibold">Churn Prediction</p>
-                            <small class="text-muted" style="font-size: 0.75rem;">(Likely to be inactive)</small>
+                        <div class="card-body text-center py-3 py-md-4 px-2">
+                            <h2 class="h2 fw-bold mb-1" style="color: #333;">{{ $counts['churn'] ?? 0 }}</h2>
+                            <p class="text-warning mb-0 fw-semibold small">Churn Prediction</p>
+                            <small class="text-muted d-none d-sm-block" style="font-size: 0.75rem;">(Likely to be inactive)</small>
                         </div>
                     </div>
                 </div>
 
                 <!-- Defected Customers -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-md-6 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm segment-card" data-segment="defected"
                         style="border-top: 4px solid #dc3545 !important; background-color: #fbe9eb;">
-                        <div class="card-body text-center py-4">
-                            <h2 class="display-4 fw-bold mb-1" style="color: #333;">{{ $counts['defected'] ?? 0 }}</h2>
-                            <p class="text-danger mb-0 fw-semibold">Defected Customers</p>
-                            <small class="text-muted" style="font-size: 0.75rem;">(Inactive customers)</small>
+                        <div class="card-body text-center py-3 py-md-4 px-2">
+                            <h2 class="h2 fw-bold mb-1" style="color: #333;">{{ $counts['defected'] ?? 0 }}</h2>
+                            <p class="text-danger mb-0 fw-semibold small">Defected</p>
+                            <small class="text-muted d-none d-sm-block" style="font-size: 0.75rem;">(Inactive customers)</small>
                         </div>
                     </div>
                 </div>
