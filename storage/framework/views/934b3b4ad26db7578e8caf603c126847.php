@@ -1,1 +1,0 @@
-Welcome to <?php echo e($app_name); ?>!<?php /**PATH C:\Ketan\projects\barber\storage\framework\views/a896bfbfc69be7a3c0cee1fa35df969b.blade.php ENDPATH**/ ?>
