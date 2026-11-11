@@ -29,6 +29,9 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        $salonId = auth()->user()->salon_id;
+        $superAdminRoleId = \Spatie\Permission\Models\Role::where('name', 'super_admin')->value('id');
+
         $rules = [
             'name' => 'required|string|max:255',
 
@@ -36,8 +39,8 @@ class EmployeeController extends Controller
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('employees', 'phone')->where(function ($query) {
-                    return $query->where('salon_id', auth()->user()->salon_id);
+                Rule::unique('employees', 'phone')->where(function ($query) use ($salonId) {
+                    return $query->where('salon_id', $salonId);
                 })
             ],
             'position' => 'nullable|string|max:255',
@@ -46,13 +49,23 @@ class EmployeeController extends Controller
             'avatar' => 'nullable|image|max:2048',
             'allow_login' => 'nullable|boolean',
             'services' => 'nullable|array',
-            'services.*' => 'exists:services,id',
+            'services.*' => [
+                'integer',
+                Rule::exists('services', 'id')->where('salon_id', $salonId)
+            ],
         ];
 
         if ($request->boolean('allow_login')) {
             $rules['email'] = 'required|email|unique:users,email';
             $rules['password'] = 'required|string|min:8|confirmed';
-            $rules['role_id'] = 'required|exists:roles,id';
+            $rules['role_id'] = [
+                'required',
+                'integer',
+                Rule::notIn(array_filter([$superAdminRoleId])),
+                Rule::exists('roles', 'id')->where(function ($query) use ($salonId) {
+                    $query->where('salon_id', $salonId)->orWhereNull('salon_id');
+                }),
+            ];
         } else {
             $rules['email'] = 'nullable|email';
         }
@@ -108,6 +121,9 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
+        $salonId = auth()->user()->salon_id;
+        $superAdminRoleId = \Spatie\Permission\Models\Role::where('name', 'super_admin')->value('id');
+
         $rules = [
             'name' => 'required|string|max:255',
 
@@ -115,8 +131,8 @@ class EmployeeController extends Controller
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('employees', 'phone')->ignore($employee->id)->where(function ($query) {
-                    return $query->where('salon_id', auth()->user()->salon_id);
+                Rule::unique('employees', 'phone')->ignore($employee->id)->where(function ($query) use ($salonId) {
+                    return $query->where('salon_id', $salonId);
                 })
             ],
             'position' => 'nullable|string|max:255',
@@ -125,12 +141,22 @@ class EmployeeController extends Controller
             'avatar' => 'nullable|image|max:2048',
             'allow_login' => 'nullable|boolean',
             'services' => 'nullable|array',
-            'services.*' => 'exists:services,id',
+            'services.*' => [
+                'integer',
+                Rule::exists('services', 'id')->where('salon_id', $salonId)
+            ],
         ];
 
         if ($request->boolean('allow_login')) {
             $rules['email'] = 'required|email|unique:users,email,' . ($employee->user_id ?? 'NULL');
-            $rules['role_id'] = 'required|exists:roles,id';
+            $rules['role_id'] = [
+                'required',
+                'integer',
+                Rule::notIn(array_filter([$superAdminRoleId])),
+                Rule::exists('roles', 'id')->where(function ($query) use ($salonId) {
+                    $query->where('salon_id', $salonId)->orWhereNull('salon_id');
+                }),
+            ];
             if ($request->filled('password')) {
                 $rules['password'] = 'required|string|min:8|confirmed';
             }

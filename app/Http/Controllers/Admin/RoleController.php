@@ -682,6 +682,13 @@ class RoleController extends Controller
 
             // Verify user belongs to the same salon (for non-super admins)
             if (!$currentUser->isSuperAdmin()) {
+                if ($role->name === 'super_admin') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to assign platform administrator role.'
+                    ], 403);
+                }
+
                 if ($user->salon_id !== $currentUser->salon_id) {
                     return response()->json([
                         'status' => 'error',
@@ -726,6 +733,13 @@ class RoleController extends Controller
 
             // Verify user belongs to the same salon (for non-super admins)
             if (!$currentUser->isSuperAdmin()) {
+                if ($role->name === 'super_admin') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to modify platform administrator role.'
+                    ], 403);
+                }
+
                 if ($user->salon_id !== $currentUser->salon_id) {
                     return response()->json([
                         'status' => 'error',

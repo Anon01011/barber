@@ -62,6 +62,9 @@
     <!-- International Tel Input CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
 
+    <!-- Impersonation Banner CSS -->
+    <link rel="stylesheet" href="{{ asset('css/impersonation.css') }}">
+
     <style>
         /* Force hide sidebar text and chevrons when collapsed */
         .sidebar.collapsed .sidebar-text,
@@ -372,7 +375,7 @@
     </script>
 </head>
 
-<body{{ $isRtl ? 'dir=rtl' : '' }}>
+<body class="{{ session()->has('impersonator_id') ? 'has-impersonation-banner' : '' }}" {{ $isRtl ? 'dir=rtl' : '' }}>
     @auth
         @php
             $salonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug;
@@ -888,6 +891,40 @@
         <!-- Mobile Sidebar Backdrop -->
         <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
+    {{-- ═══════════════════════════════════════════════════════════════════
+         SECURITY: Impersonation Banner
+         Shown ABOVE the header when Super Admin is impersonating a salon owner.
+         Provides mandatory "Return to Platform Admin" exit mechanism.
+         ═══════════════════════════════════════════════════════════════════ --}}
+    @if(session()->has('impersonator_id'))
+        @php
+            $impersonatedSalonName = session('impersonated_salon_name', 'a Salon');
+            $impersonatorName      = session('impersonator_name', 'Super Admin');
+        @endphp
+        <div id="impersonationBanner" class="impersonation-banner-top">
+            <div class="impersonation-banner-inner">
+                <div class="impersonation-left">
+                    <span class="impersonation-badge">
+                        <i class="fas fa-shield-alt"></i> Impersonation Mode Active
+                    </span>
+                    <span class="impersonation-text">
+                        Acting as owner of <strong>{{ e($impersonatedSalonName) }}</strong>
+                        <span class="impersonation-audit-note">&bull; Logged as <em>{{ e($impersonatorName) }}</em></span>
+                    </span>
+                </div>
+                <div class="impersonation-right">
+                    <form method="POST" action="{{ route('admin.salons.stop-impersonate') }}" class="m-0 p-0">
+                        @csrf
+                        <button type="submit" id="stopImpersonateBtn" class="btn-return-admin">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Return to Platform Admin</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Header -->
     <div class="header" id="header">
         <div class="header-content">
@@ -1271,69 +1308,7 @@
             @endif
         </div>
 
-        {{-- ═══════════════════════════════════════════════════════════════════
-             SECURITY: Impersonation Banner (Vulnerability 2 Fix – CWE-862)
-             Shown when a Super Admin is impersonating a salon owner.
-             Provides mandatory "Return to Platform Admin" exit mechanism.
-             ═══════════════════════════════════════════════════════════════════ --}}
-        @if(session()->has('impersonator_id'))
-            @php
-                $impersonatedSalonName = session('impersonated_salon_name', 'a Salon');
-                $impersonatorName      = session('impersonator_name', 'Super Admin');
-            @endphp
-            <div id="impersonationBanner" style="
-                position: sticky;
-                top: 0;
-                z-index: 1999;
-                background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
-                color: #fff;
-                padding: 10px 20px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                box-shadow: 0 3px 10px rgba(220,53,69,0.45);
-                border-bottom: 2px solid #a21c28;
-                font-family: 'Inter', sans-serif;
-            ">
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <span style="background:rgba(255,255,255,0.2); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <i class="fas fa-user-secret" style="font-size:16px;"></i>
-                    </span>
-                    <div>
-                        <strong style="font-size:0.95rem;">
-                            ⚠️ Impersonation Mode Active
-                        </strong>
-                        <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">
-                            You (<strong>{{ e($impersonatorName) }}</strong>) are currently acting as the owner of
-                            <strong>{{ e($impersonatedSalonName) }}</strong>.
-                            All actions are logged in the audit trail.
-                        </div>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('admin.salons.stop-impersonate') }}" style="flex-shrink:0; margin-left:16px;">
-                    @csrf
-                    <button type="submit" id="stopImpersonateBtn" style="
-                        background: #fff;
-                        color: #dc3545;
-                        border: none;
-                        border-radius: 6px;
-                        padding: 8px 16px;
-                        font-weight: 600;
-                        font-size: 0.85rem;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        white-space: nowrap;
-                        transition: box-shadow 0.2s;
-                    " onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.25)'"
-                       onmouseout="this.style.boxShadow='none'">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Return to Platform Admin
-                    </button>
-                </form>
-            </div>
-        @endif
+
 
         @yield('content')
     </div>

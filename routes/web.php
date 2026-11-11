@@ -110,6 +110,11 @@ Route::middleware(['auth', 'verified'])->prefix('saas/errors')->name('saas.error
     })->name('subscription-paused');
 });
 
+// Exit Impersonation: Must be accessible to any authenticated user who is currently impersonated (not restricted by role:super_admin)
+Route::match(['GET', 'POST'], '/admin/salons/stop-impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'stopImpersonate'])
+    ->middleware(['auth'])
+    ->name('admin.salons.stop-impersonate');
+
 // System Management routes (Super Admin Only) - GLOBAL (No Slug)
 Route::middleware(['auth', 'verified', 'role:super_admin'])
     ->prefix('admin')
@@ -128,7 +133,6 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
             Route::put('/{salon}', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'update'])->name('update');
             Route::post('/{salon}/approve', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'approve'])->name('approve');
             Route::post('/{salon}/impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'impersonate'])->name('impersonate');
-            Route::post('/stop-impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'stopImpersonate'])->name('stop-impersonate');
             Route::delete('/{salon}', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'destroy'])->name('destroy');
         });
 

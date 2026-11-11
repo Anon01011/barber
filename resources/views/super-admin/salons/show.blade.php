@@ -205,7 +205,11 @@
                                                     <div class="col-sm-6">
                                                         <label class="text-muted small">Website</label>
                                                         <p class="mb-0">
-                                                            {!! $salon->website ? '<a href="' . $salon->website . '" target="_blank" class="text-decoration-none">' . $salon->website . '</a>' : 'N/A' !!}
+                                                            @if($salon->website && safe_http_url($salon->website))
+                                                                <a href="{{ safe_http_url($salon->website) }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">{{ $salon->website }}</a>
+                                                            @else
+                                                                <span class="text-muted">{{ $salon->website ?: 'N/A' }}</span>
+                                                            @endif
                                                         </p>
                                                     </div>
                                                     <div class="col-sm-6">

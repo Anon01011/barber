@@ -22,6 +22,8 @@
         $themeHex = $colorMap[$themeColor] ?? '#0d6efd';
         $themeRgb = $colorRgbMap[$themeColor] ?? '13, 110, 253';
     @endphp
+    <!-- Modern Barber POS External Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('css/pos-barber.css') }}?v={{ file_exists(public_path('css/pos-barber.css')) ? filemtime(public_path('css/pos-barber.css')) : time() }}">
     <style>
         :root {
             --theme-color: {{ $themeHex }} !important;
@@ -29,630 +31,81 @@
             --theme-color-light: rgba({{ $themeRgb }}, 0.08) !important;
             --theme-color-hover: rgba({{ $themeRgb }}, 0.15) !important;
         }
-
-        /* Premium Vintage Barbershop Light Theme Overrides */
-        body {
-            background-color: #F6F4F0 !important;
-            color: #2C2621 !important;
-            font-family: 'Outfit', 'Inter', sans-serif;
-        }
-
-        .bg-light {
-            background-color: #F6F4F0 !important;
-        }
-
-        .card {
-            background-color: #FFFFFF !important;
-            border-color: #E6DFD5 !important;
-            color: #2C2621 !important;
-            box-shadow: 0 4px 12px rgba(44, 38, 33, 0.05) !important;
-        }
-
-        .card-header {
-            background-color: #FDFCFB !important;
-            border-bottom: 1px solid #E6DFD5 !important;
-            color: var(--theme-color) !important;
-        }
-
-        .card-title {
-            color: var(--theme-color) !important;
-        }
-
-        .text-dark {
-            color: #2C2621 !important;
-        }
-
-        .text-muted {
-            color: #7A7067 !important;
-        }
-
-        .table {
-            color: #2C2621 !important;
-            border-color: #E6DFD5 !important;
-        }
-
-        .table th {
-            background-color: #FDFCFB !important;
-            color: var(--theme-color) !important;
-            border-color: #E6DFD5 !important;
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 10 !important;
-            box-shadow: inset 0 -1px 0 #E6DFD5 !important;
-        }
-
-        .table td {
-            border-color: #E6DFD5 !important;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: #FAF9F6 !important;
-            color: #2C2621 !important;
-        }
-
-        /* Grid Section responsive CSS Grid overrides */
-        .items-grid-container {
-            height: auto !important;
-            min-height: 180px !important;
-            max-height: 340px !important;
-            flex: 1 1 auto !important;
-            overflow-y: auto !important;
-            border: 1px solid #E6DFD5 !important;
-            border-radius: 14px !important;
-            background-color: #FFFFFF !important;
-            padding: 14px !important;
-            box-shadow: inset 0 2px 5px rgba(44, 38, 33, 0.02) !important;
-        }
-
-        .grid-section .row {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
-            gap: 12px !important;
-            margin: 0 !important;
-        }
-
-        .grid-section .row > * {
-            width: auto !important;
-            max-width: none !important;
-            flex: none !important;
-            padding: 0 !important;
-        }
-
-        /* Grid Item Card styling - Centered, touch-friendly tiles */
-        .item-card {
-            user-select: none;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            background-color: #FFFFFF !important;
-            border: 1px solid #E6DFD5 !important;
-            border-radius: 12px !important;
-            padding: 12px 8px !important;
-            min-height: 80px !important;
-            height: 100% !important;
-            box-shadow: 0 2px 4px rgba(44, 38, 33, 0.02) !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            text-align: center !important;
-        }
-
-        /* Specific Hover states based on item types */
-        .item-card[data-type="service"]:hover {
-            border-color: var(--theme-color) !important;
-            background-color: var(--theme-color-light) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(var(--theme-color-rgb), 0.08) !important;
-        }
-
-        .item-card[data-type="service"]:active {
-            background-color: var(--theme-color-hover) !important;
-        }
-
-        .item-card[data-type="product"]:hover {
-            border-color: #10B981 !important;
-            background-color: #F0FDF4 !important;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.08) !important;
-        }
-
-        .item-card[data-type="product"]:active {
-            background-color: #D1FAE5 !important;
-        }
-
-        .item-card[data-type="package"]:hover {
-            border-color: #3B82F6 !important;
-            background-color: #F0F9FF !important;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.08) !important;
-        }
-
-        .item-card[data-type="package"]:active {
-            background-color: #DBEAFE !important;
-        }
-
-        .item-card[data-type="membership"]:hover {
-            border-color: #8B5CF6 !important;
-            background-color: #FAF5FF !important;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(139, 92, 246, 0.08) !important;
-        }
-
-        .item-card[data-type="membership"]:active {
-            background-color: #F3E8FF !important;
-        }
-
-        /* Tactical Haptic scale down on active touch */
-        .item-card:active {
-            transform: scale(0.96) !important;
-            box-shadow: none !important;
-            transition: all 0.1s ease !important;
-        }
-
-        /* Custom inline helper styles to guarantee Bootstrap compatibility */
-        .text-theme { color: var(--theme-color) !important; }
-
-        /* Custom inline helper styles to guarantee Bootstrap compatibility */
-        .text-amber-800 { color: #92400E !important; }
-        .text-emerald-800 { color: #065F46 !important; }
-        .text-blue-800 { color: #1E40AF !important; }
-        .text-purple-800 { color: #6B21A8 !important; }
-        .text-xs { font-size: 0.75rem !important; }
-        .mt-0.5 { margin-top: 0.125rem !important; }
-        .gap-2.5 { gap: 0.625rem !important; }
-        .p-2.5 { padding: 0.625rem !important; }
-
-        /* Form elements */
-        .form-control,
-        .form-select {
-            background-color: #FFFFFF !important;
-            border-color: #D3C9BC !important;
-            color: #2C2621 !important;
-            border-radius: 8px !important;
-        }
-
-        /* Elegant modern input groups style */
-        .input-group {
-            border-radius: 8px !important;
-            overflow: hidden !important;
-            border: 1px solid #D3C9BC !important;
-            background-color: #FFFFFF !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 2px 4px rgba(44, 38, 33, 0.01) !important;
-        }
-
-        .input-group:focus-within {
-            border-color: var(--theme-color) !important;
-            box-shadow: 0 0 0 0.25rem rgba(var(--theme-color-rgb), 0.15) !important;
-        }
-
-        .input-group-text,
-        .input-group .form-control,
-        .input-group .form-select {
-            border: none !important;
-            background-color: transparent !important;
-            box-shadow: none !important;
-        }
-
-        .input-group-text {
-            color: #7A7067 !important;
-            font-size: 0.85rem !important;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            background-color: #FFFFFF !important;
-            border-color: #B45309 !important;
-            color: #2C2621 !important;
-            box-shadow: 0 0 0 0.25rem rgba(180, 83, 9, 0.15) !important;
-        }
-
-        .form-control[readonly] {
-            background-color: #FAF9F6 !important;
-            color: #7A7067 !important;
-        }
-
-        /* Dropdowns & Select2 */
-        .dropdown-menu {
-            background-color: #FFFFFF !important;
-            border-color: #E6DFD5 !important;
-            color: #2C2621 !important;
-            border-radius: 10px !important;
-            box-shadow: 0 10px 25px -5px rgba(44, 38, 33, 0.1) !important;
-            padding: 6px !important;
-        }
-
-        .dropdown-item {
-            color: #2C2621 !important;
-            border-radius: 6px !important;
-            padding: 6px 12px !important;
-            font-size: 0.85rem !important;
-        }
-
-        .dropdown-item:hover {
-            background-color: #FFFBEB !important;
-            color: #B45309 !important;
-        }
-
-        /* Buttons overrides to Amber/Gold */
-        .btn-primary {
-            background-color: #B45309 !important;
-            border-color: #92400E !important;
-            color: #FFFFFF !important;
-            border-radius: 8px !important;
-        }
-
-        .btn-primary:hover {
-            background-color: #92400E !important;
-            border-color: #78350F !important;
-            color: #FFFFFF !important;
-        }
-
-        .btn-outline-primary {
-            color: #B45309 !important;
-            border-color: #B45309 !important;
-            border-radius: 8px !important;
-        }
-
-        .btn-outline-primary:hover,
-        .btn-outline-primary.active {
-            background-color: #B45309 !important;
-            border-color: #B45309 !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 4px 6px -1px rgba(180, 83, 9, 0.15) !important;
-        }
-
-        .btn-outline-success {
-            color: #059669 !important;
-            border-color: #059669 !important;
-            border-radius: 8px !important;
-        }
-
-        .btn-outline-success:hover,
-        .btn-outline-success.active {
-            background-color: #059669 !important;
-            border-color: #059669 !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.15) !important;
-        }
-
-        .btn-outline-info {
-            color: #2563EB !important;
-            border-color: #2563EB !important;
-            border-radius: 8px !important;
-        }
-
-        .btn-outline-info:hover,
-        .btn-outline-info.active {
-            background-color: #2563EB !important;
-            border-color: #2563EB !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15) !important;
-        }
-
-        .btn-outline-secondary {
-            color: #7C3AED !important;
-            border-color: #7C3AED !important;
-            border-radius: 8px !important;
-        }
-
-        .btn-outline-secondary:hover,
-        .btn-outline-secondary.active {
-            background-color: #7C3AED !important;
-            border-color: #7C3AED !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.15) !important;
-        }
-
-        /* Cart & items styling */
-        .bg-light-primary {
-            background-color: rgba(180, 83, 9, 0.08) !important;
-            color: #B45309 !important;
-        }
-
-        .badge.bg-light-primary {
-            background-color: rgba(180, 83, 9, 0.12) !important;
-            color: #B45309 !important;
-        }
-
-        /* Custom checkout pane */
-        .checkout-summary {
-            background-color: #FAF9F6 !important;
-            border: 1px solid #E6DFD5 !important;
-            border-radius: 0.5rem;
-            padding: 0.75rem !important;
-        }
-
-        /* Modal styling */
-        .modal-content {
-            background-color: #FFFFFF !important;
-            border-color: #E6DFD5 !important;
-            color: #2C2621 !important;
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #E6DFD5 !important;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #E6DFD5 !important;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar-thumb {
-            background: #B45309 !important;
-            border-radius: 4px !important;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #92400E !important;
-        }
-
-        /* Service Cards styling */
-        .service-card {
-            box-shadow: 0 2px 4px rgba(44, 38, 33, 0.02);
-            user-select: none;
-            background-color: #FAF6F0 !important;
-            border: 2px solid #E6DFD5 !important;
-            transition: all 0.2s ease-in-out;
-            border-radius: 10px !important;
-        }
-
-        .service-card:hover {
-            border-color: #B45309 !important;
-            background-color: #FAF9F6 !important;
-            transform: translateY(-1px);
-        }
-
-        .service-card.selected {
-            border-color: #B45309 !important;
-            background-color: #FFFBEB !important;
-            box-shadow: 0 4px 12px -2px rgba(180, 83, 9, 0.15) !important;
-        }
-
-        body {
-            overflow: hidden !important;
-        }
-
-        /* Tight layout styles to make everything fit */
-        .card-body {
-            padding: 0.5rem !important;
-        }
-
-        .card-header {
-            padding: 0.5rem 0.75rem !important;
-        }
-
-        .table th,
-        .table td {
-            padding: 0.4rem 0.5rem !important;
-            vertical-align: middle !important;
-        }
-
-        .form-control,
-        .form-select,
-        .btn {
-            padding: 0.25rem 0.5rem !important;
-            font-size: 0.85rem !important;
-        }
-
-        .icon-shape.icon-sm {
-            width: 28px !important;
-            height: 28px !important;
-        }
-
-        .form-label {
-            margin-bottom: 0.25rem !important;
-        }
-
-        .row.g-3 {
-            --bs-gutter-y: 0.5rem !important;
-            --bs-gutter-x: 0.5rem !important;
-        }
-
-        .pos-cart {
-            height: calc(100vh - 220px);
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-
-        /* Fix POS left section layout - no extra bottom gap */
-        #posFormContainer {
-            flex-shrink: 0;
-        }
-
-        .table-responsive.flex-fill-table {
-            flex: 1 1 0;
-            min-height: 0;
-            overflow-y: auto;
-        }
-
-        /* Ensure the row fills available height */
-        .pos-terminal-container {
-            height: calc(100vh - var(--header-height) - 15px);
-            overflow: hidden;
-        }
-
-        .pos-main-row {
-            flex: 1 1 0;
-            min-height: 0;
-        }
-
-        .pos-main-row .col-lg-8,
-        .pos-main-row .col-lg-4 {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pos-main-row .col-lg-8>.card,
-        .pos-main-row .col-lg-4>.card {
-            flex: 1 1 0;
-            min-height: 0;
-        }
-
-        /* Mobile Segmented Switcher & Touch Responsive Styles */
-        @media (max-width: 991.98px) {
-            .pos-terminal-container {
-                height: auto !important;
-                min-height: calc(100vh - 60px) !important;
-                overflow: visible !important;
-                padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
-            }
-
-            .pos-main-row {
-                height: auto !important;
-                min-height: auto !important;
-                overflow: visible !important;
-                flex: none !important;
-            }
-
-            .pos-main-row .col-lg-8,
-            .pos-main-row .col-lg-4 {
-                height: auto !important;
-                flex: none !important;
-                width: 100% !important;
-            }
-
-            .pos-main-row .col-lg-8>.card,
-            .pos-main-row .col-lg-4>.card {
-                height: auto !important;
-                min-height: auto !important;
-                overflow: visible !important;
-                flex: none !important;
-                margin-bottom: 1rem;
-            }
-
-            .items-grid-container {
-                max-height: none !important;
-                height: auto !important;
-                overflow-y: visible !important;
-            }
-
-            .grid-section .row {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 8px !important;
-            }
-
-            .item-card {
-                padding: 10px 6px !important;
-                min-height: 75px !important;
-            }
-
-            .pos-mobile-segment {
-                display: flex !important;
-                background: #f1f5f9;
-                border-radius: 50px;
-                padding: 4px;
-                margin-bottom: 10px;
-                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-            }
-
-            .pos-segment-btn {
-                flex: 1;
-                border: none;
-                background: transparent;
-                padding: 8px 12px;
-                border-radius: 50px;
-                font-size: 0.825rem;
-                font-weight: 600;
-                color: #64748b;
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .pos-segment-btn.active {
-                background: #ffffff;
-                color: var(--theme-color, #b45309);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            }
-
-            .pos-mobile-sticky-checkout {
-                position: fixed;
-                left: 12px;
-                right: 12px;
-                bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-                z-index: 1040;
-                animation: slideUp 0.3s ease-out;
-            }
-
-            @keyframes slideUp {
-                from { transform: translateY(100%); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
-            }
-        }
-
-        @media (min-width: 992px) {
-            .pos-mobile-segment {
-                display: none !important;
-            }
-            .pos-mobile-sticky-checkout {
-                display: none !important;
-            }
-        }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 py-1 bg-light d-flex flex-column pos-terminal-container">
-        <!-- Page Header -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-2 pb-2 border-bottom">
-            <div class="mb-1 mb-md-0">
-                <h1 class="fs-5 mb-0 fw-semibold">
-                    <i class="fas fa-scissors me-2 text-warning animate-pulse"></i>Barbershop POS Terminal
-                </h1>
-                <nav aria-label="breadcrumb" class="d-none d-md-block">
-                    <ol class="breadcrumb mb-0" style="font-size: 0.8rem;">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"
-                                class="text-decoration-none">Dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">POS Terminal</li>
-                    </ol>
-                </nav>
-            </div>
-            <div class="col-md-6">
-                <div class="d-flex justify-content-md-end gap-2">
-                    @if(optional(auth()->user()->salon)->business_type === 'both' && !auth()->user()->hasRole('employee'))
-                        <a href="{{ route('admin.pos.index', ['view' => 'salon']) }}" class="btn btn-sm btn-outline-warning">
-                            <i class="fas fa-exchange-alt me-1"></i> Switch to Salon POS
-                        </a>
-                    @endif
-                    @can('pos.view_reports')
-                    <a href="{{ route('admin.pos.analytics.index') }}" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-chart-line me-1"></i> Analytics
-                    </a>
-                    @endcan
-                    <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-history me-1"></i> Sales History
-                    </a>
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newSaleModal">
-                        <i class="fas fa-plus me-1"></i> New Sale
+    <div class="container-fluid px-2 px-md-3 py-1 pos-terminal-container">
+        <!-- Top Bar with Exit, Title, Pill Tabs, and Utility Actions -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-1 mb-1 pb-1 border-bottom flex-shrink-0">
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
+                <a href="{{ route('dashboard', ['salon_slug' => request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? 'admin']) }}" class="btn btn-sm btn-light border d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px; border-radius: 6px;" title="Exit to Dashboard">
+                    <i class="fas fa-times text-muted"></i>
+                </a>
+                <div class="d-flex align-items-center flex-shrink-0">
+                    <span class="fs-6 fw-bold text-dark text-nowrap d-flex align-items-center gap-1">
+                        <i class="fas fa-scissors text-primary"></i> Barber POS
+                    </span>
+                </div>
+
+                <!-- Navigation Pill Tabs (matching reference UI) -->
+                <div class="pos-nav-pills-bar ms-md-3 d-flex align-items-center gap-1 overflow-x-auto">
+                    <button type="button" class="pos-nav-pill" data-tab="professionals" id="tabPillProfessionals">
+                        <i class="fas fa-user-tie me-1"></i>Professionals
                     </button>
+                    <button type="button" class="pos-nav-pill active" data-tab="services" id="tabPillServices">
+                        <i class="fas fa-scissors me-1"></i>Services
+                    </button>
+                    @php
+                        $salon = auth()->user()->salon;
+                        $canProducts = $salon && ($salon->canUseFeature('Inventory Management') || $salon->canUseFeature('Products')) && \App\Helpers\ModuleHelper::inventoryEnabled();
+                        $canPackages = $salon && $salon->canUseFeature('Packages') && \App\Helpers\ModuleHelper::packagesEnabled();
+                        $canMemberships = $salon && $salon->canUseFeature('Memberships') && \App\Helpers\ModuleHelper::membershipsEnabled();
+                    @endphp
+                    @if($canProducts)
+                        <button type="button" class="pos-nav-pill" data-tab="products" id="tabPillProducts">
+                            <i class="fas fa-box me-1"></i>Products
+                        </button>
+                    @endif
+                    <button type="button" class="pos-nav-pill" data-tab="appointments" id="tabPillAppointments">
+                        <i class="fas fa-calendar-check me-1"></i>Appointments
+                        @if(isset($todayBookings) && count($todayBookings) > 0)
+                            <span class="badge bg-primary text-white rounded-pill ms-1" style="font-size: 0.65rem;">{{ count($todayBookings) }}</span>
+                        @endif
+                    </button>
+                    @if($canPackages)
+                        <button type="button" class="pos-nav-pill" data-tab="packages" id="tabPillPackages">
+                            <i class="fas fa-gift me-1"></i>Packages
+                        </button>
+                    @endif
+                    @if($canMemberships)
+                        <button type="button" class="pos-nav-pill" data-tab="memberships" id="tabPillMemberships">
+                            <i class="fas fa-star me-1"></i>Memberships
+                        </button>
+                    @endif
                 </div>
             </div>
+
+            <!-- Top Right Utilities -->
+            <div class="d-flex align-items-center justify-content-end gap-1 flex-shrink-0">
+                @if(optional(auth()->user()->salon)->business_type === 'both' && !auth()->user()->hasRole('employee'))
+                    <a href="{{ route('admin.pos.index', ['view' => 'salon']) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;">
+                        <i class="fas fa-exchange-alt"></i> <span class="d-none d-md-inline ms-1">Salon</span>
+                    </a>
+                @endif
+                @can('pos.view_reports')
+                    <a href="{{ route('admin.pos.analytics.index') }}" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 0.75rem;" title="Analytics">
+                        <i class="fas fa-chart-line"></i> <span class="d-none d-md-inline ms-1">Analytics</span>
+                    </a>
+                @endcan
+                <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.75rem;" title="Sales History">
+                    <i class="fas fa-history"></i> <span class="d-none d-md-inline ms-1">History</span>
+                </a>
+                <button class="btn btn-sm btn-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#newSaleModal" style="font-size: 0.75rem;">
+                    <i class="fas fa-plus"></i> <span class="d-none d-sm-inline ms-1">Sale</span>
+                </button>
+            </div>
         </div>
-        <!-- End of Page Header -->
 
         <!-- Mobile POS Segmented Switcher (Visible on mobile/tablet screens < 992px) -->
         <div class="pos-mobile-segment d-flex d-lg-none">
@@ -660,502 +113,501 @@
                 <i class="fas fa-scissors me-1"></i> Catalog & Items
             </button>
             <button type="button" class="pos-segment-btn position-relative" id="mobileTabCart">
-                <i class="fas fa-shopping-cart me-1"></i> Cart & Pay
-                <span class="badge bg-danger rounded-pill ms-1 d-none" id="mobileCartBadge">0</span>
+                <i class="fas fa-receipt me-1"></i> Your Order
+                <span class="badge bg-primary rounded-pill ms-1 d-none" id="mobileCartBadge">0</span>
             </button>
         </div>
 
-        <div class="row g-2 pb-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0;">
-            <!-- Left Column - Products/Services -->
-            <div class="col-lg-8 pos-catalog-column">
-                <div class="card shadow-sm" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-                    <!-- Card Header with Tabs -->
-                    <div class="card-header bg-white py-2 border-bottom">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                            <h5 class="card-title mb-0 fw-semibold">
-                                <i class="fas fa-scissors me-2 text-warning"></i>Haircuts & Barber Services
-                            </h5>
-                            <div class="position-relative" style="width: 220px; flex-shrink: 0;">
-                                <div class="input-group input-group-sm shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="fas fa-search text-muted"></i>
-                                    </span>
-                                    <input type="text" id="searchInput" class="form-control form-control-sm border-start-0"
-                                        placeholder="Search products or services..." autocomplete="off">
-                                </div>
-                                <div id="searchResults" class="position-absolute w-100 z-3 mt-1 shadow d-none">
-                                    <div class="card border-0">
-                                        <div class="list-group list-group-flush" id="searchResultsList">
-                                            <div class="list-group-item text-muted py-3 text-center">
-                                                <i class="fas fa-search me-2"></i>Type to search products or services
-                                            </div>
+        <!-- Main Workspace Row -->
+        <div class="row g-2 pos-main-row flex-grow-1" style="min-height: 0; margin-top: 0;">
+            <!-- Left Column: Catalog & Grid Area -->
+            <div class="col-12 col-lg-8 col-xl-8 col-xxl-9 pos-catalog-column">
+                <div class="pos-catalog-card">
+                    <!-- Catalog Subheader: Search + Category Filter + Active Staff Filter Pill -->
+                    <div class="pos-catalog-header">
+                        <div class="pos-search-wrapper">
+                            <i class="fas fa-search pos-search-icon"></i>
+                            <input type="text" id="searchInput" class="pos-search-input"
+                                placeholder="Enter service name, price or duration..." autocomplete="off">
+                            <input type="hidden" id="gridFilterInput">
+                        </div>
+
+                        <select class="pos-category-select" id="categorySelect">
+                            <option value="">All categories</option>
+                            @if(isset($categories))
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+
+                        <!-- Active Stylist Filter Pill -->
+                        <div id="activeStaffFilterBadge" class="pos-active-stylist-badge d-none">
+                            <i class="fas fa-user-check me-1"></i>
+                            <span id="activeStaffFilterName">Staff</span>
+                            <button type="button" class="btn-close ms-2" id="clearActiveStaffFilter" style="font-size: 0.65rem;" title="Clear Barber Filter"></button>
+                        </div>
+                    </div>
+
+                    <!-- Catalog Content Body -->
+                    <div class="pos-catalog-body">
+                        <!-- Services Section (Default) -->
+                        <div class="grid-section" id="servicesGridSection">
+                            <div class="pos-items-grid">
+                                @foreach($services as $service)
+                                    @php
+                                        $mins = $service->duration ?? 30;
+                                        $durText = $mins >= 60 ? floor($mins/60).' hr'.($mins%60 > 0 ? ' '.($mins%60).' min' : '') : $mins.' min';
+                                        $staffIds = $service->staff ? $service->staff->pluck('id')->implode(',') : '';
+                                    @endphp
+                                    <div class="pos-item-card grid-item-wrapper"
+                                        data-type="service"
+                                        data-id="{{ $service->id }}"
+                                        data-name="{{ strtolower($service->name) }}"
+                                        data-display-name="{{ $service->name }}"
+                                        data-price="{{ $service->price }}"
+                                        data-duration="{{ $mins }}"
+                                        data-category-id="{{ $service->category_id ?? '' }}"
+                                        data-staff-ids="{{ $staffIds }}">
+                                        <div class="pos-item-title" title="{{ $service->name }}">
+                                            {{ $service->name }}
+                                        </div>
+                                        <div class="pos-item-footer">
+                                            <span class="pos-item-duration">{{ $durText }}</span>
+                                            <span class="pos-item-price">{{ format_currency($service->price) }}</span>
                                         </div>
                                     </div>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
 
-                    </div>
-                    <div class="card-body p-3 flex-grow-1 d-flex flex-column" style="overflow: hidden; min-height: 0;">
-                        @php
-                            $salon = auth()->user()->salon;
-                            $canProducts = $salon && ($salon->canUseFeature('Inventory Management') || $salon->canUseFeature('Products')) && \App\Helpers\ModuleHelper::inventoryEnabled();
-                            $canPackages = $salon && $salon->canUseFeature('Packages') && \App\Helpers\ModuleHelper::packagesEnabled();
-                            $canMemberships = $salon && $salon->canUseFeature('Memberships') && \App\Helpers\ModuleHelper::membershipsEnabled();
-                        @endphp
-
-                        <!-- Tabs & Live Filter Search Bar Row -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="d-flex flex-wrap gap-2" id="posActionButtons">
-                                <button class="btn btn-outline-primary active" data-form="services">
-                                    <i class="fas fa-scissors me-1"></i> Services
-                                </button>
-                                @if($canProducts)
-                                    <button class="btn btn-outline-success" data-form="products">
-                                        <i class="fas fa-box me-1"></i> Products
-                                    </button>
-                                @endif
-                                @if($canPackages)
-                                    <button class="btn btn-outline-info" data-form="packages">
-                                        <i class="fas fa-gift me-1"></i> Packages
-                                    </button>
-                                @endif
-                                @if($canMemberships)
-                                    <button class="btn btn-outline-secondary" data-form="memberships">
-                                        <i class="fas fa-star me-1"></i> Memberships
-                                    </button>
-                                @endif
-                            </div>
-
-                            <!-- Real-time Local grid item filter search bar -->
-                            <div class="position-relative" style="width: 220px;">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light border-end-0" style="padding: 0.25rem 0.5rem;">
-                                        <i class="fas fa-filter text-muted" style="font-size: 0.75rem;"></i>
-                                    </span>
-                                    <input type="text" id="gridFilterInput"
-                                        class="form-control form-control-sm border-start-0" placeholder="Filter items..."
-                                        autocomplete="off">
-                                </div>
+                        <!-- Professionals Tab Section -->
+                        <div class="grid-section d-none" id="professionalsGridSection">
+                            <div class="pos-professionals-grid">
+                                @foreach($staff as $staffMember)
+                                    @php
+                                        $avatarUrl = $staffMember->employee?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($staffMember->name).'&background=E2E8F0&color=334155';
+                                        $serviceCount = $staffMember->services ? $staffMember->services->count() : 0;
+                                    @endphp
+                                    <div class="pos-pro-card" data-staff-id="{{ $staffMember->id }}" data-staff-name="{{ $staffMember->name }}">
+                                        <img src="{{ $avatarUrl }}" alt="{{ $staffMember->name }}" class="pos-pro-avatar">
+                                        <div class="pos-pro-name">{{ $staffMember->name }}</div>
+                                        <div class="pos-pro-role">{{ $staffMember->employee?->position ?? 'Barber / Stylist' }}</div>
+                                        <div class="pos-pro-services-count">
+                                            <i class="fas fa-scissors me-1 text-primary"></i>{{ $serviceCount }} {{ Str::plural('Service', $serviceCount) }}
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2 btn-select-barber"
+                                            data-staff-id="{{ $staffMember->id }}" data-staff-name="{{ $staffMember->name }}">
+                                            <i class="fas fa-check me-1"></i>Select Barber
+                                        </button>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
 
-                        <div class="items-grid-container border rounded p-3 mb-3 bg-white">
-
-                            <!-- Services Grid Section -->
-                            <div class="grid-section" id="servicesGridSection">
+                        <!-- Appointments Tab Section -->
+                        <div class="grid-section d-none" id="appointmentsGridSection">
+                            @if(isset($todayBookings) && count($todayBookings) > 0)
                                 <div class="row g-2">
-                                    @foreach($services as $service)
-                                        <div class="col-12 col-sm-6 col-md-4 grid-item-wrapper"
-                                            data-name="{{ strtolower($service->name) }}">
-                                            <div class="item-card border rounded cursor-pointer transition-all h-100"
-                                                data-type="service" data-id="{{ $service->id }}"
-                                                data-name="{{ $service->name }}" data-price="{{ $service->price }}">
-                                                <div class="fw-bold text-dark text-truncate w-100" style="font-size: 0.825rem;"
-                                                    title="{{ $service->name }}">
-                                                    {{ $service->name }}
+                                    @foreach($todayBookings as $booking)
+                                        <div class="col-12 col-md-6">
+                                            <div class="pos-appointment-card p-3 border rounded-3 bg-white shadow-sm d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="text-center px-2 py-1 bg-light rounded border">
+                                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ \Carbon\Carbon::parse($booking->start_time)->format('h:i A') }}</div>
+                                                        <small class="text-muted" style="font-size: 0.7rem;">Today</small>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+                                                            {{ optional($booking->customer)->name ?? 'Walk-in' }}
+                                                        </div>
+                                                        <div class="text-muted small" style="font-size: 0.775rem;">
+                                                            <i class="fas fa-scissors me-1 text-primary"></i>{{ optional($booking->service)->name ?? 'Service' }}
+                                                            &bull; <i class="fas fa-user me-1 text-secondary"></i>{{ optional($booking->staff)->name ?? 'Staff' }}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="text-theme fw-bold text-xs mt-1">
-                                                    {{ format_currency($service->price) }}
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button type="button" class="btn btn-sm btn-primary btn-load-booking"
+                                                        data-booking-id="{{ $booking->id }}"
+                                                        data-customer-id="{{ $booking->customer_id }}"
+                                                        data-customer-name="{{ optional($booking->customer)->name }}"
+                                                        data-customer-phone="{{ optional($booking->customer)->phone }}"
+                                                        data-customer-email="{{ optional($booking->customer)->email }}"
+                                                        data-service-id="{{ $booking->service_id }}"
+                                                        data-service-name="{{ optional($booking->service)->name }}"
+                                                        data-service-price="{{ optional($booking->service)->price ?? 0 }}"
+                                                        data-staff-id="{{ $booking->staff_id }}">
+                                                        <i class="fas fa-plus me-1"></i>Load
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
-                            </div>
+                            @else
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-calendar-times fa-3x mb-2 opacity-25"></i>
+                                    <p class="mb-0">No active appointments scheduled for today.</p>
+                                </div>
+                            @endif
+                        </div>
 
-                            @if($canProducts)
+                        @if($canProducts)
                             <!-- Products Grid Section -->
                             <div class="grid-section d-none" id="productsGridSection">
-                                <div class="row g-2">
-                                    @foreach($products as $product)
-                                        <div class="col-12 col-sm-6 col-md-4 grid-item-wrapper"
-                                            data-name="{{ strtolower($product->name) }}">
-                                            <div class="item-card border rounded cursor-pointer transition-all h-100"
-                                                data-type="product" data-id="{{ $product->id }}"
-                                                data-name="{{ $product->name }}" data-price="{{ $product->selling_price }}">
-                                                <div class="fw-bold text-dark text-truncate w-100" style="font-size: 0.825rem;"
-                                                    title="{{ $product->name }}">
+                                @if($products->isEmpty())
+                                    <div class="pos-empty-section-msg">
+                                        <i class="fas fa-box fa-2x mb-2 opacity-25"></i>
+                                        <p class="mb-0 small text-muted">No products found.<br>Add products from <strong>Inventory</strong> to sell here.</p>
+                                    </div>
+                                @else
+                                    <div class="pos-items-grid">
+                                        @foreach($products as $product)
+                                            <div class="pos-item-card grid-item-wrapper"
+                                                data-type="product"
+                                                data-id="{{ $product->id }}"
+                                                data-name="{{ strtolower($product->name) }}"
+                                                data-display-name="{{ $product->name }}"
+                                                data-price="{{ $product->selling_price }}"
+                                                data-stock="{{ $product->quantity_in_stock }}">
+                                                <div class="pos-item-title" title="{{ $product->name }}">
                                                     {{ $product->name }}
                                                 </div>
-                                                <div class="text-emerald-800 fw-bold text-xs mt-1">
-                                                    {{ format_currency($product->selling_price) }}
+                                                <div class="pos-item-footer">
+                                                    <span class="pos-item-duration text-muted">
+                                                        <i class="fas fa-box me-1"></i>
+                                                        Qty: {{ (int) $product->quantity_in_stock }}
+                                                    </span>
+                                                    <span class="pos-item-price">{{ format_currency($product->selling_price) }}</span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
-                            @endif
+                        @endif
 
-                            @if($canPackages)
+                        @if($canPackages)
                             <!-- Packages Grid Section -->
                             <div class="grid-section d-none" id="packagesGridSection">
-                                <div class="row g-2">
-                                    @foreach($packages as $package)
-                                        <div class="col-12 col-sm-6 col-md-4 grid-item-wrapper"
-                                            data-name="{{ strtolower($package->name) }}">
-                                            <div class="item-card border rounded cursor-pointer transition-all h-100"
-                                                data-type="package" data-id="{{ $package->id }}"
-                                                data-name="{{ $package->name }}" data-price="{{ $package->price }}">
-                                                <div class="fw-bold text-dark text-truncate w-100" style="font-size: 0.825rem;"
-                                                    title="{{ $package->name }}">
+                                @if($packages->isEmpty())
+                                    <div class="pos-empty-section-msg">
+                                        <i class="fas fa-gift fa-2x mb-2 opacity-25"></i>
+                                        <p class="mb-0 small text-muted">No packages created yet.<br>Create packages from the <strong>Packages</strong> admin section.</p>
+                                    </div>
+                                @else
+                                    <div class="pos-items-grid">
+                                        @foreach($packages as $package)
+                                            @php
+                                                $pkgSavings = $package->savings ?? 0;
+                                            @endphp
+                                            <div class="pos-item-card grid-item-wrapper"
+                                                data-type="package"
+                                                data-id="{{ $package->id }}"
+                                                data-name="{{ strtolower($package->name) }}"
+                                                data-display-name="{{ $package->name }}"
+                                                data-price="{{ $package->price }}">
+                                                <div class="pos-item-title" title="{{ $package->name }}">
                                                     {{ $package->name }}
                                                 </div>
-                                                <div class="text-blue-800 fw-bold text-xs mt-1">
-                                                    {{ format_currency($package->price) }}
+                                                <div class="pos-item-footer">
+                                                    <span class="pos-item-duration text-muted">
+                                                        <i class="fas fa-gift me-1"></i>
+                                                        {{ $package->services->count() }} {{ Str::plural('Service', $package->services->count()) }}
+                                                        @if($pkgSavings > 0)
+                                                            <span class="badge bg-success ms-1" style="font-size:0.6rem;">Save {{ format_currency($pkgSavings) }}</span>
+                                                        @endif
+                                                    </span>
+                                                    <span class="pos-item-price">{{ format_currency($package->price) }}</span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
-                            @endif
+                        @endif
 
-                            @if($canMemberships)
+                        @if($canMemberships)
                             <!-- Memberships Grid Section -->
                             <div class="grid-section d-none" id="membershipsGridSection">
-                                <div class="row g-2">
-                                    @foreach($memberships as $membership)
-                                        @php
-                                            $membershipPrice = $membership->calculateTotalMembershipPrice();
-                                        @endphp
-                                        <div class="col-12 col-sm-6 col-md-4 grid-item-wrapper"
-                                            data-name="{{ strtolower($membership->name) }}">
-                                            <div class="item-card border rounded cursor-pointer transition-all h-100"
-                                                data-type="membership" data-id="{{ $membership->id }}"
-                                                data-name="{{ $membership->name }}" data-price="{{ $membershipPrice }}">
-                                                <div class="fw-bold text-dark text-truncate w-100" style="font-size: 0.825rem;"
-                                                    title="{{ $membership->name }}">
+                                @if($memberships->isEmpty())
+                                    <div class="pos-empty-section-msg">
+                                        <i class="fas fa-id-card fa-2x mb-2 opacity-25"></i>
+                                        <p class="mb-0 small text-muted">No memberships created yet.<br>Create memberships from the <strong>Memberships</strong> admin section.</p>
+                                    </div>
+                                @else
+                                    <div class="pos-items-grid">
+                                        @foreach($memberships as $membership)
+                                            @php
+                                                $membershipPrice = $membership->calculateTotalMembershipPrice();
+                                                $memSavings = $membership->savings ?? 0;
+                                            @endphp
+                                            <div class="pos-item-card grid-item-wrapper"
+                                                data-type="membership"
+                                                data-id="{{ $membership->id }}"
+                                                data-name="{{ strtolower($membership->name) }}"
+                                                data-display-name="{{ $membership->name }}"
+                                                data-price="{{ $membershipPrice }}">
+                                                <div class="pos-item-title" title="{{ $membership->name }}">
                                                     {{ $membership->name }}
                                                 </div>
-                                                <div class="text-purple-800 fw-bold text-xs mt-1">
-                                                    {{ format_currency($membershipPrice) }}
+                                                <div class="pos-item-footer">
+                                                    <span class="pos-item-duration text-muted">
+                                                        <i class="fas fa-star me-1"></i>
+                                                        {{ $membership->validity_value ?? '—' }} {{ $membership->validity_unit ?? '' }}
+                                                        @if($memSavings > 0)
+                                                            <span class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;">Save {{ format_currency($memSavings) }}</span>
+                                                        @endif
+                                                    </span>
+                                                    <span class="pos-item-price">{{ format_currency($membershipPrice) }}</span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
-                            @endif
-
-                        </div>
-
-                        <!-- Unified Cart Table -->
-                        <div class="table-responsive mt-2 border rounded shadow-sm"
-                            style="overflow-y: auto; flex: 1 1 0; min-height: 0;">
-                            <table class="table table-sm table-hover mb-0" id="unifiedCartTable">
-                                <thead class="table-light">
-                                    <tr class="text-uppercase small text-muted">
-                                        <th class="ps-3 py-2 fw-semibold">Item Details</th>
-                                        <th class="text-center py-2 fw-semibold">Barber</th>
-                                        <th class="text-center py-2 fw-semibold" style="width: 80px;">Qty</th>
-                                        <th class="text-end py-2 fw-semibold">Price</th>
-                                        <th class="text-end py-2 fw-semibold" style="width: 100px;">Disc</th>
-                                        <th class="text-end py-2 fw-semibold">Total</th>
-                                        <th class="text-center py-2 fw-semibold">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="unifiedCartBody">
-                                    <!-- Dynamic rows will be added here -->
-                                    <tr id="emptyCartRow">
-                                        <td colspan="7" class="text-center py-5 text-muted">
-                                            <i class="fas fa-shopping-cart fa-3x mb-3 opacity-25"></i>
-                                            <p class="mb-0">Your cart is empty. Add items to start billing.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column - Billing Summary -->
-            <div class="col-lg-4 pos-cart-column d-none d-lg-flex">
-                <div class="card border-0 shadow-sm"
-                    style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-                    <div class="card-header bg-white py-1">
-                        <h5 class="card-title mb-0" style="font-size: 0.95rem;">
-                            <i class="fas fa-receipt me-2"></i>Billing Summary
-                        </h5>
-                    </div>
-                    <div class="card-body p-2 flex-grow-1 overflow-y-auto">
-                        <!-- Customer Info -->
-                        <div class="mb-2">
-                            <div id="customerSearchSection">
-                                <label class="form-label fw-medium">Customer</label>
-                                <div class="position-relative">
-                                    <select class="form-select" id="customerSelect">
-                                        <option value="">Walk-in Customer</option>
-                                        @foreach($customers as $customer)
-                                            <option value="{{ $customer['id'] }}" data-name="{{ $customer['name'] }}"
-                                                data-phone="{{ $customer['phone'] }}" data-email="{{ $customer['email'] }}">
-                                                {{ $customer['text'] }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+            <!-- Right Column: "Your order" Panel -->
+            <div class="col-12 col-lg-4 col-xl-4 col-xxl-3 pos-cart-column d-none d-lg-flex">
+                <div class="pos-order-panel">
+                    <!-- Order Header -->
+                    <div class="pos-order-header">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="pos-order-title">
+                                <i class="fas fa-receipt text-primary me-1"></i>Your order
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.75rem; border-radius: 6px;" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                                <i class="fas fa-user-plus me-1"></i>New
+                            </button>
+                        </div>
+
+                        <!-- Customer Selection -->
+                        <div id="customerSearchSection" class="pos-customer-box">
+                            <div class="position-relative">
+                                <select class="form-select form-select-sm" id="customerSelect">
+                                    <option value="">Walk-in Customer</option>
+                                    @foreach($customers as $customer)
+                                        <option value="{{ $customer['id'] }}" data-name="{{ $customer['name'] }}"
+                                            data-phone="{{ $customer['phone'] }}" data-email="{{ $customer['email'] }}">
+                                            {{ $customer['text'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="customerId" value="">
+                        <input type="hidden" id="existingSaleId" value="">
+
+                        <!-- Customer Info Display Card (compact) -->
+                        <div id="customerDisplay" class="mt-1 px-2 py-1 bg-light rounded-2 border d-none">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.8rem;" id="customerName"></div>
+                                    <div class="text-muted" style="font-size: 0.675rem;" id="customerPhone"></div>
+                                    <div class="text-muted" style="font-size: 0.675rem;" id="customerEmail"></div>
+                                    <div id="membershipInfo" class="mt-1 d-none">
+                                        <span class="badge bg-success text-white" style="font-size: 0.6rem;">
+                                            <i class="fas fa-star me-1"></i><span id="membershipName"></span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <div class="mt-2 text-end">
-                                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
-                                        data-bs-target="#addCustomerModal">
-                                        <i class="fas fa-plus"></i> New Customer
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-danger py-0 px-1" id="clearCustomerBtn" style="font-size: 0.7rem; border-radius: 4px;" title="Clear Customer">
+                                        <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </div>
-                            <input type="hidden" id="customerId" value="">
-                            <input type="hidden" id="existingSaleId" value="">
-                            <div id="customerDisplay" class="mt-2 p-2 bg-light rounded d-none">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <strong id="customerName"></strong><br>
-                                        <small id="customerPhone"></small><br>
-                                        <small id="customerEmail" class="text-muted"></small>
-                                        <div id="membershipInfo" class="mt-1 d-none">
-                                            <small class="badge bg-success text-white">
-                                                <i class="fas fa-star me-1"></i>Membership: <span
-                                                    id="membershipName"></span>
-                                                <small id="membershipDates" class="ms-1"></small>
-                                            </small>
-                                        </div>
-                                        @if($canMemberships)
-                                        <div id="assignMembershipSection" class="mt-2 d-none">
-                                            <button class="btn btn-sm btn-outline-primary" id="assignMembershipBtn">
-                                                <i class="fas fa-plus me-1"></i>Assign Membership
-                                            </button>
-                                        </div>
-                                        @endif
-                                    </div>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-outline-secondary" id="manageMembershipBtn"
-                                            style="display: none;">
-                                            <i class="fas fa-edit me-1"></i>Manage
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" id="clearCustomerBtn">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-top pt-2">
-                            <div class=" row mb-1">
-                                <div class="col-8"><small class="text-muted">Subtotal</small></div>
-                                <div class="col-4 text-end"><span id="cartSubtotal" class="fw-medium">0.00</span></div>
-                            </div>
-
-                            <!-- Discount Row -->
-                            <div class="row mb-1 align-items-center">
-                                <div class="col-8">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-light border-end-0">
-                                            <i class="fas fa-tag text-muted"></i>
-                                        </span>
-                                        <input type="number" class="form-control border-start-0 border-end-0"
-                                            id="discountValue" placeholder="Discount" min="0" step="0.01">
-                                        <select class="form-select border-start-0 border-end-0" id="discountType"
-                                            style="max-width: 65px;">
-                                            <option value="fixed">$</option>
-                                            <option value="percent">%</option>
-                                        </select>
-                                        <button class="btn btn-outline-secondary" type="button" id="applyDiscount"
-                                            title="Apply Discount">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger d-none" type="button" id="clearDiscount"
-                                            title="Remove Discount">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="col-4 text-end">
-                                    <span id="cartDiscount" class="fw-medium text-danger">-0.00</span>
-                                </div>
-                            </div>
-                            <div class="row mb-1">
-                                <div class="col-8"><small class="text-muted">Tax
-                                        ({{ number_format($taxRate ?? 0, 2) + 0 }}%)</small></div>
-                                <div class="col-4 text-end"><span id="cartTax" class="fw-medium">0.00</span></div>
-                            </div>
-                            <hr class="my-1">
-                            <div class="row mb-1">
-                                <div class="col-8"><strong>Total</strong></div>
-                                <div class="col-4 text-end"><strong><span id="grandTotal"
-                                            class="text-primary">0.00</span></strong>
-                                </div>
-                            </div>
-
-                            <div class="row mb-1">
-                                <div class="col-8"><small class="text-muted">Payable</small></div>
-                                <div class="col-4 text-end"><span id="payableAmount" class="fw-medium">0.00</span></div>
-                            </div>
-                            <div class="row mb-1">
-                                <div class="col-8"><small class="text-muted">Balance Due</small></div>
-                                <div class="col-4 text-end"><span id="outstandingAmount"
-                                        class="fw-medium text-danger">0.00</span></div>
-                            </div>
-
-                            <!-- Tip -->
-                            <div class="row mb-1">
-                                <div class="col-6">
-                                    <label class="form-label small mb-0">Tip</label>
-                                    <input type="number" class="form-control form-control-sm py-0" style="height: 26px;"
-                                        id="tipAmount" value="0" min="0" step="0.01">
-                                </div>
-
-                                <!-- Payment Method Selection -->
-                                <div class="mb-2 mt-1">
-                                    <label class="form-label small fw-semibold mb-1">Payment Method</label>
-                                    <div class="row g-1">
-                                        @if($acceptCash ?? true)
-                                            <div class="col-6">
-                                                <input type="radio" class="btn-check" name="payment_method" id="cartPaymentCash"
-                                                    value="cash" autocomplete="off" checked>
-                                                <label class="btn btn-outline-success btn-sm w-100 py-1" for="cartPaymentCash">
-                                                    <i class="fas fa-money-bill-wave me-1"></i>Cash
-                                                </label>
-                                            </div>
-                                        @endif
-
-                                        @if($acceptCard ?? true)
-                                            <div class="col-6">
-                                                <input type="radio" class="btn-check" name="payment_method" id="cartPaymentCard"
-                                                    value="card" autocomplete="off">
-                                                <label class="btn btn-outline-primary btn-sm w-100 py-1" for="cartPaymentCard">
-                                                    <i class="fas fa-credit-card me-1"></i>Card
-                                                </label>
-                                            </div>
-                                        @endif
-
-                                        @if($acceptOnline ?? true)
-                                            <div class="col-6">
-                                                <input type="radio" class="btn-check" name="payment_method"
-                                                    id="cartPaymentOnline" value="online" autocomplete="off">
-                                                <label class="btn btn-outline-info btn-sm w-100 py-1" for="cartPaymentOnline">
-                                                    <i class="fas fa-globe me-1"></i>Online
-                                                </label>
-                                            </div>
-                                        @endif
-
-                                        <div class="col-6">
-                                            <input type="radio" class="btn-check" name="payment_method"
-                                                id="cartPaymentOther" value="other" autocomplete="off">
-                                            <label class="btn btn-outline-secondary btn-sm w-100 py-1"
-                                                for="cartPaymentOther">
-                                                <i class="fas fa-ellipsis-h me-1"></i>Other
-                                            </label>
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="radio" class="btn-check" name="payment_method"
-                                                id="cartPaymentMixed" value="mixed" autocomplete="off">
-                                            <label class="btn btn-outline-dark btn-sm w-100 py-1" for="cartPaymentMixed">
-                                                <i class="fas fa-columns me-1"></i>Split
-                                            </label>
-                                        </div>
-                                        <div class="col-6" style="display: none;">
-                                            <input type="radio" class="btn-check" name="payment_method"
-                                                id="cartPaymentPackage" value="package" autocomplete="off">
-                                            <label class="btn btn-outline-primary btn-sm w-100 py-1"
-                                                for="cartPaymentPackage">
-                                                <i class="fas fa-box-open me-1"></i>Package
-                                            </label>
-                                        </div>
-                                        <div class="col-12">
-                                            <input type="radio" class="btn-check" name="payment_method" id="cartPaymentNone"
-                                                value="none" autocomplete="off">
-                                            <label class="btn btn-outline-warning btn-sm w-100 py-1" for="cartPaymentNone">
-                                                <i class="fas fa-clock me-1"></i>Unpaid / Pay Later
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Payment Details (Visible for Cash) -->
-                            <div id="paymentDetailsSection">
-                                <div class="row mb-2">
-                                    <div class="col-6">
-                                        <label class="form-label small mb-0">Amount Received <span
-                                                class="text-danger">*</span></label>
-                                        <input type="number" class="form-control form-control-sm py-0" style="height: 26px;"
-                                            id="amountReceived" step="0.01" min="0">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small mb-0">Change</label>
-                                        <input type="text" class="form-control form-control-sm py-0" style="height: 26px;"
-                                            id="changeAmount" readonly value="0.00">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Split Payment Details (Visible for Split) -->
-                            <div id="splitPaymentSection" class="d-none">
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold mb-1">Split Amounts</label>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label small text-muted mb-0">Cash</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text py-0"><i
-                                                        class="fas fa-money-bill-wave"></i></span>
-                                                <input type="number" class="form-control split-input py-0"
-                                                    style="height: 26px;" id="splitCash" placeholder="0.00" min="0"
-                                                    step="0.01">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small text-muted mb-0">Card</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text py-0"><i
-                                                        class="fas fa-credit-card"></i></span>
-                                                <input type="number" class="form-control split-input py-0"
-                                                    style="height: 26px;" id="splitCard" placeholder="0.00" min="0"
-                                                    step="0.01">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small text-muted mb-0">Online</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text py-0"><i class="fas fa-globe"></i></span>
-                                                <input type="number" class="form-control split-input py-0"
-                                                    style="height: 26px;" id="splitOnline" placeholder="0.00" min="0"
-                                                    step="0.01">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small text-muted mb-0">Other</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text py-0"><i class="fas fa-ellipsis-h"></i></span>
-                                                <input type="number" class="form-control split-input py-0"
-                                                    style="height: 26px;" id="splitOther" placeholder="0.00" min="0"
-                                                    step="0.01">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-1 text-end">
-                                        <small class="text-muted">Remaining: <span id="splitRemaining"
-                                                class="fw-bold text-danger">0.00</span></small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Hidden inputs for cash/card amounts -->
-                            <input type="hidden" id="cashAmount" value="0">
-                            <input type="hidden" id="cardAmount" value="0">
-                            <input type="hidden" id="onlineAmount" value="0">
-                            <input type="hidden" id="otherAmount" value="0">
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-white border-top p-2">
-                    <!-- Checkout Button -->
-                    <button class="btn btn-success w-100" id="checkoutBtn" disabled data-bs-toggle="modal"
-                        data-bs-target="#saleConfirmationModal">
-                        <i class="fas fa-check-circle me-2"></i>Process Sale
-                    </button>
-                    <button class="btn btn-outline-secondary w-100 mt-2" id="resetBtn">
-                        <i class="fas fa-undo me-2"></i>Reset
-                    </button>
+
+                    <!-- Scrollable Order Items Container (Grouped by Barber) -->
+                    <div class="pos-order-items-scroll flex-grow-1" id="orderItemsScrollArea">
+                        <div id="orderCardsContainer">
+                            <!-- Dynamic Barber and Item cards rendered here by JS -->
+                        </div>
+
+                        <!-- Empty Placeholder (Modern Clean State) -->
+                        <div id="emptyOrderPlaceholder" class="pos-empty-order-placeholder">
+                            <div class="pos-empty-order-icon">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Your cart is empty</div>
+                            <div class="small text-muted" style="max-width: 240px; font-size: 0.775rem;">
+                                Tap any service, barber, or product on the left to start this order.
+                            </div>
+                        </div>
+
+                        <!-- Hidden Table kept for full compatibility with existing POS calculations -->
+                        <div class="d-none">
+                            <table id="unifiedCartTable">
+                                <tbody id="unifiedCartBody">
+                                    <tr id="emptyCartRow"><td colspan="7"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary & Checkout Footer -->
+                    <div class="pos-order-summary">
+                        <!-- Subtotal Line -->
+                        <div class="pos-summary-line">
+                            <span class="text-lbl">Subtotal</span>
+                            <span class="text-val" id="cartSubtotal">0.00</span>
+                        </div>
+
+                        <!-- Discount Line (Sleek Inline Design - Always Visible) -->
+                        <div class="pos-summary-line" id="cartDiscountRow">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="text-lbl">Discount</span>
+                                <div class="pos-discount-control">
+                                    <input type="number" id="discountValue" placeholder="0" min="0" step="0.01">
+                                    <select id="discountType">
+                                        <option value="percent">%</option>
+                                        <option value="fixed">{{ $currencySymbol ?? '₹' }}</option>
+                                    </select>
+                                    <button type="button" id="applyDiscount" class="d-none"></button>
+                                    <button type="button" id="clearDiscount" class="d-none disc-clear-btn" title="Clear Discount"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <span class="fw-bold text-danger" id="cartDiscount">-0.00</span>
+                        </div>
+
+                        <!-- Tax Line -->
+                        <div class="pos-summary-line">
+                            <span class="text-lbl">Tax ({{ number_format($taxRate ?? 0, 2) + 0 }}%)</span>
+                            <span class="text-val" id="cartTax">0.00</span>
+                        </div>
+
+                        <!-- Paid Already Row (when editing unpaid sale) -->
+                        <div class="pos-summary-line d-none" id="cartPaidRow" style="color: #065f46;">
+                            <span class="fw-medium">Paid Already</span>
+                            <span class="fw-bold text-success">0.00</span>
+                        </div>
+
+                        <!-- Tip Selector Pills (Reasonable percentages & compact single-row layout) -->
+                        @if($tipEnabled ?? true)
+                            <div class="pos-tip-wrapper d-flex align-items-center justify-content-between gap-1 py-1 px-2 my-1">
+                                <span class="text-lbl fw-semibold" style="font-size: 0.7rem; white-space: nowrap;">Tip</span>
+                                <div class="pos-tip-quick-group flex-grow-1">
+                                    <button type="button" class="pos-tip-pill active" data-pct="0">No Tip</button>
+                                    <button type="button" class="pos-tip-pill" data-pct="5">5%</button>
+                                    <button type="button" class="pos-tip-pill" data-pct="10">10%</button>
+                                    <button type="button" class="pos-tip-pill" data-pct="15">15%</button>
+                                    <button type="button" class="pos-tip-pill" data-pct="custom">Custom</button>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 bg-white border rounded px-1 flex-shrink-0" style="height: 22px;">
+                                    <span class="text-muted" style="font-size: 0.65rem;">{{ $currencySymbol ?? '₹' }}</span>
+                                    <input type="number" class="border-0 bg-transparent text-end fw-bold text-dark" style="width: 36px; font-size: 0.72rem; outline: none; padding: 0;" id="tipAmount" value="0" min="0" step="0.01">
+                                </div>
+                            </div>
+                        @else
+                            <input type="hidden" id="tipAmount" value="0">
+                        @endif
+
+                        <!-- Grand Total Banner (Prominent display matching reference UI) -->
+                        <div class="pos-total-banner py-1 mb-1">
+                            <div>
+                                <div class="pos-order-total-lbl" style="font-size: 0.8rem;">Total Price</div>
+                                <div class="pos-order-total-sub" style="font-size: 0.62rem;">Including all taxes & fees</div>
+                            </div>
+                            <div class="pos-order-total-amount" id="grandTotal" style="font-size: 1.25rem;">0.00</div>
+                        </div>
+
+                        <div class="d-none">
+                            <span id="payableAmount">0.00</span>
+                            <span id="outstandingAmount">0.00</span>
+                        </div>
+
+                        <!-- Touch Payment Device Tiles (Matching the 3 tiles in reference UI) -->
+                        <div class="payment-device-tiles">
+                            <div class="payment-device-tile active" id="tilePaymentCash" data-method="cash">
+                                <i class="fas fa-mobile-alt text-primary"></i>
+                                <span>This device</span>
+                            </div>
+                            <div class="payment-device-tile" id="tilePaymentCard" data-method="card">
+                                <i class="fas fa-credit-card text-muted"></i>
+                                <span>Frontdesk</span>
+                            </div>
+                            <div class="payment-device-tile" id="tilePaymentMore" data-method="mixed">
+                                <i class="fas fa-ellipsis-h text-muted"></i>
+                                <span>See all</span>
+                            </div>
+                        </div>
+
+                        <!-- Radio inputs maintained for seamless controller compatibility -->
+                        <div class="d-none">
+                            <input type="radio" name="payment_method" id="cartPaymentCash" value="cash" checked>
+                            <input type="radio" name="payment_method" id="cartPaymentCard" value="card">
+                            <input type="radio" name="payment_method" id="cartPaymentOnline" value="online">
+                            <input type="radio" name="payment_method" id="cartPaymentOther" value="other">
+                            <input type="radio" name="payment_method" id="cartPaymentMixed" value="mixed">
+                            <input type="radio" name="payment_method" id="cartPaymentPackage" value="package">
+                            <input type="radio" name="payment_method" id="cartPaymentNone" value="none">
+                        </div>
+
+                        <!-- Cash Payment Inputs (Compact Inline) -->
+                        <div id="paymentDetailsSection" class="mb-1 py-1 px-2 bg-light rounded-2 border">
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center gap-1 flex-grow-1">
+                                    <span class="text-muted fw-semibold" style="font-size: 0.7rem; white-space: nowrap;">Received:</span>
+                                    <input type="number" class="form-control form-control-sm py-0 px-1 bg-white" style="height: 24px; font-size: 0.75rem;"
+                                        id="amountReceived" step="0.01" min="0">
+                                </div>
+                                <div class="d-flex align-items-center gap-1 flex-grow-1">
+                                    <span class="text-muted fw-semibold" style="font-size: 0.7rem; white-space: nowrap;">Change:</span>
+                                    <input type="text" class="form-control form-control-sm py-0 px-1 bg-white fw-bold text-success" style="height: 24px; font-size: 0.75rem;"
+                                        id="changeAmount" readonly value="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Split Payment Details (Visible for Split) -->
+                        <div id="splitPaymentSection" class="d-none mb-2 p-2 bg-light rounded-3 border">
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <label class="small text-muted mb-0" style="font-size: 0.7rem;">Cash</label>
+                                    <input type="number" class="form-control form-control-sm split-input py-0" style="height: 24px;" id="splitCash" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted mb-0" style="font-size: 0.7rem;">Card</label>
+                                    <input type="number" class="form-control form-control-sm split-input py-0" style="height: 24px;" id="splitCard" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted mb-0" style="font-size: 0.7rem;">Online</label>
+                                    <input type="number" class="form-control form-control-sm split-input py-0" style="height: 24px;" id="splitOnline" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted mb-0" style="font-size: 0.7rem;">Other</label>
+                                    <input type="number" class="form-control form-control-sm split-input py-0" style="height: 24px;" id="splitOther" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="mt-1 text-end">
+                                <small class="text-muted" style="font-size: 0.725rem;">Remaining: <span id="splitRemaining" class="fw-bold text-danger">0.00</span></small>
+                            </div>
+                        </div>
+
+                        <!-- Hidden fields -->
+                        <input type="hidden" id="cashAmount" value="0">
+                        <input type="hidden" id="cardAmount" value="0">
+                        <input type="hidden" id="onlineAmount" value="0">
+                        <input type="hidden" id="otherAmount" value="0">
+
+                        <!-- Primary CTA Charge Button -->
+                        <button type="button" class="pos-charge-btn" id="checkoutBtn" disabled data-bs-toggle="modal" data-bs-target="#saleConfirmationModal">
+                            <i class="fas fa-bolt"></i>
+                            <span id="chargeBtnText">Charge 0.00</span>
+                        </button>
+
+                        <button type="button" class="btn btn-sm btn-link text-muted w-100 mt-1 py-0 text-decoration-none" id="resetBtn" style="font-size: 0.72rem;">
+                            <i class="fas fa-undo me-1"></i>Reset Order
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1163,13 +615,13 @@
 
     <!-- Mobile Floating Sticky Checkout Bar (Visible only on mobile when items in cart) -->
     <div id="posMobileStickyBar" class="pos-mobile-sticky-checkout" style="display: none;">
-        <button type="button" class="btn btn-warning w-100 py-2 px-3 d-flex justify-content-between align-items-center fw-bold rounded-4 shadow-lg" id="btnStickyCheckout" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: none; font-size: 0.95rem;">
+        <button type="button" class="btn btn-primary w-100 py-2 px-3 d-flex justify-content-between align-items-center fw-bold rounded-3 shadow-lg" id="btnStickyCheckout" style="background: #0D6EFD; color: #fff; border: none; font-size: 0.95rem;">
             <span class="d-flex align-items-center">
-                <span class="badge bg-white text-dark rounded-pill me-2 px-2 py-1" id="mobileStickyItemCount">0 Items</span>
-                <span id="mobileStickyTotal">$0.00</span>
+                <span class="badge bg-white text-primary rounded-pill me-2 px-2 py-1" id="mobileStickyItemCount">0 Items</span>
+                <span id="mobileStickyTotal">0.00</span>
             </span>
             <span>
-                <span>Checkout</span>
+                <span>View Order</span>
                 <i class="fas fa-arrow-right ms-2"></i>
             </span>
         </button>
@@ -1389,10 +841,7 @@
                 const selectors = [
                     '#discountValue', '#discountType', '#applyDiscount', '#tipAmount',
                     '#amountReceived', '.split-input', '#checkoutBtn',
-                    '#addServiceBtn', '#addProductBtn', '#addPackageBtn', '#addMembershipBtn',
-                    '#clearCustomerBtn', '.qty-input', '.disc-input',
-                    '#servicesDropdown', '#addProductSelect', '#addPackageSelect', '#addMembershipSelect',
-                    '#addStaffSelect', '#addProductStaffSelect', '#addPackageStaffSelect'
+                    '#clearCustomerBtn', '.qty-input', '.disc-input'
                 ];
 
                 selectors.forEach(selector => {
@@ -1406,10 +855,10 @@
                 $('#customerSelect').prop('disabled', disabled);
 
                 if (disabled) {
-                    $('#checkoutBtn').attr('title', 'This sale is already paid').addClass('btn-secondary').removeClass('btn-success').html('<i class="fas fa-check-circle me-2"></i>Already Paid');
+                    $('#checkoutBtn').attr('title', 'This sale is already paid').prop('disabled', true).html('<i class="fas fa-check-circle me-2"></i>Already Paid');
                     showAlert('This sale is already paid and cannot be modified.', 'info');
                 } else {
-                    $('#checkoutBtn').removeAttr('title').addClass('btn-success').removeClass('btn-secondary').html('<i class="fas fa-check-circle me-2"></i>Process Sale');
+                    $('#checkoutBtn').removeAttr('title').prop('disabled', false).html('<i class="fas fa-bolt me-2"></i><span id="chargeBtnText">Charge</span>');
                 }
 
                 isPaidSale = !!disabled;
@@ -1442,13 +891,23 @@
                     if (discountType === 'percent') {
                         discountPercent = Math.min(discountValue, 100); // Cap at 100%
                         discountAmount = 0;
-                        $('#discountValue').val(discountPercent.toFixed(2));
+                        if (discountValue > 0) {
+                            $('#discountValue').val(discountPercent);
+                        }
                     } else {
                         discountAmount = Math.max(0, discountValue);
                         discountPercent = 0;
                     }
 
                     updateCart();
+                });
+
+                // Auto-apply on type change or input
+                $('#discountType').on('change', function () {
+                    $('#applyDiscount').click();
+                });
+                $('#discountValue').on('input', function () {
+                    $('#applyDiscount').click();
                 });
 
                 // Also apply discount when pressing Enter in the discount input
@@ -1534,25 +993,100 @@
                     }
                 });
 
-                // POS Action Buttons Toggling (Switch visible Grid section)
-                $('#posActionButtons button').on('click', function () {
-                    const type = $(this).data('form');
+                // Active Barber filter state
+                let activeStaffId = null;
+                let activeStaffName = null;
 
-                    // Update buttons active state
-                    $('#posActionButtons button').removeClass('active');
+                // Navigation Pill Tabs Switching
+                $('.pos-nav-pill').on('click', function () {
+                    const tab = $(this).data('tab');
+                    $('.pos-nav-pill').removeClass('active');
                     $(this).addClass('active');
 
-                    // Show selected grid section, hide others
+                    // Show selected section, hide others
                     $('.grid-section').addClass('d-none');
-                    $(`#${type}GridSection`).removeClass('d-none');
+                    $(`#${tab}GridSection`).removeClass('d-none');
                 });
 
+                // Barber Selection from Professionals tab
+                $(document).on('click', '.btn-select-barber, .pos-pro-card', function (e) {
+                    e.stopPropagation();
+                    const staffId = $(this).data('staff-id');
+                    const staffName = $(this).data('staff-name');
+                    activeStaffId = staffId;
+                    activeStaffName = staffName;
+
+                    $('#activeStaffFilterName').text(staffName);
+                    $('#activeStaffFilterBadge').removeClass('d-none');
+
+                    // Switch view to Services
+                    $('#tabPillServices').click();
+
+                    // Filter services to this stylist
+                    filterCatalogItems();
+                    showAlert(`Filtering services for ${staffName}`, 'info');
+                });
+
+                // Clear Active Barber filter
+                $('#clearActiveStaffFilter').on('click', function (e) {
+                    e.stopPropagation();
+                    activeStaffId = null;
+                    activeStaffName = null;
+                    $('#activeStaffFilterBadge').addClass('d-none');
+                    filterCatalogItems();
+                });
+
+                // Category filter dropdown
+                $('#categorySelect').on('change', function () {
+                    filterCatalogItems();
+                });
+
+                // Search input filter
+                $('#searchInput, #gridFilterInput').on('input', function () {
+                    filterCatalogItems();
+                });
+
+                function filterCatalogItems() {
+                    const selectedCat = $('#categorySelect').val();
+                    const query = ($('#searchInput').val() || '').toLowerCase().trim();
+
+                    // Filter Services
+                    $('#servicesGridSection .pos-item-card').each(function () {
+                        const $card = $(this);
+                        const cardCatId = String($card.data('category-id') || '');
+                        const staffIds = String($card.data('staff-ids') || '').split(',');
+                        const name = String($card.data('name') || '').toLowerCase();
+                        const price = String($card.data('price') || '');
+                        const dur = String($card.data('duration') || '');
+
+                        let matchCat = !selectedCat || (cardCatId === String(selectedCat));
+                        let matchStaff = !activeStaffId || staffIds.includes(String(activeStaffId));
+                        let matchQuery = !query || name.includes(query) || price.includes(query) || dur.includes(query);
+
+                        if (matchCat && matchStaff && matchQuery) {
+                            $card.removeClass('d-none');
+                        } else {
+                            $card.addClass('d-none');
+                        }
+                    });
+
+                    // Filter other tabs
+                    $('.grid-section:not(#servicesGridSection) .pos-item-card, .pos-pro-card').each(function () {
+                        const name = ($(this).data('name') || $(this).data('staff-name') || '').toLowerCase();
+                        if (!query || name.includes(query)) {
+                            $(this).removeClass('d-none');
+                        } else {
+                            $(this).addClass('d-none');
+                        }
+                    });
+                }
+
                 // Click item card to add to cart directly
-                $(document).on('click', '.item-card', function () {
+                $(document).on('click', '.pos-item-card, .item-card', function () {
                     const $card = $(this);
                     const type = $card.data('type');
                     const id = $card.data('id');
-                    const name = $card.data('name');
+                    const name = $card.data('display-name') || $card.data('name');
                     const price = parseFloat($card.data('price') || 0);
 
                     // Check if this service can be covered by a package balance
@@ -1580,24 +1114,103 @@
                         name: name,
                         price: finalPrice,
                         quantity: 1,
-                        staff_id: (typeof isEmployeeUser !== 'undefined' && isEmployeeUser) ? currentUserId : null,
+                        staff_id: (typeof isEmployeeUser !== 'undefined' && isEmployeeUser) ? currentUserId : (activeStaffId || null),
                         discount_amount: 0,
                         notes: notes,
                         package_id: packageId
                     });
                 });
 
-                // Live search grid filter
-                $('#gridFilterInput').on('input', function () {
-                    const query = $(this).val().toLowerCase().trim();
-                    $('.grid-item-wrapper').each(function () {
-                        const name = $(this).data('name');
-                        if (name.includes(query)) {
-                            $(this).removeClass('d-none');
+                // Load Booking into Order
+                $(document).on('click', '.btn-load-booking', function () {
+                    const btn = $(this);
+                    const customerId = btn.data('customer-id');
+                    const customerName = btn.data('customer-name');
+                    const customerPhone = btn.data('customer-phone');
+                    const customerEmail = btn.data('customer-email');
+                    const serviceId = btn.data('service-id');
+                    const serviceName = btn.data('service-name');
+                    const servicePrice = parseFloat(btn.data('service-price') || 0);
+                    const staffId = btn.data('staff-id');
+
+                    if (customerId) {
+                        selectCustomer(customerId, customerName, customerPhone, customerEmail);
+                        $('#customerSelect').val(customerId).trigger('change');
+                    }
+
+                    if (serviceId) {
+                        addToCart({
+                            type: 'service',
+                            id: serviceId,
+                            name: serviceName,
+                            price: servicePrice,
+                            quantity: 1,
+                            staff_id: staffId || activeStaffId || null,
+                            discount_amount: 0,
+                            notes: 'Loaded from Booking'
+                        });
+                    }
+
+                    $('#tabPillServices').click();
+                    showAlert('Booking loaded into order!', 'success');
+                });
+
+                // Quick Tip Percentage Pills
+                $('.pos-tip-pill').on('click', function () {
+                    $('.pos-tip-pill').removeClass('active');
+                    $(this).addClass('active');
+
+                    const pct = $(this).data('pct');
+                    if (pct === 'custom') {
+                        $('#tipAmount').focus().select();
+                    } else {
+                        const percentVal = parseFloat(pct) || 0;
+                        const calculatedTip = Math.max(0, netSubtotal * (percentVal / 100));
+                        $('#tipAmount').val(calculatedTip.toFixed(2));
+                        tipAmount = calculatedTip;
+                        updateCart(false);
+                    }
+                });
+
+                // Touch Payment Device Tiles
+                $('.payment-device-tile').on('click', function () {
+                    const method = $(this).data('method');
+                    $('.payment-device-tile').removeClass('active');
+                    $(this).addClass('active');
+
+                    if (method === 'cash') {
+                        $('#cartPaymentCash').prop('checked', true).trigger('change');
+                        $('#paymentDetailsSection').slideDown(150);
+                    } else if (method === 'card') {
+                        $('#cartPaymentCard').prop('checked', true).trigger('change');
+                        $('#paymentDetailsSection').slideUp(150);
+                    } else {
+                        $('#cartPaymentMixed').prop('checked', true).trigger('change');
+                        $('#paymentDetailsSection').slideUp(150);
+                    }
+                });
+
+                // Quantity controls in Order List
+                $(document).on('click', '.btn-qty-minus', function (e) {
+                    e.stopPropagation();
+                    const index = $(this).data('index');
+                    if (cart[index]) {
+                        if (cart[index].quantity > 1) {
+                            cart[index].quantity -= 1;
                         } else {
-                            $(this).addClass('d-none');
+                            cart.splice(index, 1);
                         }
-                    });
+                        updateCart();
+                    }
+                });
+
+                $(document).on('click', '.btn-qty-plus', function (e) {
+                    e.stopPropagation();
+                    const index = $(this).data('index');
+                    if (cart[index]) {
+                        cart[index].quantity += 1;
+                        updateCart();
+                    }
                 });
 
                 // Handle customer selection
@@ -2401,14 +2014,162 @@
                     $body.empty();
 
                     if (cart.length === 0) {
+                        $('.pos-item-card').removeClass('selected');
+                        $('#emptyOrderPlaceholder').removeClass('d-none').show();
+                        $('#orderCardsContainer').addClass('d-none').hide().empty();
+
                         $body.append(`<tr id="emptyCartRow">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td colspan="7" class="text-center py-5 text-muted">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <i class="fas fa-shopping-cart fa-3x mb-3 opacity-25"></i>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <p class="mb-0">Your cart is empty. Add items to start billing.</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                        <                                            /tr>`);
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-shopping-cart fa-3x mb-3 opacity-25"></i>
+                                <p class="mb-0">Your cart is empty. Add items to start billing.</p>
+                            </td>
+                        </tr>`);
                         return;
                     }
+
+                    // Highlight selected cards in catalog
+                    $('.pos-item-card').removeClass('selected');
+                    cart.forEach(item => {
+                        $(`.pos-item-card[data-type="${item.type}"][data-id="${item.id}"]`).addClass('selected');
+                    });
+
+                    // Render modern Barber-grouped order cards
+                    $('#emptyOrderPlaceholder').addClass('d-none').hide();
+                    const $cardsContainer = $('#orderCardsContainer');
+                    $cardsContainer.removeClass('d-none').show().empty();
+
+                    const groups = {};
+
+                    cart.forEach((item, index) => {
+                        const parentPackage = cart.find(i => i.type === 'package' && i.id == item.package_id);
+                        if (item.package_id && item.price === 0 && parentPackage) return;
+
+                        let groupKey = 'unassigned';
+                        let groupTitle = 'General Services';
+                        let groupAvatar = null;
+                        let groupSubtitle = 'Walk-in / Unassigned Stylist';
+
+                        if (item.type === 'product') {
+                            groupKey = 'products';
+                            groupTitle = 'Products & Retail';
+                            groupSubtitle = 'In-store inventory';
+                        } else if (item.type === 'package' || item.type === 'membership') {
+                            groupKey = 'packages';
+                            groupTitle = 'Packages & Memberships';
+                            groupSubtitle = 'Prepaid / Subscriptions';
+                        } else if (item.staff_id) {
+                            const staffObj = typeof staffList !== 'undefined' ? staffList.find(s => String(s.id) === String(item.staff_id)) : null;
+                            groupKey = 'staff_' + item.staff_id;
+                            groupTitle = staffObj ? staffObj.name : 'Barber #' + item.staff_id;
+                            groupAvatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(groupTitle) + '&background=DBEAFE&color=1D4ED8';
+                            groupSubtitle = 'Assigned Stylist';
+                        }
+
+                        if (!groups[groupKey]) {
+                            groups[groupKey] = {
+                                key: groupKey,
+                                title: groupTitle,
+                                subtitle: groupSubtitle,
+                                avatar: groupAvatar,
+                                staffId: item.staff_id,
+                                items: [],
+                                subtotal: 0
+                            };
+                        }
+
+                        const lineTotal = (item.price * item.quantity) - (item.discount_amount || 0);
+                        groups[groupKey].items.push({ item: item, index: index, lineTotal: lineTotal });
+                        groups[groupKey].subtotal += lineTotal;
+                    });
+
+                    Object.values(groups).forEach(group => {
+                        let itemsHtml = '';
+                        group.items.forEach(({ item, index, lineTotal }) => {
+                            let staffSelectOptions = '';
+                            if (item.type === 'service') {
+                                let filtered = typeof staffList !== 'undefined' ? staffList : [];
+                                staffSelectOptions = `<select class="pos-barber-select staff-select" data-index="${index}" ${isPaidSale ? 'disabled' : ''}>
+                                    <option value="">👤 Stylist</option>
+                                    ${filtered.map(s => `<option value="${s.id}" ${s.id == item.staff_id ? 'selected' : ''}>✂️ ${s.name}</option>`).join('')}
+                                </select>`;
+                            }
+
+                            // Per-item discount display
+                            const itemDiscAmt  = item.discount_amount  || 0;
+                            const itemDiscPct  = item.discount_percent  || 0;
+                            let discDisplayHtml = '';
+                            if (!isPaidSale) {
+                                const discVal = itemDiscPct > 0 ? itemDiscPct : itemDiscAmt;
+                                const discType = itemDiscPct > 0 ? 'percent' : 'fixed';
+                                discDisplayHtml = `
+                                    <div class="pos-item-disc-control" title="Item Discount (${discType === 'percent' ? '%' : currencySymbol})">
+                                        <input type="number" class="disc-input"
+                                            data-index="${index}"
+                                            data-disc-type="${discType}"
+                                            value="${discVal > 0 ? discVal : ''}"
+                                            placeholder="Disc" min="0" step="0.01">
+                                        <select class="disc-type-select" data-index="${index}">
+                                            <option value="fixed"  ${discType === 'fixed'   ? 'selected' : ''}>${currencySymbol}</option>
+                                            <option value="percent"${discType === 'percent' ? 'selected' : ''}>%</option>
+                                        </select>
+                                        ${itemDiscAmt > 0 || itemDiscPct > 0 ? `<button type="button" class="disc-clear-btn btn-clear-item-discount" data-index="${index}" title="Clear"><i class="fas fa-times"></i></button>` : ''}
+                                    </div>`;
+                            } else if (itemDiscAmt > 0) {
+                                discDisplayHtml = `<span style="font-size:0.65rem;color:#DC2626;">-${formatCurrency(itemDiscAmt)}</span>`;
+                            }
+
+                            itemsHtml += `
+                                <div class="pos-order-item-row py-1 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="pos-order-item-title fw-semibold text-dark text-truncate me-2" style="font-size: 0.8rem; max-width: 160px;" title="${item.name}">${item.name}</div>
+                                        <div class="pos-order-item-price fw-bold text-dark text-nowrap" style="font-size: 0.825rem;">${formatCurrency(lineTotal)}</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1 gap-1">
+                                        <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width: 0;">
+                                            ${staffSelectOptions}
+                                            ${discDisplayHtml}
+                                            ${item.notes ? `<div class="text-muted extra-small" style="font-size: 0.65rem;">${item.notes}</div>` : ''}
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                                            <button type="button" class="qty-btn btn-qty-minus" data-index="${index}" ${isPaidSale ? 'disabled' : ''}>-</button>
+                                            <span class="px-1 fw-bold text-dark" style="font-size: 0.775rem;">${item.quantity}</span>
+                                            <button type="button" class="qty-btn btn-qty-plus" data-index="${index}" ${isPaidSale ? 'disabled' : ''}>+</button>
+                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1 btn-remove" data-index="${index}" ${isPaidSale ? 'disabled' : ''} title="Remove">
+                                                <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        const avatarMarkup = group.avatar
+                            ? `<img src="${group.avatar}" alt="${group.title}" class="pos-barber-avatar">`
+                            : `<div class="pos-barber-avatar bg-light d-flex align-items-center justify-content-center text-primary"><i class="fas ${group.key === 'products' ? 'fa-box' : 'fa-cut'}"></i></div>`;
+
+                        const hasGroupHeader = group.key !== 'unassigned';
+                        const groupCardHtml = `
+                            <div class="pos-barber-order-card mb-1">
+                                ${hasGroupHeader ? `
+                                    <div class="pos-barber-header py-1 px-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            ${avatarMarkup}
+                                            <div>
+                                                <div class="pos-barber-name" style="font-size: 0.775rem;">${group.title}</div>
+                                                <div class="pos-barber-subtitle" style="font-size: 0.625rem;">${group.subtitle}</div>
+                                            </div>
+                                        </div>
+                                        <div class="pos-barber-total" style="font-size: 0.8rem;">${formatCurrency(group.subtotal)}</div>
+                                    </div>
+                                ` : ''}
+                                <div class="pos-order-items-list px-2 py-0">
+                                    ${itemsHtml}
+                                </div>
+                            </div>
+                        `;
+
+                        $cardsContainer.append(groupCardHtml);
+                    });
 
                     cart.forEach((item, index) => {
                         // Check if this is a sub-item of a package that is ALSO in the cart
@@ -2651,12 +2412,12 @@
                     $('#cartSubtotal').text(formatCurrency(grossSubtotal));
                     $('#cartTax').text(formatCurrency(tax));
 
-                    // Only show discount if there is one
+                    // Always show discount row so user can enter a discount
+                    $('#cartDiscountRow').show();
                     if (totalDiscount > 0) {
-                        $('#cartDiscount').parent().show();
-                        $('#cartDiscount').text('-' + formatCurrency(totalDiscount));
+                        $('#cartDiscount').text('-' + formatCurrency(totalDiscount)).removeClass('text-muted').addClass('text-danger').show();
                     } else {
-                        $('#cartDiscount').parent().hide();
+                        $('#cartDiscount').text(formatCurrency(0)).removeClass('text-danger').addClass('text-muted').show();
                     }
 
                     // Show/hide clear discount button (cross mark)
@@ -2670,17 +2431,8 @@
 
                     // Handle Display of Previous Paid Row
                     if (previousPaidAmount > 0) {
-                        if ($('#cartPaidRow').length === 0) {
-                            $('#payableAmount').closest('.row').before(`
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <div class="row mb-2" id="cartPaidRow" style="color: #065f46;">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <div class="col-8"><small>Paid Already</small></div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <div class="col-4 text-end"><span class="fw-medium">${formatCurrency(previousPaidAmount)}</span></div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             `);
-                        } else {
-                            $('#cartPaidRow').find('span').text(formatCurrency(previousPaidAmount));
-                            $('#cartPaidRow').show();
-                        }
+                        $('#cartPaidRow').find('span').text(formatCurrency(previousPaidAmount));
+                        $('#cartPaidRow').show();
                     } else {
                         $('#cartPaidRow').hide();
                     }
@@ -2790,9 +2542,9 @@
 
                     if (isEffectivelyPaid) {
                         isCheckoutDisabled = true;
-                        $('#checkoutBtn').html('<i class="fas fa-check-circle me-2"></i>Already Paid').addClass('btn-secondary').removeClass('btn-success');
+                        $('#checkoutBtn').html('<i class="fas fa-check-circle me-2"></i><span id="chargeBtnText">Already Paid</span>').addClass('btn-secondary').removeClass('btn-success');
                     } else {
-                        $('#checkoutBtn').html('<i class="fas fa-check-circle me-2"></i>Process Sale').addClass('btn-success').removeClass('btn-secondary');
+                        $('#checkoutBtn').html('<i class="fas fa-bolt me-2"></i><span id="chargeBtnText">Charge ' + formatCurrency(Math.max(0, payable)) + '</span>').addClass('btn-success').removeClass('btn-secondary');
 
                         if (method === 'cash') {
                             const received = parseFloat($('#amountReceived').val()) || 0;
@@ -2855,7 +2607,7 @@
                     const index = $(this).data('index');
                     if (index >= 0 && index < cart.length) {
                         cart[index].staff_id = $(this).val() || null;
-
+                        updateCart(true);
                     }
                 });
 
@@ -2895,29 +2647,46 @@
 
                 // Generic removal logic is handled by .btn-remove above
 
-                // Handle discount input change
-                $(document).on('input', '.disc-input', function () {
-                    const index = $(this).data('index');
-                    const $row = $(this).closest('tr');
-                    if (index >= 0 && index < cart.length) {
-                        const newDisc = parseFloat($(this).val()) || 0;
-                        cart[index].discount_amount = newDisc;
-                        // Recalculate totals
-                        const baseTotal = cart[index].quantity * cart[index].price;
-                        cart[index].total = baseTotal - newDisc;
-
-                        // Update row total display
-                        $row.find('td:eq(5)').text(formatCurrency(cart[index].total));
-
-                        updateCart(false); // Don't re-render table
+                // Helper: apply item discount based on type (fixed $ or percent %)
+                function applyItemDiscount(index, discValue, discType) {
+                    if (index < 0 || index >= cart.length) return;
+                    const item = cart[index];
+                    const baseTotal = item.quantity * item.price;
+                    if (discType === 'percent') {
+                        const pct = Math.min(parseFloat(discValue) || 0, 100);
+                        item.discount_percent  = pct;
+                        item.discount_amount   = parseFloat((baseTotal * pct / 100).toFixed(2));
+                    } else {
+                        item.discount_percent  = 0;
+                        item.discount_amount   = Math.min(parseFloat(discValue) || 0, baseTotal);
                     }
+                    item.total = baseTotal - item.discount_amount;
+                    updateCart(false);
+                }
+
+                // Handle per-item discount value change
+                $(document).on('input', '.disc-input', function () {
+                    const index    = parseInt($(this).data('index'));
+                    const $wrapper = $(this).closest('.pos-item-disc-control');
+                    const discType = $wrapper.find('.disc-type-select').val() || $(this).data('disc-type') || 'fixed';
+                    applyItemDiscount(index, $(this).val(), discType);
+                });
+
+                // Handle per-item discount type change (% ↔ ₹)
+                $(document).on('change', '.disc-type-select', function () {
+                    const index    = parseInt($(this).data('index'));
+                    const $wrapper = $(this).closest('.pos-item-disc-control');
+                    const discType = $(this).val();
+                    const discVal  = $wrapper.find('.disc-input').val();
+                    applyItemDiscount(index, discVal, discType);
                 });
 
                 // Handle clearing item discount
                 $(document).on('click', '.btn-clear-item-discount', function () {
-                    const index = $(this).data('index');
+                    const index = parseInt($(this).data('index'));
                     if (index >= 0 && index < cart.length) {
-                        cart[index].discount_amount = 0;
+                        cart[index].discount_amount  = 0;
+                        cart[index].discount_percent = 0;
                         updateCart(true); // Re-render needed to refresh input values
                     }
                 });
@@ -2952,14 +2721,13 @@
                 // Handle tip amount input
                 $('#tipAmount').on('input', function () {
                     tipAmount = parseFloat($(this).val()) || 0;
-                    // Show/hide tip staff section
+                    $('.pos-tip-pill').removeClass('active');
                     if (tipAmount > 0) {
-                        $('#tipStaffSection').show();
+                        $('.pos-tip-pill[data-pct="custom"]').addClass('active');
                     } else {
-                        $('#tipStaffSection').hide();
-                        $('#tipStaffSelect').val('');
+                        $('.pos-tip-pill[data-pct="0"]').addClass('active');
                     }
-                    updateCart();
+                    updateCart(false);
                 });
 
                 // Handle cash amount input
@@ -3767,10 +3535,12 @@
                     $(this).addClass('active');
                     $('#mobileTabCart').removeClass('active');
                     $('.pos-catalog-column').removeClass('d-none');
-                    $('.pos-cart-column').addClass('d-none d-lg-flex');
+                    $('.pos-cart-column').addClass('d-none');
+                    $('body').removeClass('mobile-view-cart');
                     if (cart.length > 0) {
                         $('#posMobileStickyBar').fadeIn(150);
                     }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
 
                 $('#mobileTabCart').on('click', function () {
@@ -3778,14 +3548,13 @@
                     $('#mobileTabCatalog').removeClass('active');
                     $('.pos-catalog-column').addClass('d-none');
                     $('.pos-cart-column').removeClass('d-none');
+                    $('body').addClass('mobile-view-cart');
                     $('#posMobileStickyBar').fadeOut(150);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
 
                 $('#btnStickyCheckout').on('click', function () {
                     $('#mobileTabCart').trigger('click');
-                    $('html, body').animate({
-                        scrollTop: $('.pos-cart-column').offset() ? $('.pos-cart-column').offset().top - 65 : 0
-                    }, 200);
                 });
 
                 // Helper function to format currency
@@ -4070,6 +3839,9 @@
                 } else {
                     $('#paymentDetailsSection').hide();
                 }
+
+                // Initial Cart & UI calculation on page load
+                updateCart(true);
 
             });
 
