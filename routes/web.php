@@ -63,9 +63,10 @@ Route::get('/contact', function () {
 })->name('contact');
 
 // SaaS Registration (Rate limited to prevent abuse)
-Route::middleware(['throttle:10,1'])->group(function () {
+Route::middleware(['throttle:60,1'])->group(function () {
     Route::get('/register-salon', [App\Http\Controllers\SaaS\RegisterController::class, 'showRegistrationForm'])->name('saas.register');
     Route::post('/register-salon', [App\Http\Controllers\SaaS\RegisterController::class, 'register'])->name('saas.register.store');
+    Route::post('/register-salon/check-availability', [App\Http\Controllers\SaaS\RegisterController::class, 'checkAvailability'])->name('saas.register.check-availability');
 });
 
 Route::get('/pending-approval', [App\Http\Controllers\SaaS\RegisterController::class, 'pendingApproval'])
@@ -249,8 +250,8 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
             Route::get('/{employee}/bookings', [EmployeeController::class, 'bookings'])->name('bookings');
         });
 
-        // Role Hierarchy
-        Route::get('/roles/hierarchy', [RoleController::class, 'getHierarchy'])->name('roles.hierarchy');
+        // Role Hierarchy route removed — RoleController@getHierarchy was never implemented.
+        // See BUG-01 in SECURITY_AUDIT_AND_CODE_REVIEW.md
     });
 
 // Global Authenticated Routes

@@ -260,6 +260,10 @@ class RoleController extends Controller
 
             $role->syncPermissions($permissionNames);
 
+            // Clear permission cache so users with this new role get fresh permissions immediately
+            cache()->forget('spatie.permission.cache');
+            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
             DB::commit();
 
             return response()->json([

@@ -78,11 +78,32 @@ class TenantPermissionRegistrar extends PermissionRegistrar
 
             $permissionClass = $this->getPermissionClass();
             $this->permissions = $this->cache->remember($this->getCacheKey(), $this->cacheExpirationTime, function () use ($permissionClass) {
-                return $permissionClass::with('roles')->get();
+                // SEC-ROLE-01 FIX: load roles with their status so we can filter
+                // inactive (disabled) roles out of permission resolution.
+                return $permissionClass::with(['roles' => function ($q) {
+                    // Load all roles but mark each with status so callers can filter
+                    $q->select(['roles.id', 'roles.name', 'roles.guard_name', 'roles.status']);
+                }])->get();
             });
         }
 
         $permissions = clone $this->permissions;
+
+        // SEC-ROLE-01: Strip permissions whose ONLY granting roles are inactive.
+        // A permission is still granted if at least one active role carries it.
+        // Global/system roles (super_admin, salon_admin) always have status = true
+        // so they are unaffected.
+        $permissions = $permissions->filter(function ($permission) {
+            $roles = $permission->roles ?? collect();
+            if ($roles->isEmpty()) {
+                // No roles: direct permission — keep
+                return true;
+            }
+            // Keep permission if at least one role that carries it is active (status != false)
+            return $roles->contains(function ($role) {
+                return (bool) ($role->status ?? true);
+            });
+        })->values();
 
         foreach ($params as $key => $value) {
             $permissions = $permissions->where($key, $value);

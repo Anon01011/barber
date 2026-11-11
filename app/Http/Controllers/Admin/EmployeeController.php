@@ -110,6 +110,15 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employees.index')->with('success', 'Employee created successfully.');
     }
 
+    /**
+     * Show the specified employee — redirects to the edit view (single-page pattern).
+     * Required to prevent BUG-01b: route admin.employees.show was registered but no method existed.
+     */
+    public function show(Employee $employee)
+    {
+        return redirect()->route('admin.employees.edit', $employee);
+    }
+
     public function edit(Employee $employee)
     {
         $salons = Salon::all();

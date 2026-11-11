@@ -156,6 +156,16 @@ class AppointmentController extends Controller
         return view('customer.appointments.create', compact('services'));
     }
 
+    /**
+     * Calendar view for customer appointments.
+     * Fixes BUG-01e: route customer.appointments.calendar had no method.
+     * Shows the same appointment list view in calendar layout.
+     */
+    public function calendar(Request $request)
+    {
+        return $this->index($request);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -254,8 +264,10 @@ class AppointmentController extends Controller
 
     public function show(Booking $booking)
     {
-        if ($booking->customer_id !== Auth::user()->customer->id) {
-            abort(403);
+        // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
+        $customer = Auth::user()->customer;
+        if (!$customer || $booking->customer_id !== $customer->id) {
+            abort(403, 'Unauthorized action.');
         }
 
         $booking->load(['service', 'staff']);
@@ -267,7 +279,9 @@ class AppointmentController extends Controller
 
     public function destroy(Booking $booking)
     {
-        if ($booking->customer_id !== auth()->user()->customer->id) {
+        // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
+        $customer = auth()->user()->customer;
+        if (!$customer || $booking->customer_id !== $customer->id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -476,8 +490,9 @@ class AppointmentController extends Controller
      */
     public function reschedule(Request $request, Booking $booking)
     {
-        // Check ownership
-        if ($booking->customer_id !== auth()->user()->customer->id) {
+        // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
+        $customer = auth()->user()->customer;
+        if (!$customer || $booking->customer_id !== $customer->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

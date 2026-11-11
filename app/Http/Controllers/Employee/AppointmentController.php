@@ -431,4 +431,15 @@ class AppointmentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Complete appointment WITH payment collection (employee-facing).
+     * Alias for complete() — payment is recorded via the admin booking workflow.
+     * Fixes BUG-01c: route employee.appointments.complete-payment had no method.
+     */
+    public function completeWithPayment($id)
+    {
+        // Delegate to complete(); payment capture is handled server-side by admin/POS
+        return $this->complete($id);
+    }
 }

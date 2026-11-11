@@ -93,18 +93,25 @@
 
         /* Mobile Segmented Switcher & Touch Responsive Styles */
         @media (max-width: 991.98px) {
+            body, body.pos-body {
+                overflow-x: hidden !important;
+            }
             .pos-terminal-container {
                 height: auto !important;
                 min-height: calc(100vh - 60px) !important;
                 overflow: visible !important;
                 padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
             }
 
             .pos-main-row {
                 height: auto !important;
                 min-height: auto !important;
                 overflow: visible !important;
+                overflow-x: hidden !important;
                 flex: none !important;
+                width: 100% !important;
             }
 
             .pos-main-row .col-lg-8,
@@ -112,6 +119,9 @@
                 height: auto !important;
                 flex: none !important;
                 width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
             }
 
             .pos-main-row .col-lg-8 > .card,
@@ -121,12 +131,21 @@
                 overflow: visible !important;
                 flex: none !important;
                 margin-bottom: 1rem;
+                max-width: 100% !important;
             }
 
             .pos-cart {
                 height: auto !important;
                 max-height: 350px !important;
             }
+
+            /* Show catalog by default, hide cart */
+            .pos-catalog-column { display: block !important; }
+            .pos-cart-column    { display: none !important; }
+
+            /* When cart tab active */
+            body.mobile-view-cart .pos-catalog-column { display: none !important; }
+            body.mobile-view-cart .pos-cart-column    { display: block !important; }
 
             .pos-mobile-segment {
                 display: flex !important;
@@ -166,6 +185,8 @@
                 bottom: calc(64px + env(safe-area-inset-bottom, 0px));
                 z-index: 1040;
                 animation: slideUp 0.3s ease-out;
+                max-width: calc(100vw - 24px);
+                box-sizing: border-box;
             }
 
             @keyframes slideUp {
@@ -530,7 +551,7 @@
         </div>
 
         <!-- Right Column - Billing Summary -->
-        <div class="col-lg-4 pos-cart-column d-none d-lg-flex">
+        <div class="col-lg-4 pos-cart-column">
             <div class="card border-0 shadow-sm" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="card-header bg-white py-1">
                     <h5 class="card-title mb-0" style="font-size: 0.95rem;">
@@ -3306,8 +3327,7 @@
                 $('#mobileTabCatalog').on('click', function () {
                     $(this).addClass('active');
                     $('#mobileTabCart').removeClass('active');
-                    $('.pos-catalog-column').removeClass('d-none');
-                    $('.pos-cart-column').addClass('d-none d-lg-flex');
+                    $('body').removeClass('mobile-view-cart');
                     if (cart.length > 0) {
                         $('#posMobileStickyBar').fadeIn(150);
                     }
@@ -3316,8 +3336,7 @@
                 $('#mobileTabCart').on('click', function () {
                     $(this).addClass('active');
                     $('#mobileTabCatalog').removeClass('active');
-                    $('.pos-catalog-column').addClass('d-none');
-                    $('.pos-cart-column').removeClass('d-none');
+                    $('body').addClass('mobile-view-cart');
                     $('#posMobileStickyBar').fadeOut(150);
                 });
 

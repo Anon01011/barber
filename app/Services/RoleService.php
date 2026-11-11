@@ -145,7 +145,7 @@ class RoleService
         }
 
         return Role::where('level', '<=', $userRole->level)
-            ->where('id', '!=', $user->id) // Prevent self-assignment
+            ->where('id', '!=', $userRole->id) // Prevent user from assigning their own highest role
             ->orderBy('level', 'desc')
             ->orderBy('name')
             ->get();

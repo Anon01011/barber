@@ -1,0 +1,257 @@
+/**
+ * SaaS Salon Registration Styles
+ * Clean, modern light-mode validation & UI styles
+ */
+
+/* Validation Input Borders and Backgrounds */
+.reg-input-error,
+.reg-input-error:focus {
+    border: 2px solid #ef4444 !important;
+    background-color: #fef2f2 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.reg-input-success,
+.reg-input-success:focus {
+    border: 2px solid #10b981 !important;
+    background-color: #f0fdf4 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Feedback Messages */
+.reg-feedback-msg {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    transition: all 0.15s ease-in-out;
+}
+
+.reg-error-msg {
+    color: #ef4444 !important;
+}
+
+.reg-success-msg {
+    color: #10b981 !important;
+}
+
+/* Ensure validation feedback and criteria hide properly without breaking responsive Tailwind classes */
+.reg-feedback-msg.hidden,
+.reg-error-msg.hidden,
+.reg-success-msg.hidden,
+#password_criteria.hidden,
+#salon_slug_hint.hidden {
+    display: none !important;
+}
+
+/* Password Field Wrapper & Toggle Button */
+.password-field-wrapper {
+    position: relative !important;
+    width: 100% !important;
+}
+
+.password-field-wrapper input {
+    padding-right: 48px !important;
+}
+
+.password-toggle-btn {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 20 !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 6px !important;
+    color: #64748b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    outline: none !important;
+    border-radius: 6px !important;
+    transition: color 0.15s ease, background-color 0.15s ease !important;
+}
+
+.password-toggle-btn:hover {
+    color: #334155 !important;
+    background-color: #f1f5f9 !important;
+}
+
+/* Password Requirements Strip */
+.pwd-rule-item {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    font-size: 0.725rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    transition: all 0.15s ease !important;
+}
+
+.pwd-rule-item.is-valid {
+    color: #059669 !important;
+    font-weight: 600 !important;
+}
+
+.pwd-rule-item.is-invalid {
+    color: #ef4444 !important;
+    font-weight: 600 !important;
+}
+
+.pwd-rule-badge {
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    background-color: #e2e8f0 !important;
+    color: #64748b !important;
+    flex-shrink: 0 !important;
+    transition: all 0.15s ease !important;
+}
+
+.pwd-rule-item.is-valid .pwd-rule-badge {
+    background-color: #d1fae5 !important;
+    color: #059669 !important;
+}
+
+.pwd-rule-item.is-invalid .pwd-rule-badge {
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
+/* Base Typography */
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+}
+
+.brand-sidebar-panel {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.gradient-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.92) 0%, rgba(124, 58, 237, 0.88) 100%);
+    z-index: 1;
+}
+
+/* Plan Selection Cards */
+.plan-option.selected {
+    border-color: #7c3aed;
+    background-color: #f5f3ff;
+    box-shadow: 0 0 0 2px #7c3aed;
+}
+
+.plan-option:hover {
+    border-color: #7c3aed;
+    transform: translateY(-2px);
+}
+
+/* Business Type Selection Cards */
+.business-type-option {
+    border: 2px solid #e2e8f0;
+}
+
+.business-type-option.selected {
+    border-color: #7c3aed;
+    background-color: #f5f3ff;
+    box-shadow: 0 4px 12px -2px rgba(124, 58, 237, 0.15);
+}
+
+.business-type-option#option_barber.selected {
+    border-color: #d97706;
+    background-color: #fffbeb;
+    box-shadow: 0 4px 12px -2px rgba(217, 119, 6, 0.15);
+}
+
+.business-type-option#option_both.selected {
+    border-color: #4f46e5;
+    background-color: #eef2ff;
+    box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.15);
+}
+
+.business-type-option.selected .indicator-dot {
+    border-color: #7c3aed;
+}
+
+.business-type-option#option_barber.selected .indicator-dot {
+    border-color: #d97706;
+}
+
+.business-type-option#option_both.selected .indicator-dot {
+    border-color: #4f46e5;
+}
+
+.business-type-option.selected .indicator-dot-inner {
+    display: block;
+}
+
+.business-type-option:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* Progress Modal Styles */
+.progress-modal-content {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.step-item.active {
+    opacity: 1;
+    transform: translateX(10px);
+}
+
+.step-item.completed .step-icon {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+/* Log Container */
+.log-container {
+    font-family: 'Fira Code', monospace;
+}
+
+.log-entry {
+    animation: fadeInLog 0.2s forwards;
+}
+
+@keyframes fadeInLog {
+    to {
+        opacity: 1;
+    }
+}
+
+/* International Tel Input Overrides */
+.iti {
+    width: 100%;
+}
+
+.iti__flag-container {
+    z-index: 2;
+}
+
+.iti__selected-flag {
+    padding: 0 8px 0 12px;
+}
+
+.iti--separate-dial-code .iti__selected-dial-code {
+    margin-left: 6px;
+    color: #495057;
+}
+

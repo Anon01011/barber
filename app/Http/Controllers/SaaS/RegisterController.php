@@ -414,4 +414,68 @@ class RegisterController extends Controller
             'status' => 'pending'
         ]);
     }
+
+    /**
+     * Check real-time availability of email, phone, or salon URL slug.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string|in:email,phone,salon_slug',
+            'value' => 'required|string|max:255',
+        ]);
+
+        $type = $request->input('type');
+        $value = trim($request->input('value', ''));
+
+        switch ($type) {
+            case 'email':
+                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    return response()->json([
+                        'available' => false,
+                        'message' => 'Please enter a valid email address.'
+                    ]);
+                }
+                $exists = User::where('email', $value)->exists();
+                return response()->json([
+                    'available' => !$exists,
+                    'message' => $exists ? 'This email address is already registered.' : 'Email is available.'
+                ]);
+
+            case 'phone':
+                $cleanPhone = function_exists('normalize_phone') ? \normalize_phone($value) : preg_replace('/[^\d+]/', '', $value);
+                $exists = User::where('phone', $cleanPhone)
+                    ->orWhere('phone', $value)
+                    ->exists();
+                return response()->json([
+                    'available' => !$exists,
+                    'message' => $exists ? 'This phone number is already registered.' : 'Phone number is available.'
+                ]);
+
+            case 'salon_slug':
+                $slug = Str::slug($value);
+                if (strlen($slug) < 2) {
+                    return response()->json([
+                        'available' => false,
+                        'message' => 'Salon URL must be at least 2 characters.'
+                    ]);
+                }
+                $reserved = ['admin', 'super-admin', 'dashboard', 'login', 'register', 'api', 'pos', 'customer', 'employee', 'staff'];
+                if (in_array(strtolower($slug), $reserved)) {
+                    return response()->json([
+                        'available' => false,
+                        'message' => 'This URL address is reserved. Please choose another.'
+                    ]);
+                }
+                $exists = Salon::where('slug', $slug)->exists();
+                return response()->json([
+                    'available' => !$exists,
+                    'slug' => $slug,
+                    'message' => $exists ? 'This salon URL is already taken.' : 'Salon URL is available.'
+                ]);
+
+            default:
+                return response()->json(['available' => false, 'message' => 'Invalid check type.'], 400);
+        }
+    }
 }

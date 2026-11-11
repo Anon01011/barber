@@ -919,21 +919,26 @@ body.has-impersonation-banner .main-content {
     body .main-content {
         height: auto !important;
         overflow: visible !important;
-        padding: 4px 6px 75px 6px !important; /* clearance for bottom mobile navigation */
+        /* Bottom padding clears the fixed mobile nav (≈56px) + sticky checkout bar (≈56px) */
+        padding: 4px 0 130px 0 !important;
         margin-top: var(--header-height, 56px) !important;
+        box-sizing: border-box !important;
+        max-width: 100vw !important;
     }
     .pos-terminal-container {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
-        padding: 0 !important;
+        padding: 0 4px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     .pos-main-row {
         display: block !important;
-        flex-wrap: wrap !important;
         height: auto !important;
         margin: 0 !important;
         width: 100% !important;
+        overflow-x: hidden !important;
     }
     .pos-catalog-column,
     .pos-cart-column {
@@ -943,6 +948,8 @@ body.has-impersonation-banner .main-content {
         flex: none !important;
         height: auto !important;
         padding: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
     /* By default on mobile, show Catalog only, hide Cart */
@@ -963,22 +970,41 @@ body.has-impersonation-banner .main-content {
 
     /* Natural scrolling for catalog and order panel on mobile */
     .pos-catalog-card {
+        display: block !important;
         height: auto !important;
-        min-height: auto !important;
+        min-height: 200px !important;
         overflow: visible !important;
         border-radius: 8px !important;
+        max-width: 100% !important;
+        background: #FFFFFF !important;
     }
     .pos-catalog-body {
+        display: block !important;
+        flex: none !important;
         height: auto !important;
+        min-height: 150px !important;
         max-height: none !important;
         overflow: visible !important;
         padding: 8px 6px !important;
+    }
+    .grid-section {
+        display: block !important;
+        width: 100% !important;
+    }
+    .grid-section.d-none {
+        display: none !important;
     }
     .pos-order-panel {
         height: auto !important;
         min-height: auto !important;
         overflow: visible !important;
         border-radius: 8px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .pos-order-header {
+        max-width: 100% !important;
+        overflow: hidden !important;
     }
     .pos-order-items-scroll {
         height: auto !important;
@@ -987,12 +1013,46 @@ body.has-impersonation-banner .main-content {
         overflow: visible !important;
         flex: none !important;
         padding: 6px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     .pos-order-summary {
         overflow: visible !important;
         max-height: none !important;
         flex: none !important;
         padding: 8px 6px 20px 6px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    /* Prevent customer search/select from overflowing */
+    .pos-customer-box {
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    .pos-customer-box .select2-container,
+    .pos-customer-box .form-select {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+    /* Order item rows — prevent horizontal overflow */
+    .pos-order-item-row,
+    .pos-order-item-title {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        word-break: break-word !important;
+    }
+    /* Staff select dropdowns in cart — constrain width */
+    .staff-select,
+    select.form-select-sm {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+    /* Tip / discount row wrapping */
+    .pos-tip-row,
+    .pos-discount-control {
+        flex-wrap: wrap !important;
+        max-width: 100% !important;
     }
     .pos-items-grid {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -1016,6 +1076,12 @@ body.has-impersonation-banner .main-content {
         left: 8px !important;
         right: 8px !important;
         z-index: 1040 !important;
+        max-width: calc(100vw - 16px) !important;
+        box-sizing: border-box !important;
+    }
+    /* Ensure charge/pay button is full width on mobile */
+    .pos-charge-btn {
+        width: 100% !important;
     }
 }
 
@@ -1031,6 +1097,26 @@ body.has-impersonation-banner .main-content {
     }
     .pos-order-total-amount {
         font-size: 1.15rem !important;
+    }
+    /* Tighter header on tiny screens — allow wrapping */
+    .pos-terminal-container > div:first-child {
+        gap: 4px !important;
+    }
+    /* Received/Change row: stack vertically on tiny screens */
+    .pos-received-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+    /* Tip buttons: smaller on tiny screens */
+    .pos-tip-btn {
+        padding: 2px 6px !important;
+        font-size: 0.7rem !important;
+    }
+    /* Staff select inside cart items — full width on tiny screens */
+    .pos-order-item-row .staff-select {
+        width: 100% !important;
+        min-width: 0 !important;
     }
 }
 

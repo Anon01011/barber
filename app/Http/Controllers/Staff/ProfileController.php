@@ -43,4 +43,14 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Profile updated successfully.');
     }
+
+    /**
+     * Account self-deletion for staff is not supported.
+     * This stub prevents BUG-01d (route employee.profile.destroy had no method).
+     * Staff accounts can only be deactivated by an admin.
+     */
+    public function destroy(Request $request)
+    {
+        return back()->with('error', 'Staff accounts cannot be deleted from the profile page. Please contact your salon administrator.');
+    }
 }
