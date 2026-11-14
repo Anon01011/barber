@@ -200,11 +200,28 @@ class CustomerPhoneHandler {
 
         this.phoneInputs.forEach(phoneData => {
             if (phoneData.input.closest('form') === formElement) {
+                const rawVal = (phoneData.input.value || '').trim();
+                const isRequired = phoneData.input.hasAttribute('required') || phoneData.input.required;
+
+                if (!rawVal) {
+                    if (!isRequired) {
+                        phoneData.input.value = '';
+                        phoneData.input.classList.remove('is-invalid');
+                        return;
+                    }
+                }
+
                 if (!this.validatePhoneNumber(phoneData.iti, phoneData.input)) {
                     isValid = false;
                 } else {
                     // Update input with full international number for backend
-                    phoneData.input.value = phoneData.iti.getNumber();
+                    const fullNumber = phoneData.iti.getNumber();
+                    // Ensure we don't send only a dial code (e.g. "+974") if input was actually empty
+                    if (rawVal && fullNumber) {
+                        phoneData.input.value = fullNumber;
+                    } else if (!isRequired) {
+                        phoneData.input.value = '';
+                    }
                 }
             }
         });

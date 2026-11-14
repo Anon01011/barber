@@ -183,11 +183,11 @@
                 <label class="form-label small fw-bold text-muted mb-1">Email <span class="text-danger">*</span></label>
                 <input type="email" name="email" id="create_email" class="form-control" placeholder="Enter email address">
             </div>
-            <label class="form-label small fw-bold text-muted mb-1">Phone <span class="text-danger">*</span></label>
+            <label class="form-label small fw-bold text-muted mb-1">Phone</label>
             <div class="input-group">
 
                 <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror"
-                    placeholder="Mobile number" required value="{{ old('phone') }}">
+                    placeholder="Mobile number" value="{{ old('phone') }}">
                 <input type="hidden" name="country_code" value="+974">
             </div>
             @error('phone')
@@ -298,10 +298,10 @@
                 <label class="form-label small fw-bold text-muted mb-1">Email <span class="text-danger">*</span></label>
                 <input type="email" name="email" id="edit_email" class="form-control">
             </div>
-            <label class="form-label small fw-bold text-muted mb-1">Phone <span class="text-danger">*</span></label>
+            <label class="form-label small fw-bold text-muted mb-1">Phone</label>
             <div class="input-group">
                 <input type="text" name="phone" id="edit_phone" class="form-control @error('phone') is-invalid @enderror"
-                    placeholder="Mobile number" required>
+                    placeholder="Mobile number">
                 <input type="hidden" name="country_code" value="+974">
             </div>
             @error('phone')

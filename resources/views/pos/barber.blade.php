@@ -697,20 +697,26 @@
                             <span id="outstandingAmount">0.00</span>
                         </div>
 
-                        <!-- Touch Payment Device Tiles (Matching the 3 tiles in reference UI) -->
+                        <!-- Payment Method Selection Tiles -->
                         <div class="payment-device-tiles">
-                            <div class="payment-device-tile active" id="tilePaymentCash" data-method="cash">
-                                <i class="fas fa-mobile-alt text-primary"></i>
-                                <span>This device</span>
+                            <div class="payment-device-tile active" id="tilePaymentCash" data-method="cash" title="Cash">
+                                <i class="fas fa-money-bill-wave text-success"></i>
+                                <span>Cash</span>
                             </div>
-                            <div class="payment-device-tile" id="tilePaymentCard" data-method="card">
-                                <i class="fas fa-credit-card text-muted"></i>
-                                <span>Frontdesk</span>
+                            <div class="payment-device-tile" id="tilePaymentCard" data-method="card" title="Card">
+                                <i class="fas fa-credit-card text-primary"></i>
+                                <span>Card</span>
                             </div>
-                            <div class="payment-device-tile" id="tilePaymentMore" data-method="mixed">
-                                <i class="fas fa-ellipsis-h text-muted"></i>
-                                <span>See all</span>
+                            <div class="payment-device-tile" id="tilePaymentSplit" data-method="mixed" title="Split Payment">
+                                <i class="fas fa-columns text-dark"></i>
+                                <span>Split</span>
                             </div>
+                            @if($acceptOnline ?? true)
+                            <div class="payment-device-tile" id="tilePaymentOnline" data-method="online" title="Online Payment">
+                                <i class="fas fa-globe text-info"></i>
+                                <span>Online</span>
+                            </div>
+                            @endif
                         </div>
 
                         <!-- Radio inputs maintained for seamless controller compatibility -->
@@ -1345,7 +1351,7 @@
                     }
                 });
 
-                // Touch Payment Device Tiles
+                // Payment Method Tiles (Cash, Card, Split, Online)
                 $('.payment-device-tile').on('click', function () {
                     const method = $(this).data('method');
                     $('.payment-device-tile').removeClass('active');
@@ -1353,13 +1359,12 @@
 
                     if (method === 'cash') {
                         $('#cartPaymentCash').prop('checked', true).trigger('change');
-                        $('#paymentDetailsSection').slideDown(150);
                     } else if (method === 'card') {
                         $('#cartPaymentCard').prop('checked', true).trigger('change');
-                        $('#paymentDetailsSection').slideUp(150);
-                    } else {
+                    } else if (method === 'mixed') {
                         $('#cartPaymentMixed').prop('checked', true).trigger('change');
-                        $('#paymentDetailsSection').slideUp(150);
+                    } else if (method === 'online') {
+                        $('#cartPaymentOnline').prop('checked', true).trigger('change');
                     }
                 });
 
@@ -2684,6 +2689,11 @@
                         const totalEntered = cash + card + online + other;
                         const remaining = Math.max(0, payable - totalEntered);
                         $('#splitRemaining').text(formatCurrency(remaining));
+                    if (remaining <= 0.009) {
+                        $('#splitRemaining').removeClass('text-danger').addClass('text-success');
+                    } else {
+                        $('#splitRemaining').removeClass('text-success').addClass('text-danger');
+                    }
                     } else {
                         $('#cashAmount').val(0);
                         $('#cardAmount').val(0);
@@ -3090,6 +3100,10 @@
                     const payable = parseFloat($('#payableAmount').text().replace(/[^0-9.-]+/g, "")) || 0;
                     const received = parseFloat($('#amountReceived').val()) || 0;
 
+                    // Sync active payment tile
+                    $('.payment-device-tile').removeClass('active');
+                    $(`.payment-device-tile[data-method="${method}"]`).addClass('active');
+
                     // Update checkout button style based on payment method
                     const $checkoutBtn = $('#checkoutBtn');
                     const $paymentStatusBadge = $('#paymentStatusBadge');
@@ -3162,6 +3176,11 @@
                     const remaining = Math.max(0, payable - totalEntered);
 
                     $('#splitRemaining').text(formatCurrency(remaining));
+                    if (remaining <= 0.009) {
+                        $('#splitRemaining').removeClass('text-danger').addClass('text-success');
+                    } else {
+                        $('#splitRemaining').removeClass('text-success').addClass('text-danger');
+                    }
 
                     // Update hidden inputs
                     $('#cashAmount').val(cash);

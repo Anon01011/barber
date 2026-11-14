@@ -218,9 +218,15 @@ class StaffController extends Controller
         }
 
         try {
+            $phone = filled($request->phone) ? trim($request->phone) : null;
+            if ($phone && preg_match('/^\+\d{1,4}$/', $phone)) {
+                $phone = null;
+            }
+            $request->merge(['phone' => $phone]);
+
             $rules = [
                 'name' => ['required', 'string', 'max:255'],
-                'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone'],
+                'phone' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->where(fn ($q) => $q->where('salon_id', $salon->id))],
                 'address' => ['nullable', 'string', 'max:500'],
                 'role' => [
                     'required',
@@ -263,7 +269,7 @@ class StaffController extends Controller
                 'name' => $request->name,
                 'email' => $email,
                 'password' => $password,
-                'phone' => $request->phone,
+                'phone' => $phone,
                 'address' => $request->address,
                 'salon_id' => $salon->id,
                 'status' => $request->status,
@@ -379,9 +385,15 @@ class StaffController extends Controller
         }
 
         try {
+            $phone = filled($request->phone) ? trim($request->phone) : null;
+            if ($phone && preg_match('/^\+\d{1,4}$/', $phone)) {
+                $phone = null;
+            }
+            $request->merge(['phone' => $phone]);
+
             $rules = [
                 'name' => ['required', 'string', 'max:255'],
-                'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,' . $staff->id],
+                'phone' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->where(fn ($q) => $q->where('salon_id', $salon->id))->ignore($staff->id)],
                 'address' => ['nullable', 'string', 'max:500'],
                 'status' => ['required', 'in:active,inactive'],
                 'branch_id' => ['nullable', Rule::exists('branches', 'id')->where('salon_id', $salon->id)],
@@ -414,7 +426,7 @@ class StaffController extends Controller
 
             $updateData = [
                 'name' => $request->name,
-                'phone' => $request->phone,
+                'phone' => $phone,
                 'address' => $request->address,
                 'status' => $request->status,
                 'branch_id' => $request->branch_id,
