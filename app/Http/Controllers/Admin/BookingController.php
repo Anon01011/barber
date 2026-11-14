@@ -2230,7 +2230,7 @@ class BookingController extends Controller
                 $allowOverlapping = $this->settingsService->get('allow_overlapping_bookings', false, $salonId);
 
                 if (!$allowOverlapping) {
-                    $bufferTime = $this->settingsService->get('appointment_buffer_time', 0, $salonId);
+                    $bufferTime = $this->settingsService->get('appointment_buffer_time', 15, $salonId);
                     $checkEndTime = $endTime->copy()->addMinutes((int) $bufferTime);
 
                     $existingBookings = Booking::where('staff_id', $validated['staff_id'])
@@ -2250,6 +2250,10 @@ class BookingController extends Controller
                 }
 
                 // Create the booking - ensure UTC storage
+                // BUG FIX: Respect 'auto_confirm_bookings' setting — if enabled and no explicit status provided, auto-confirm
+                $autoConfirmEnabled = $this->settingsService->get('auto_confirm_bookings', false, $salonId);
+                $bookingStatus = $validated['status'] ?? ($autoConfirmEnabled ? 'confirmed' : 'pending');
+
                 $booking = Booking::create([
                     'salon_id' => $salonId,
                     'created_by' => auth()->id(),
@@ -2263,7 +2267,7 @@ class BookingController extends Controller
                     'start_time' => $startTime->setTimezone('UTC'),
                     'end_time' => $endTime->setTimezone('UTC'),
                     'amount' => $amount,
-                    'status' => $validated['status'] ?? 'pending',
+                    'status' => $bookingStatus,
                     'notes' => $validated['notes'] ?? null,
                 ]);
 

@@ -378,7 +378,11 @@
 <body class="{{ session()->has('impersonator_id') ? 'has-impersonation-banner' : '' }}" {{ $isRtl ? 'dir=rtl' : '' }}>
     @auth
         @php
-            $salonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug;
+            $salonSlug = request()->route('salon_slug') 
+                ?? optional(auth()->user()->salon)->slug 
+                ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null)
+                ?? (app()->bound('current_salon') ? optional(app('current_salon'))->slug : null)
+                ?? session('current_salon_slug');
         @endphp
         @inject('settings', 'App\Services\SettingsService')
         <!-- Sidebar -->
@@ -1267,8 +1271,15 @@
                                     <i class="fas fa-sign-out-alt"></i>
                                     Logout
                                 </a>
+                                <a href="#"
+                                    onclick="event.preventDefault(); if(confirm('Log out and remove this device from trusted devices? You will need your password to log in next time.')) { document.getElementById('forget-device-input').value = '1'; document.getElementById('logout-form').submit(); }"
+                                    class="user-dropdown-item text-muted" style="font-size: 11.5px; opacity: 0.85;">
+                                    <i class="fas fa-ban"></i>
+                                    Logout & Forget Device
+                                </a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                     @csrf
+                                    <input type="hidden" name="forget_device" id="forget-device-input" value="0">
                                 </form>
                             </div>
                         </div>
@@ -1343,19 +1354,19 @@
                     <span>Home</span>
                 </a>
                 @can('pos.view')
-                    <a href="{{ route('admin.pos.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                    <a href="{{ $salonSlug ? route('admin.pos.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
                         <i class="fas fa-cash-register"></i>
                         <span>Terminal</span>
                     </a>
                 @endcan
                 @can('bookings.view')
-                    <a href="{{ route('admin.bookings.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}">
+                    <a href="{{ $salonSlug ? route('admin.bookings.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i>
                         <span>Bookings</span>
                     </a>
                 @endcan
                 @can('customers.view')
-                    <a href="{{ route('admin.customers.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                    <a href="{{ $salonSlug ? route('admin.customers.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                         <i class="fas fa-users"></i>
                         <span>Clients</span>
                     </a>
@@ -1366,16 +1377,16 @@
                 </a>
             @elseif(auth()->user()->hasRole('employee'))
                 @can('pos.view')
-                    <a href="{{ route('admin.pos.index', ['salon_slug' => optional(auth()->user()->salon)->slug, 'view' => 'barber']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                    <a href="{{ $salonSlug ? route('admin.pos.index', ['salon_slug' => $salonSlug, 'view' => 'barber']) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
                         <i class="fas fa-cash-register"></i>
                         <span>POS</span>
                     </a>
                 @endcan
-                <a href="{{ route('employee.dashboard', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
+                <a href="{{ $salonSlug ? route('employee.dashboard', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}">
+                <a href="{{ $salonSlug ? route('employee.appointments.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check"></i>
                     <span>Appts</span>
                 </a>

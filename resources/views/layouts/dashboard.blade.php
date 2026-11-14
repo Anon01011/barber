@@ -32,33 +32,36 @@
                 <img src="{{ app(\App\Services\SettingsService::class)->getLogoUrl() }}" alt="Logo" class="h-8">
             </div>
             <nav class="mt-5 px-2">
+                @php
+                    $dashSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null) ?? session('current_salon_slug');
+                @endphp
                 @if(auth()->user()->hasRole('super_admin'))
                     <a href="{{ route('dashboard') }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-home mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         Dashboard
                     </a>
-                    <a href="{{ route('admin.appointments.index') }}"
+                    <a href="{{ $dashSlug ? route('admin.bookings.index', ['salon_slug' => $dashSlug]) : '#' }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-calendar-alt mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         Appointments
                     </a>
-                    <a href="{{ route('admin.pos.index') }}"
+                    <a href="{{ $dashSlug ? route('admin.pos.index', ['salon_slug' => $dashSlug]) : '#' }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-cash-register mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         POS
                     </a>
-                    <a href="{{ route('admin.services.index') }}"
+                    <a href="{{ $dashSlug ? route('admin.services.categories.index', ['salon_slug' => $dashSlug]) : '#' }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-cut mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         Services
                     </a>
-                    <a href="{{ route('admin.inventory.index') }}"
+                    <a href="{{ $dashSlug ? route('admin.inventory.index', ['salon_slug' => $dashSlug]) : '#' }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-boxes mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         Inventory
                     </a>
-                    <a href="{{ route('admin.staff.index') }}"
+                    <a href="{{ $dashSlug ? route('admin.staff.index', ['salon_slug' => $dashSlug]) : '#' }}"
                         class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150">
                         <i class="fas fa-users mr-3 text-gray-500 group-hover:text-gray-500"></i>
                         Staff

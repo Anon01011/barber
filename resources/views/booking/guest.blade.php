@@ -1480,6 +1480,15 @@
                                         class="form-control border-b border-gray-200 focus:border-blue-500 px-0 rounded-none resize-none"
                                         id="modal-notes" name="notes" rows="2" placeholder="Any special requests?"></textarea>
                                 </div>
+
+                                @if(!empty($cancellation_policy))
+                                    <div class="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
+                                        <div class="font-semibold mb-1 flex items-center gap-1.5 text-amber-800">
+                                            <i class="fas fa-info-circle text-amber-600"></i> Cancellation Policy
+                                        </div>
+                                        <p class="mb-0 text-amber-700 leading-relaxed whitespace-pre-line">{{ $cancellation_policy }}</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -88,6 +88,26 @@ class User extends Authenticatable
         return $this->belongsTo(Salon::class);
     }
 
+    public function trustedDevices()
+    {
+        return $this->hasMany(TrustedDevice::class);
+    }
+
+    public function devicePins()
+    {
+        return $this->hasMany(UserDevicePin::class);
+    }
+
+    public function devicePin()
+    {
+        return $this->hasOne(UserDevicePin::class);
+    }
+
+    public function deviceAuditLogs()
+    {
+        return $this->hasMany(DevicePinAuditLog::class);
+    }
+
     /**
      * Get the commission profile assigned to this staff member.
      */

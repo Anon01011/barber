@@ -16,13 +16,37 @@ class LoginController extends Controller
         // $this->middleware('guest')->except('logout');
     }
 
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
+        if (Auth::check()) {
+            return redirect()->route('home.dashboard');
+        }
+
+        if ($request->query('mode') !== 'password') {
+            $deviceService = app(\App\Services\TrustedDeviceService::class);
+            $device = $deviceService->getTrustedDeviceFromRequest($request);
+            if ($device && $device->user && $device->user->devicePin && $device->user->devicePin->pin_enabled) {
+                return redirect()->route('pin.login');
+            }
+        }
+
         return view('auth.login');
     }
 
-    public function showAdminLoginForm()
+    public function showAdminLoginForm(Request $request)
     {
+        if (Auth::check()) {
+            return redirect()->route('home.dashboard');
+        }
+
+        if ($request->query('mode') !== 'password') {
+            $deviceService = app(\App\Services\TrustedDeviceService::class);
+            $device = $deviceService->getTrustedDeviceFromRequest($request);
+            if ($device && $device->user && $device->user->devicePin && $device->user->devicePin->pin_enabled) {
+                return redirect()->route('pin.login');
+            }
+        }
+
         return view('auth.admin-login');
     }
 
@@ -95,6 +119,25 @@ class LoginController extends Controller
                 } else {
                     Auth::logout();
                     return back()->withErrors(['email' => 'Your account is not properly configured.']);
+                }
+
+                // Check if eligible for Trusted Device registration
+                $deviceService = app(\App\Services\TrustedDeviceService::class);
+                $forgetOtherUserCookie = null;
+                if ($deviceService->isUserEligible($user)) {
+                    $currentDevice = $deviceService->getTrustedDeviceFromRequest($request);
+                    if ($currentDevice && $currentDevice->user_id !== $user->id) {
+                        $forgetOtherUserCookie = $deviceService->createForgetCookie();
+                        $currentDevice = null;
+                    }
+                    if (!$currentDevice && !session('pin_setup_skipped')) {
+                        session(['pin_setup_pending' => true]);
+                        $response = redirect()->route('pin.setup.prompt');
+                        if ($forgetOtherUserCookie) {
+                            $response->withCookie($forgetOtherUserCookie);
+                        }
+                        return $response;
+                    }
                 }
 
                 // Redirect employees to POS barber screen
@@ -191,6 +234,25 @@ class LoginController extends Controller
                 // User has no salon and is not super admin
                 Auth::logout();
                 return back()->withErrors(['email' => 'Your account is not properly configured.']);
+            }
+
+            // Check if eligible for Trusted Device registration
+            $deviceService = app(\App\Services\TrustedDeviceService::class);
+            $forgetOtherUserCookie = null;
+            if ($deviceService->isUserEligible($user)) {
+                $currentDevice = $deviceService->getTrustedDeviceFromRequest($request);
+                if ($currentDevice && $currentDevice->user_id !== $user->id) {
+                    $forgetOtherUserCookie = $deviceService->createForgetCookie();
+                    $currentDevice = null;
+                }
+                if (!$currentDevice && !session('pin_setup_skipped')) {
+                    session(['pin_setup_pending' => true]);
+                    $response = redirect()->route('pin.setup.prompt');
+                    if ($forgetOtherUserCookie) {
+                        $response->withCookie($forgetOtherUserCookie);
+                    }
+                    return $response;
+                }
             }
 
             // Redirect employees to POS barber screen

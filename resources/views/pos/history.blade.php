@@ -22,7 +22,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h2 class="mb-0">Sales History</h2>
                     <div>
-                        <a href="{{ route('admin.pos.index') }}" class="btn btn-primary">
+                        @php
+                            $posSalonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null) ?? session('current_salon_slug');
+                        @endphp
+                        <a href="{{ $posSalonSlug ? route('admin.pos.index', ['salon_slug' => $posSalonSlug]) : '#' }}" class="btn btn-primary">
                             <i class="fas fa-arrow-left me-1"></i> Back to POS
                         </a>
                     </div>

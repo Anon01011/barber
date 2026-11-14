@@ -377,6 +377,11 @@
 
                                         <hr class="my-5">
 
+                                        <!-- Trusted Devices & PIN Login -->
+                                        @include('admin.settings.partials.trusted-devices')
+
+                                        <hr class="my-5">
+
                                         <!-- Delete Account Section -->
                                         <div class="bg-danger-subtle rounded-3 p-4 border border-danger-subtle">
                                             <div class="d-flex align-items-start">

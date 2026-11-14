@@ -194,7 +194,18 @@ class AppointmentController extends Controller
 
         // Check if the combined date and time is in the past
         // We need to check this using the salon's timezone
-        $timezone = app(SettingsService::class)->get('timezone', 'UTC', $customer->salon_id);
+        $settingsService = app(SettingsService::class);
+        $timezone = $settingsService->get('timezone', 'UTC', $customer->salon_id);
+
+        // Check advance booking days setting
+        $advanceBookingDays = (int) $settingsService->get('advance_booking_days', 30, $customer->salon_id);
+        $bookingDate = Carbon::parse($validated['date'], $timezone)->startOfDay();
+        $maxDate = Carbon::now($timezone)->startOfDay()->addDays($advanceBookingDays);
+        if ($bookingDate->gt($maxDate)) {
+            return response()->json([
+                'message' => "Bookings can only be made up to {$advanceBookingDays} days in advance."
+            ], 422);
+        }
 
         // Parse date and time in the salon's timezone to avoid conversion issues
         $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['date'] . ' ' . $validated['time'], $timezone);
@@ -210,43 +221,49 @@ class AppointmentController extends Controller
 
             $service = Service::findOrFail($validated['service_id']);
 
-            // Get salon timezone
-            $timezone = app(SettingsService::class)->get('timezone', 'UTC', $customer->salon_id);
-
-            // IMPORTANT: Parse the date and time separately to avoid timezone conversion issues
-            // The date input from the browser is in YYYY-MM-DD format (user's local date)
-            // We need to treat it as a date in the salon's timezone, not convert it
-            $dateString = $validated['date']; // e.g., "2026-02-05"
-            $timeString = $validated['time']; // e.g., "14:30"
-
-            // Create datetime string and parse it directly in the salon's timezone
-            // This ensures "2026-02-05 14:30" is interpreted as Feb 5 in the salon's timezone
+            // Parse date and time separately in the salon's timezone
+            $dateString = $validated['date'];
+            $timeString = $validated['time'];
             $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateString . ' ' . $timeString, $timezone);
 
-            // Store directly in salon's timezone as requested
             $startTime = $startDateTime;
             $endTime = $startTime->copy()->addMinutes((int) $service->duration);
 
-            // Create booking with pending status
+            // Calculate amount with tax if tax_enabled_services is true
+            $amount = (float) $service->price;
+            if ($settingsService->get('tax_enabled_services', false, $customer->salon_id)) {
+                $taxRate = (float) $settingsService->get('tax_rate', 0, $customer->salon_id);
+                $amount += $amount * ($taxRate / 100);
+            }
+
+            // Respect auto_confirm_bookings setting
+            $autoConfirm = (bool) $settingsService->get('auto_confirm_bookings', false, $customer->salon_id);
+            $initialStatus = $autoConfirm ? 'confirmed' : 'pending';
+
+            // Create booking
             $booking = Booking::create([
-                'salon_id' => $customer->salon_id, // Explicitly set salon_id
+                'salon_id' => $customer->salon_id,
                 'customer_id' => $customer->id,
                 'created_by' => auth()->id(),
                 'service_id' => $validated['service_id'],
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'notes' => $validated['notes'],
-                'amount' => $service->price,
-                'status' => 'pending',
+                'amount' => $amount,
+                'status' => $initialStatus,
                 'source' => 'online',
                 'staff_assignment_status' => 'pending',
-                'time_confirmation_status' => 'pending' // New field to track time confirmation
+                'time_confirmation_status' => $autoConfirm ? 'confirmed' : 'pending'
             ]);
 
             DB::commit();
 
+            $successMsg = $autoConfirm
+                ? 'Appointment booked and confirmed successfully!'
+                : 'Appointment request submitted successfully. Our staff will review and confirm your booking time.';
+
             return response()->json([
-                'message' => 'Appointment request submitted successfully. Our staff will review and confirm your booking time.',
+                'message' => $successMsg,
                 'booking' => $booking
             ]);
 
@@ -316,10 +333,11 @@ class AppointmentController extends Controller
         $salonId = auth()->user()->customer->salon_id;
         $settings = app(\App\Services\SettingsService::class);
         $timezone = $settings->get('timezone', config('app.timezone', 'UTC'), $salonId);
-        $workingStart = $settings->get('working_hours_start', '09:00', $salonId);
+        $workingStart = $settings->get('working_hours_start', '08:00', $salonId);
         $workingEnd = $settings->get('working_hours_end', '20:00', $salonId);
         $slotInterval = (int) $settings->get('slot_duration', 30, $salonId);
-        $bufferTime = (int) $settings->get('appointment_buffer_time', 0, $salonId);
+        $bufferTime = (int) $settings->get('appointment_buffer_time', 15, $salonId);
+        $allowOverlapping = (bool) $settings->get('allow_overlapping_bookings', false, $salonId);
 
         // Get all active staff members
         $staffMembers = User::role('employee')
@@ -403,16 +421,18 @@ class AppointmentController extends Controller
 
                 // Check for booking conflicts for this staff
                 $hasConflict = false;
-                $staffBookings = $bookings->get($staff->id, collect());
+                if (!$allowOverlapping) {
+                    $staffBookings = $bookings->get($staff->id, collect());
 
-                foreach ($staffBookings as $booking) {
-                    $bookingStart = $booking->start_time->copy()->setTimezone($timezone);
-                    $bookingEnd = $booking->end_time->copy()->setTimezone($timezone)->addMinutes($bufferTime);
+                    foreach ($staffBookings as $booking) {
+                        $bookingStart = $booking->start_time->copy()->setTimezone($timezone);
+                        $bookingEnd = $booking->end_time->copy()->setTimezone($timezone)->addMinutes($bufferTime);
 
-                    // Check overlap
-                    if ($slotStart->lt($bookingEnd) && $slotEnd->gt($bookingStart)) {
-                        $hasConflict = true;
-                        break;
+                        // Check overlap
+                        if ($slotStart->lt($bookingEnd) && $slotEnd->gt($bookingStart)) {
+                            $hasConflict = true;
+                            break;
+                        }
                     }
                 }
 
@@ -508,6 +528,16 @@ class AppointmentController extends Controller
 
         // Check if the combined date and time is in the past
         $timezone = app(SettingsService::class)->get('timezone', 'UTC', $booking->salon_id);
+
+        // Apply advance-booking limit — mirrors the creation flow
+        $advanceBookingDays = (int) app(SettingsService::class)->get('advance_booking_days', 30, $booking->salon_id);
+        $bookingDate = \Carbon\Carbon::parse($validated['date'], $timezone)->startOfDay();
+        $maxDate = \Carbon\Carbon::now($timezone)->startOfDay()->addDays($advanceBookingDays);
+        if ($bookingDate->gt($maxDate)) {
+            return response()->json([
+                'message' => "Appointments can only be rescheduled up to {$advanceBookingDays} days in advance."
+            ], 422);
+        }
 
         // Parse date and time in the salon's timezone to avoid conversion issues
         $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['date'] . ' ' . $validated['time'], $timezone);

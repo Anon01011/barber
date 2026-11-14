@@ -186,6 +186,9 @@ class SettingsService
             // Filter out string "null" values and convert to empty strings for HTML5 validation
             if ($value === 'null' || $value === null) {
                 $value = '';
+            } elseif (is_bool($value) || is_int($value) || is_float($value)) {
+                // Return scalar types as-is — do NOT run trim() on non-strings (PHP 8 TypeError)
+                return $value;
             } elseif (is_string($value)) {
                 // Remove surrounding quotes if present
                 $value = trim($value, '"\'');
@@ -295,6 +298,9 @@ class SettingsService
             foreach ($settings as $key => $value) {
                 if ($value === 'null' || $value === null) {
                     $settings[$key] = '';
+                } elseif (is_bool($value) || is_int($value) || is_float($value)) {
+                    // Keep scalar types as-is — trim() on non-string is TypeError in PHP 8
+                    // $settings[$key] stays unchanged
                 } elseif (is_string($value)) {
                     // Remove surrounding quotes if present
                     $settings[$key] = trim($value, '"\'');

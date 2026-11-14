@@ -132,6 +132,7 @@ class GuestBookingController extends Controller
             'currency_code' => $settingsService->get('currency_code', 'USD', $salon->id),
             'advance_booking_days' => (int) $settingsService->get('advance_booking_days', 30, $salon->id),
             'slot_duration' => (int) $settingsService->get('slot_duration', 30, $salon->id),
+            'cancellation_policy' => $settingsService->get('cancellation_policy', '', $salon->id),
         ]);
     }
 
@@ -325,7 +326,17 @@ class GuestBookingController extends Controller
                 $taxEnabledServices = $this->settingsService->get('tax_enabled_services', false, $salon->id);
                 $taxRate = $this->settingsService->get('tax_rate', 0, $salon->id);
                 $allowOverlapping = $this->settingsService->get('allow_overlapping_bookings', false, $salon->id);
-                $bufferTime = (int) $this->settingsService->get('appointment_buffer_time', 0, $salon->id);
+                $bufferTime = (int) $this->settingsService->get('appointment_buffer_time', 15, $salon->id);
+
+                // BUG FIX: Respect 'default_guest_status' setting (was hardcoded to pending)
+                $rawGuestStatus = $this->settingsService->get('default_guest_status', 'pending', $salon->id);
+                $guestBookingStatus = in_array($rawGuestStatus, ['pending', 'confirmed']) ? $rawGuestStatus : 'pending';
+
+                // BUG FIX: Also respect 'auto_confirm_bookings' — if enabled, force confirmed regardless
+                $autoConfirmEnabled = $this->settingsService->get('auto_confirm_bookings', false, $salon->id);
+                if ($autoConfirmEnabled) {
+                    $guestBookingStatus = 'confirmed';
+                }
 
                 // Prepare services list (flatten quantity)
                 $servicesList = [];
@@ -370,7 +381,7 @@ class GuestBookingController extends Controller
                     // 1. Try preferred/previous staff
                     if ($previousStaffId) {
                         $staff = $staffMembers->find($previousStaffId);
-                        if ($staff && $this->isStaffAvailable($staff, $currentStartTime, $serviceEndTime, $bookings, $dailySchedules, $weeklySchedules, $absences, $dateStr, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime)) {
+                        if ($staff && $this->isStaffAvailable($staff, $currentStartTime, $serviceEndTime, $bookings, $dailySchedules, $weeklySchedules, $absences, $dateStr, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime, $bookingGroupId ?? null)) {
                             $assignedStaffId = $staff->id;
                         }
                     }
@@ -380,7 +391,7 @@ class GuestBookingController extends Controller
                         foreach ($staffMembers as $staff) {
                             if ($staff->id === $previousStaffId)
                                 continue;
-                            if ($this->isStaffAvailable($staff, $currentStartTime, $serviceEndTime, $bookings, $dailySchedules, $weeklySchedules, $absences, $dateStr, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime)) {
+                            if ($this->isStaffAvailable($staff, $currentStartTime, $serviceEndTime, $bookings, $dailySchedules, $weeklySchedules, $absences, $dateStr, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime, $bookingGroupId ?? null)) {
                                 $assignedStaffId = $staff->id;
                                 break;
                             }
@@ -409,7 +420,7 @@ class GuestBookingController extends Controller
                         'end_time' => $serviceEndTime,
                         'amount' => $servicePrice,
                         'notes' => $bookingNotes . ($index > 0 ? ' (Sequential service)' : ''),
-                        'status' => Booking::STATUS_PENDING,
+                        'status' => $guestBookingStatus, // Respects 'default_guest_status' + 'auto_confirm_bookings' settings
                         'source' => 'online'
                     ]);
 
@@ -661,9 +672,12 @@ class GuestBookingController extends Controller
     }
 
     /**
-     * Helper to check if a specific staff member is available for a specific time range
+     * Helper to check if a specific staff member is available for a specific time range.
+     *
+     * @param string|null $exemptBookingGroupId When set, bookings in this group do not apply the
+     *   buffer time against each other — sequential services within the same group are contiguous.
      */
-    private function isStaffAvailable($staff, $start, $end, $bookings, $dailySchedules, $weeklySchedules, $absences, $date, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime)
+    private function isStaffAvailable($staff, $start, $end, $bookings, $dailySchedules, $weeklySchedules, $absences, $date, $salonTz, $workingStart, $workingEnd, $allowOverlapping, $bufferTime, ?string $exemptBookingGroupId = null)
     {
         // 1. Check Absences / Leave
         $checkStartUtc = $start->copy()->setTimezone('UTC');
@@ -717,7 +731,11 @@ class GuestBookingController extends Controller
         if (!$allowOverlapping) {
             foreach ($bookings->where('staff_id', $staff->id) as $booking) {
                 $bStart = Carbon::parse($booking->start_time)->setTimezone('UTC');
-                $bEnd = Carbon::parse($booking->end_time)->setTimezone('UTC')->addMinutes($bufferTime);
+                // Skip buffer for bookings in the same sequential group — they are intentionally contiguous.
+                $applyBuffer = ($exemptBookingGroupId === null || empty($booking->booking_group_id) || $booking->booking_group_id !== $exemptBookingGroupId)
+                    ? $bufferTime
+                    : 0;
+                $bEnd = Carbon::parse($booking->end_time)->setTimezone('UTC')->addMinutes($applyBuffer);
 
                 // Check overlap
                 if ($bStart->lt($checkEndUtc) && $bEnd->gt($checkStartUtc)) {

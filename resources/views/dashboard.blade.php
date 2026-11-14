@@ -3321,12 +3321,15 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            <a href="{{ route('admin.bookings.index') }}"
+                            @php
+                                $dashSalonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null) ?? session('current_salon_slug');
+                            @endphp
+                            <a href="{{ $dashSalonSlug ? route('admin.bookings.index', ['salon_slug' => $dashSalonSlug]) : '#' }}"
                                 class="list-group-item list-group-item-action px-4 py-3 border-0">
                                 <i class="fas fa-tasks me-3 text-muted"></i>Manage Tasks
                             </a>
                             @if(\App\Helpers\ModuleHelper::staffEnabled())
-                                <a href="{{ route('admin.staff.index') }}"
+                                <a href="{{ $dashSalonSlug ? route('admin.staff.index', ['salon_slug' => $dashSalonSlug]) : '#' }}"
                                     class="list-group-item list-group-item-action px-4 py-3 border-0">
                                     <i class="fas fa-user-tie me-3 text-muted"></i>Add Staff
                                 </a>

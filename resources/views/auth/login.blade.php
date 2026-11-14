@@ -110,6 +110,23 @@
                 <p class="mt-1 text-slate-600 text-sm">Please sign in to your account</p>
             </div>
 
+            @php
+                $recognizedDevice = app(\App\Services\TrustedDeviceService::class)->getTrustedDeviceFromRequest(request());
+            @endphp
+            @if($recognizedDevice && $recognizedDevice->user && $recognizedDevice->user->devicePin?->pin_enabled)
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2 text-indigo-900 font-medium">
+                        <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span>Trusted device recognized ({{ $recognizedDevice->user->name }})</span>
+                    </div>
+                    <a href="{{ route('pin.login') }}" class="font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                        Use PIN &rarr;
+                    </a>
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded-r-md">
                     <div class="flex">

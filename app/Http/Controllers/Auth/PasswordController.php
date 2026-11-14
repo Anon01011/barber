@@ -24,6 +24,11 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Security: Revoke all other trusted devices on password change
+        $deviceService = app(\App\Services\TrustedDeviceService::class);
+        $currentDevice = $deviceService->getTrustedDeviceFromRequest($request);
+        $deviceService->revokeAllOtherDevices($request->user(), $currentDevice);
+
         return back()->with('status', 'password-updated');
     }
 }

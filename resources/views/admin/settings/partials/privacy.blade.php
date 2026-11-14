@@ -1,3 +1,14 @@
+<!-- Trusted Devices & PIN Login Section -->
+<div class="settings-section-card mb-4">
+    <div class="settings-section-header">
+        <div class="icon-box"><i class="fas fa-mobile-alt"></i></div>
+        <h6>Trusted Devices & Quick PIN Login</h6>
+    </div>
+    <div class="p-3">
+        @include('admin.settings.partials.trusted-devices')
+    </div>
+</div>
+
 <!-- Customer Data Privacy -->
 <div class="settings-section-card">
     <div class="settings-section-header">

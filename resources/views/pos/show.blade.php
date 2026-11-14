@@ -56,19 +56,22 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
+                    @php
+                        $posSalonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null) ?? session('current_salon_slug');
+                    @endphp
                     <div>
                         <h2 class="mb-0">Sale Details</h2>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="{{ route('admin.pos.index') }}">POS</a></li>
-                                <li class="breadcrumb-item"><a href="{{ route('admin.pos.history') }}">Sales History</a>
+                                <li class="breadcrumb-item"><a href="{{ $posSalonSlug ? route('admin.pos.index', ['salon_slug' => $posSalonSlug]) : '#' }}">POS</a></li>
+                                <li class="breadcrumb-item"><a href="{{ $posSalonSlug ? route('admin.pos.sales.index', ['salon_slug' => $posSalonSlug]) : '#' }}">Sales History</a>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">#{{ $sale->sale_number }}</li>
                             </ol>
                         </nav>
                     </div>
                     <div>
-                        <a href="{{ route('admin.pos.history') }}" class="btn btn-outline-secondary me-2">
+                        <a href="{{ $posSalonSlug ? route('admin.pos.sales.index', ['salon_slug' => $posSalonSlug]) : '#' }}" class="btn btn-outline-secondary me-2">
                             <i class="fas fa-arrow-left me-1"></i> Back to History
                         </a>
                         <a href="{{ route('admin.pos.receipt', $sale->id) }}" target="_blank" class="btn btn-primary">

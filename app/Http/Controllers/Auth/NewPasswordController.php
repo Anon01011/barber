@@ -47,6 +47,10 @@ class NewPasswordController extends Controller
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // Security: Invalidate all trusted devices and disable PIN on password reset
+                app(\App\Services\TrustedDeviceService::class)->revokeAllOtherDevices($user);
+                \App\Models\UserDevicePin::where('user_id', $user->id)->update(['pin_enabled' => false]);
+
                 event(new PasswordReset($user));
             }
         );

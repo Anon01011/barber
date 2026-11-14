@@ -127,12 +127,12 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Buffer Time (minutes)</label>
                                             <select name="appointment_buffer_time" class="form-select">
-                                                <option value="0" {{ ($settings['appointment_buffer_time'] ?? 0) == 0 ? 'selected' : '' }}>No Buffer</option>
-                                                <option value="5" {{ ($settings['appointment_buffer_time'] ?? 0) == 5 ? 'selected' : '' }}>5 Minutes</option>
-                                                <option value="10" {{ ($settings['appointment_buffer_time'] ?? 0) == 10 ? 'selected' : '' }}>10 Minutes</option>
-                                                <option value="15" {{ ($settings['appointment_buffer_time'] ?? 0) == 15 ? 'selected' : '' }}>15 Minutes</option>
-                                                <option value="20" {{ ($settings['appointment_buffer_time'] ?? 0) == 20 ? 'selected' : '' }}>20 Minutes</option>
-                                                <option value="30" {{ ($settings['appointment_buffer_time'] ?? 0) == 30 ? 'selected' : '' }}>30 Minutes</option>
+                                                <option value="0" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 0 ? 'selected' : '' }}>No Buffer</option>
+                                                <option value="5" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 5 ? 'selected' : '' }}>5 Minutes</option>
+                                                <option value="10" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 10 ? 'selected' : '' }}>10 Minutes</option>
+                                                <option value="15" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 15 ? 'selected' : '' }}>15 Minutes</option>
+                                                <option value="20" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 20 ? 'selected' : '' }}>20 Minutes</option>
+                                                <option value="30" {{ (int)($settings['appointment_buffer_time'] ?? 0) == 30 ? 'selected' : '' }}>30 Minutes</option>
                                             </select>
                                             <small class="text-muted">Time gap between appointments</small>
                                         </div>
