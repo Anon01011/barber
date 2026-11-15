@@ -173,7 +173,7 @@
                     billActivityBtn.title = 'View customer bill activity';
                     
                     // Fetch customer's unpaid amount
-                    const salonSlug = '{{ auth()->user()->salon->slug }}';
+                    const salonSlug = '{{ app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '') }}';
                     fetch(`/${salonSlug}/admin/customers/${customerId}/bill-activity`, {
                         headers: {
                             'Accept': 'application/json',

@@ -293,7 +293,7 @@
 
     function fetchBillActivity(customerId, filter = null) {
         @if(auth()->user()->salon)
-            const salonSlug = '{{ auth()->user()->salon->slug }}';
+            const salonSlug = '{{ auth()->user()?->salon?->slug }}';
         @else
             // Fallback for Super Admin or users without a direct salon relationship
             const pathParts = window.location.pathname.split('/');
@@ -459,7 +459,7 @@
             payInPosBtn.style.display = 'inline-block';
             payInPosBtn.onclick = function () {
                 @if(auth()->user()->salon)
-                    const salonSlug = '{{ auth()->user()->salon->slug }}';
+                    const salonSlug = '{{ auth()->user()?->salon?->slug }}';
                 @else
                     const pathParts = window.location.pathname.split('/');
                     const salonSlug = pathParts[1];

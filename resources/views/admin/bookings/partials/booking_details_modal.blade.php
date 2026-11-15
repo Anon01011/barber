@@ -360,7 +360,7 @@
                         $currentSalon = app()->bound('current_salon') ? app('current_salon') : null;
                         $salonSlug = $currentSalon ? $currentSalon->slug : request()->route('salon_slug');
                         if (!$salonSlug && auth()->check() && auth()->user()->salon) {
-                            $salonSlug = auth()->user()->salon->slug;
+                            $salonSlug = auth()->user()?->salon?->slug;
                         }
                     @endphp
                     const salonSlug = "{{ $salonSlug }}";

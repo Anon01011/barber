@@ -78,7 +78,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     @if(auth()->user()->hasRole('salon_admin'))
-                    <form action="{{ route('admin.saas.settings.clear-cache', ['salon_slug' => auth()->user()->salon->slug]) }}" method="POST">
+                    <form action="{{ route('admin.saas.settings.clear-cache', ['salon_slug' => app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '')]) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-clear-cache shadow-sm">
                             <i class="fas fa-sync me-2"></i> Clear Cache

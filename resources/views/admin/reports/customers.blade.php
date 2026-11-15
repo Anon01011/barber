@@ -190,7 +190,7 @@
                 <p class="text-muted small mb-0">Deep dive into your customer behavior and retention</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm shadow-sm" id="exportCustomersBtn">
+                <button type="button" class="btn btn-success btn-sm shadow-sm" id="exportCustomersBtn" onclick="exportCustomersReport()">
                     <i class="fas fa-download me-2"></i>Export Report
                 </button>
                 <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">

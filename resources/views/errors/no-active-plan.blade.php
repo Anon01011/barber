@@ -78,7 +78,7 @@
 
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     @if(auth()->check() && auth()->user()->salon)
-                        <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()->salon->slug]) }}"
+                        <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()?->salon?->slug]) }}"
                             class="auth-button" style="text-decoration: none; text-align: center;">
                             <i class="fas fa-credit-card me-2"></i>View Subscription Plans
                         </a>

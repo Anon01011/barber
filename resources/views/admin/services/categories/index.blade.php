@@ -1593,7 +1593,7 @@
                         const formData = new FormData(form);
 
                         @if(auth()->user()->salon)
-                            const salonSlug = '{{ auth()->user()->salon->slug }}';
+                            const salonSlug = '{{ auth()->user()?->salon?->slug }}';
                         @else
                             const pathParts = window.location.pathname.split('/');
                             const salonSlug = pathParts[1] || 'admin';

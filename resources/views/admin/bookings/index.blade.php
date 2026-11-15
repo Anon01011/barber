@@ -82,7 +82,7 @@
                 window.updateBookingStatus = function (bookingId, status) {
                     if (!confirm('Are you sure you want to change the status to ' + status.replace('_', ' ') + '?')) return;
 
-                    fetch(`{{ url(auth()->user()->salon->slug) }}/admin/bookings/${bookingId}/status`, {
+                    fetch(`{{ url(app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '')) }}/admin/bookings/${bookingId}/status`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',

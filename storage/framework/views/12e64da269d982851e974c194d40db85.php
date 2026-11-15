@@ -193,7 +193,7 @@
                 <p class="text-muted small mb-0">Monitor staff productivity, revenue, and earnings</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm shadow-sm" id="exportStaffBtn">
+                <button type="button" class="btn btn-success btn-sm shadow-sm" id="exportStaffBtn" onclick="exportStaffReport()">
                     <i class="fas fa-download me-2"></i>Export Report
                 </button>
                 <a href="<?php echo e(route('admin.reports.index')); ?>" class="btn btn-outline-secondary btn-sm">

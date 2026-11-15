@@ -195,7 +195,7 @@
     @push('scripts')
         <script>
             function getSalonSlug() {
-                const userSalonSlug = '{{ auth()->user()->salon->slug ?? "" }}';
+                const userSalonSlug = '{{ auth()->user()?->salon?->slug ?? "" }}';
                 if (userSalonSlug) return userSalonSlug;
                 const pathParts = window.location.pathname.split('/').filter(p => p);
                 return pathParts[0] || '';

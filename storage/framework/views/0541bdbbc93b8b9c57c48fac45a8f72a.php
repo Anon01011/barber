@@ -153,7 +153,7 @@
                 <p class="text-muted small mb-0 mt-1">Overview of your salon's financial performance</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm shadow-sm" id="exportSalesBtn">
+                <button type="button" class="btn btn-success btn-sm shadow-sm" id="exportSalesBtn" onclick="exportSalesReport()">
                     <i class="fas fa-download me-2"></i>Export Report
                 </button>
                 <a href="<?php echo e(route('admin.reports.index')); ?>" class="btn btn-outline-secondary btn-sm">
@@ -866,8 +866,9 @@
                                                                                                                                                                                                                                                                                 </div>
                                                                                                                                                                                                                                                                                      `);
 
+                    const salonSlug = '<?php echo e(app()->bound('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? '')); ?>' || (typeof getSalonSlug === 'function' ? getSalonSlug() : (window.location.pathname.split('/')[1] || ''));
                     $.ajax({
-                        url: `/<?php echo e(auth()->user()->salon->slug); ?>/admin/reports/transaction/${type}/${id}`,
+                        url: `/${salonSlug}/admin/reports/transaction/${type}/${id}`,
                         method: 'GET',
                         success: function (response) {
                             renderTransactionDetails(response);
@@ -1386,15 +1387,15 @@
                 });
 
                 // Export Sales Report
-                document.getElementById('exportSalesBtn').addEventListener('click', function () {
-                    const startDate = document.getElementById('start_date').value;
-                    const endDate = document.getElementById('end_date').value;
-                    const source = document.getElementById('source').value;
-                    const branchId = document.getElementById('branch_id').value;
-                    const staffId = document.getElementById('staff_id').value;
-                    const customerId = document.getElementById('customer_id').value;
-                    const paymentMethod = document.getElementById('payment_method').value;
-                    const paymentStatus = document.getElementById('payment_status').value;
+                window.exportSalesReport = function () {
+                    const startDate = document.getElementById('start_date') ? document.getElementById('start_date').value : '';
+                    const endDate = document.getElementById('end_date') ? document.getElementById('end_date').value : '';
+                    const source = document.getElementById('source') ? document.getElementById('source').value : '';
+                    const branchId = document.getElementById('branch_id') ? document.getElementById('branch_id').value : '';
+                    const staffId = document.getElementById('staff_id') ? document.getElementById('staff_id').value : '';
+                    const customerId = document.getElementById('customer_id') ? document.getElementById('customer_id').value : '';
+                    const paymentMethod = document.getElementById('payment_method') ? document.getElementById('payment_method').value : '';
+                    const paymentStatus = document.getElementById('payment_status') ? document.getElementById('payment_status').value : '';
 
                     const url = new URL('<?php echo e(route("admin.reports.sales.export")); ?>', window.location.origin);
                     if (startDate) url.searchParams.append('start_date', startDate);
@@ -1407,7 +1408,11 @@
                     if (paymentStatus) url.searchParams.append('payment_status', paymentStatus);
 
                     window.location.href = url.toString();
-                });
+                };
+                const exportSalesBtnEl = document.getElementById('exportSalesBtn');
+                if (exportSalesBtnEl) {
+                    exportSalesBtnEl.addEventListener('click', window.exportSalesReport);
+                }
             });
         </script>
     <?php $__env->stopPush(); ?>

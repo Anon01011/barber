@@ -371,7 +371,7 @@
             <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
                 @if(auth()->check() && auth()->user()->hasRole('salon_admin'))
                     @php
-                        $salonSlug = auth()->user()->salon ? auth()->user()->salon->slug : null;
+                        $salonSlug = auth()->user()->salon ? auth()->user()?->salon?->slug : null;
                     @endphp
                     @if($salonSlug)
                         <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}" class="btn-custom btn-primary-custom">

@@ -17,12 +17,12 @@
 
             @if(auth()->check() && auth()->user()->salon)
                 <div class="space-y-3">
-                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()->salon->slug]) }}" 
+                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()?->salon?->slug]) }}" 
                        class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
                         Renew Subscription
                     </a>
                     
-                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()->salon->slug]) }}" 
+                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => auth()->user()?->salon?->slug]) }}" 
                        class="block w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition duration-200">
                         View Plans
                     </a>

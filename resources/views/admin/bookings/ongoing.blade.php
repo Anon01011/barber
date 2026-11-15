@@ -210,7 +210,7 @@
                         confirmButtonText: 'Yes, update it!'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            fetch(`{{ url(auth()->user()->salon->slug) }}/admin/bookings/${bookingId}/status`, {
+                            fetch(`{{ url(app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '')) }}/admin/bookings/${bookingId}/status`, {
                                 method: 'PUT',
                                 headers: {
                                     'Content-Type': 'application/json',

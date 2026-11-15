@@ -2528,7 +2528,7 @@
 
                     // Fetch and display unpaid amount
                     if (btnUnpaidAmountDetails && unpaidAmountTextDetails) {
-                        const salonSlug = '{{ auth()->user()->salon->slug }}';
+                        const salonSlug = '{{ app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '') }}';
                         fetch(`/${salonSlug}/admin/customers/${customerId}/bill-activity`, {
                             headers: {
                                 'Accept': 'application/json',
@@ -2611,7 +2611,7 @@
             document.getElementById('staffDetailsContent').style.display = 'none';
 
             @if(auth()->user()->salon)
-                const salonSlug = '{{ auth()->user()->salon->slug }}';
+                const salonSlug = '{{ app()->bound('current_salon') && app('current_salon') ? app('current_salon')->slug : (auth()->user()?->salon?->slug ?? request()->route('salon_slug') ?? '') }}';
             @else
                 const pathParts = window.location.pathname.split('/');
                 const salonSlug = pathParts[1] || 'admin';

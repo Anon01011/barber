@@ -264,7 +264,7 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             function getSalonSlug() {
-                const userSalonSlug = '{{ auth()->user()->salon->slug ?? "" }}';
+                const userSalonSlug = '{{ auth()->user()?->salon?->slug ?? "" }}';
                 if (userSalonSlug) return userSalonSlug;
                 const pathParts = window.location.pathname.split('/').filter(p => p);
                 return pathParts[0] || '';

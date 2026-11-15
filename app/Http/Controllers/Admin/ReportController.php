@@ -17,13 +17,29 @@ class ReportController extends Controller
 {
     protected $settingsService;
 
+        protected function getSalonId()
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon')->id;
+        }
+        return auth()->user()?->salon_id;
+    }
+
+    protected function getSalon()
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon');
+        }
+        return auth()->user()?->salon;
+    }
+
     public function __construct(\App\Services\SettingsService $settingsService)
     {
         $this->settingsService = $settingsService;
     }
     public function index()
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $today = Carbon::today();
         $startOfMonth = Carbon::now()->startOfMonth();
         $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
@@ -267,7 +283,7 @@ class ReportController extends Controller
 
     public function sales(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $range = $request->get('range', 'today');
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
@@ -1226,7 +1242,7 @@ class ReportController extends Controller
 
     public function appointments(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $startDate = $request->get('start_date', Carbon::now()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
         $staffId = $request->get('staff_id');
@@ -1969,7 +1985,7 @@ class ReportController extends Controller
 
     public function staff(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $startDate = $request->get('start_date', Carbon::now()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
         $branchId = $request->get('branch_id');
@@ -2211,7 +2227,7 @@ class ReportController extends Controller
 
     public function customers(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $branchId = $request->get('branch_id');
         $staffId = $request->get('staff_id');
         $serviceId = $request->get('service_id');
@@ -2581,7 +2597,7 @@ class ReportController extends Controller
 
     public function transactionDetails($type, $id)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
 
         if ($type === 'booking') {
             $booking = Booking::where('salon_id', $salonId)
@@ -2675,7 +2691,7 @@ class ReportController extends Controller
 
     public function inventory(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
@@ -2812,8 +2828,8 @@ class ReportController extends Controller
      */
     public function exportSales(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
-        $salon = auth()->user()->salon;
+        $salonId = $this->getSalonId();
+        $salon = $this->getSalon();
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $source = $request->get('source', 'all');
@@ -3276,8 +3292,8 @@ class ReportController extends Controller
      */
     public function exportAppointments(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
-        $salon = auth()->user()->salon;
+        $salonId = $this->getSalonId();
+        $salon = $this->getSalon();
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $staffId = $request->get('staff_id');
@@ -3684,8 +3700,8 @@ class ReportController extends Controller
      */
     public function exportStaff(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
-        $salon = auth()->user()->salon;
+        $salonId = $this->getSalonId();
+        $salon = $this->getSalon();
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $branchId = $request->get('branch_id');
@@ -4060,8 +4076,8 @@ class ReportController extends Controller
      */
     public function exportCustomersReport(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
-        $salon = auth()->user()->salon;
+        $salonId = $this->getSalonId();
+        $salon = $this->getSalon();
         $branchId = $request->get('branch_id');
         $staffId = $request->get('staff_id');
         $serviceId = $request->get('service_id');
@@ -4395,7 +4411,7 @@ class ReportController extends Controller
      */
     public function exportInventory(Request $request)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
 
         $filename = 'inventory_report_' . date('Y-m-d') . '.csv';
         $headers = [
@@ -4470,7 +4486,7 @@ class ReportController extends Controller
                     }
 
                     // Check for duplicate email
-                    $exists = Customer::where('salon_id', auth()->user()->salon_id)
+                    $exists = Customer::where('salon_id', $this->getSalonId())
                         ->where('email', $data[1])
                         ->exists();
 
@@ -4482,7 +4498,7 @@ class ReportController extends Controller
                     // Check for duplicate phone
                     $phone = !empty($data[2]) ? trim($data[2]) : null;
                     if ($phone) {
-                        $existsPhone = Customer::where('salon_id', auth()->user()->salon_id)
+                        $existsPhone = Customer::where('salon_id', $this->getSalonId())
                             ->where('phone', $phone)
                             ->exists();
 
@@ -4499,7 +4515,7 @@ class ReportController extends Controller
                     }
 
                     Customer::create([
-                        'salon_id' => auth()->user()->salon_id,
+                        'salon_id' => $this->getSalonId(),
                         'name' => $data[0],
                         'email' => $data[1],
                         'phone' => $data[2],

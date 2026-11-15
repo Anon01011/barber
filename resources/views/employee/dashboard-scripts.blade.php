@@ -3,7 +3,7 @@
     // Helper function to get salon slug from URL
     function getSalonSlug() {
         // Priority 1: Get from authenticated user's salon (most reliable)
-        const userSalonSlug = '{{ auth()->user()->salon->slug ?? "" }}';
+        const userSalonSlug = '{{ auth()->user()?->salon?->slug ?? "" }}';
         if (userSalonSlug) return userSalonSlug;
 
         // Priority 2: Get from route parameter

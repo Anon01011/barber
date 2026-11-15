@@ -176,7 +176,7 @@
                 @endif
             </h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm shadow-sm" id="exportAppointmentsBtn">
+                <button type="button" class="btn btn-success btn-sm shadow-sm" id="exportAppointmentsBtn" onclick="exportAppointmentsReport()">
                     <i class="fas fa-download me-2"></i>Export Report
                 </button>
                 <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
@@ -1176,30 +1176,33 @@
                     });
 
                     // Export Appointments Report
-                    document.getElementById('exportAppointmentsBtn').addEventListener('click', function () {
-                        const startDate = document.getElementById('start_date').value;
-                        const endDate = document.getElementById('end_date').value;
-                        const branchId = document.getElementById('branch_id').value;
-                        const staffId = document.getElementById('staff_id').value;
-                        const serviceId = document.getElementById('service_id').value;
-                        const customerId = document.getElementById('customer_id').value;
-                        const status = document.getElementById('status').value;
-                        const paymentStatus = document.getElementById('payment_status').value;
-                        const paymentMethod = document.getElementById('payment_method').value;
-
+                    window.exportAppointmentsReport = function () {
                         const url = new URL('{{ route("admin.reports.appointments.export") }}', window.location.origin);
-                        if (startDate) url.searchParams.append('start_date', startDate);
-                        if (endDate) url.searchParams.append('end_date', endDate);
-                        if (branchId) url.searchParams.append('branch_id', branchId);
-                        if (staffId) url.searchParams.append('staff_id', staffId);
-                        if (serviceId) url.searchParams.append('service_id', serviceId);
-                        if (customerId) url.searchParams.append('customer_id', customerId);
-                        if (status) url.searchParams.append('status', status);
-                        if (paymentStatus) url.searchParams.append('payment_status', paymentStatus);
-                        if (paymentMethod) url.searchParams.append('payment_method', paymentMethod);
+                        const filterForm = document.getElementById('filterForm');
+
+                        if (filterForm) {
+                            const formData = new FormData(filterForm);
+                            for (const [key, value] of formData.entries()) {
+                                if (value !== null && value !== '') {
+                                    url.searchParams.set(key, value);
+                                }
+                            }
+                        } else {
+                            const getVal = (id) => document.getElementById(id)?.value || '';
+                            const fields = ['start_date', 'end_date', 'branch_id', 'staff_id', 'service_id', 'customer_id', 'status', 'payment_status', 'payment_method'];
+                            fields.forEach(field => {
+                                const val = getVal(field);
+                                if (val) url.searchParams.set(field, val);
+                            });
+                        }
 
                         window.location.href = url.toString();
-                    });
+                    };
+
+                    const exportAppointmentsBtn = document.getElementById('exportAppointmentsBtn');
+                    if (exportAppointmentsBtn) {
+                        exportAppointmentsBtn.addEventListener('click', window.exportAppointmentsReport);
+                    }
                 });
             </script>
         @endpush
