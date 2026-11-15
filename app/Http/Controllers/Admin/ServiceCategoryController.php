@@ -63,6 +63,10 @@ class ServiceCategoryController extends Controller
 
     public function edit(ServiceCategory $category)
     {
+        if (!auth()->user()->isSuperAdmin() && $category->salon_id !== auth()->user()->salon_id) {
+            return response()->json(['error' => 'Unauthorized action.'], 403);
+        }
+
         return response()->json([
             'name' => $category->name,
             'name_ar' => $category->name_ar,
@@ -73,6 +77,10 @@ class ServiceCategoryController extends Controller
 
     public function update(Request $request, ServiceCategory $category)
     {
+        if (!auth()->user()->isSuperAdmin() && $category->salon_id !== auth()->user()->salon_id) {
+            return response()->json(['error' => 'Unauthorized action.'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
@@ -91,6 +99,10 @@ class ServiceCategoryController extends Controller
 
     public function destroy(ServiceCategory $category)
     {
+        if (!auth()->user()->isSuperAdmin() && $category->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this category.');
+        }
+
         if ($category->services()->exists()) {
             return redirect()->route('admin.services.categories.index')
                 ->with('error', 'Cannot delete category with associated services.');
@@ -203,14 +215,21 @@ class ServiceCategoryController extends Controller
      */
     public function bulkStaffAssignment(Request $request, ServiceCategory $category)
     {
+        $salonId = auth()->user()->salon_id;
+        if (!auth()->user()->isSuperAdmin() && $category->salon_id !== $salonId) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
+        }
+
         $validated = $request->validate([
-            'staff_id' => 'required|exists:users,id',
+            'staff_id' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('users', 'id')->where('salon_id', $salonId),
+            ],
             'action' => 'required|in:assign,remove'
         ]);
 
         $userId = $validated['staff_id'];
         $action = $validated['action'];
-        $salonId = auth()->user()->salon_id;
 
         // Fetch all services belonging to this category and salon
         $services = Service::where('category_id', $category->id)

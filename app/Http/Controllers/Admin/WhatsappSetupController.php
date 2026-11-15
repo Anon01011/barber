@@ -93,12 +93,19 @@ class WhatsappSetupController extends Controller
                         'Body' => $message,
                     ]);
             } elseif ($gateway === 'custom') {
+                if (!$this->isSafeWebhookUrl($request->whatsapp_custom_url)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid or restricted custom gateway URL. Internal and private network addresses are blocked for security.'
+                    ], 422);
+                }
+
                 $headers = json_decode($request->input('whatsapp_custom_headers', '[]'), true);
                 $payload = json_decode($request->input('whatsapp_custom_payload', '[]'), true);
                 $payload[$request->whatsapp_custom_to_key] = $request->phone;
                 $payload[$request->whatsapp_custom_message_key] = $message;
 
-                $req = Http::withHeaders($headers ?: []);
+                $req = Http::timeout(10)->withHeaders($headers ?: []);
                 $response = ($request->whatsapp_custom_method === 'GET')
                     ? $req->get($request->whatsapp_custom_url, $payload)
                     : $req->post($request->whatsapp_custom_url, $payload);
@@ -107,11 +114,57 @@ class WhatsappSetupController extends Controller
             if ($response && $response->successful()) {
                 return response()->json(['success' => true, 'message' => 'Test WhatsApp sent successfully!']);
             } else {
-                $error = $response ? ($response->json('message') ?? $response->body()) : 'Unknown error';
+                $error = $response ? ($response->json('message') ?? 'Gateway returned an error code ' . $response->status()) : 'Unknown error';
                 return response()->json(['success' => false, 'message' => 'Gateway Error: ' . $error]);
             }
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error: Failed to deliver test WhatsApp message.']);
         }
+    }
+
+    /**
+     * Validate that a webhook URL does not resolve to private/reserved networks (SSRF defense).
+     */
+    protected function isSafeWebhookUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || empty($parsed['scheme']) || empty($parsed['host'])) {
+            return false;
+        }
+
+        if (!in_array(strtolower($parsed['scheme']), ['https', 'http'], true)) {
+            return false;
+        }
+
+        $host = strtolower($parsed['host']);
+
+        // Explicit blocked hostnames
+        $blockedHosts = ['localhost', '127.0.0.1', '::1', 'metadata.google.internal', 'instance-data'];
+        if (in_array($host, $blockedHosts, true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local')) {
+            return false;
+        }
+
+        // Resolve IP addresses
+        $ipList = [];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ipList[] = $host;
+        } else {
+            $ip = @gethostbyname($host);
+            if ($ip && $ip !== $host) {
+                $ipList[] = $ip;
+            }
+        }
+
+        if (empty($ipList)) {
+            return false;
+        }
+
+        foreach ($ipList as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

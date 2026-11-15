@@ -220,24 +220,30 @@ class CommissionService
     /**
      * Approve multiple commissions.
      */
-    public function approveCommissions(array $commissionIds): int
+    public function approveCommissions(array $commissionIds, ?int $salonId = null): int
     {
-        return StaffCommission::whereIn('id', $commissionIds)
-            ->where('status', 'pending')
-            ->update(['status' => 'approved']);
+        $query = StaffCommission::whereIn('id', $commissionIds)
+            ->where('status', 'pending');
+        if ($salonId) {
+            $query->where('salon_id', $salonId);
+        }
+        return $query->update(['status' => 'approved']);
     }
 
     /**
      * Mark multiple commissions as paid.
      */
-    public function markCommissionsAsPaid(array $commissionIds): int
+    public function markCommissionsAsPaid(array $commissionIds, ?int $salonId = null): int
     {
-        return StaffCommission::whereIn('id', $commissionIds)
-            ->where('status', 'approved')
-            ->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-            ]);
+        $query = StaffCommission::whereIn('id', $commissionIds)
+            ->where('status', 'approved');
+        if ($salonId) {
+            $query->where('salon_id', $salonId);
+        }
+        return $query->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
     }
 
     private function mapModelToItemType(string $modelClass): ?string

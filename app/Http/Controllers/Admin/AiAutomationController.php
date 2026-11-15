@@ -121,7 +121,7 @@ class AiAutomationController extends Controller
             Log::error('AI Copilot Exception: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json([
                 'type' => 'error',
-                'response' => "AI Analysis for **{$salon->name}**: " . $e->getMessage(),
+                'response' => 'AI Copilot encountered an issue while processing your request. Please try again.',
             ], 200);
         }
     }

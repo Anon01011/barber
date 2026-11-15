@@ -15,6 +15,13 @@ use Illuminate\Support\Facades\DB;
 
 class TestController extends Controller
 {
+    public function __construct()
+    {
+        if (!app()->isLocal()) {
+            abort(403, 'Test controllers are only accessible in local environment.');
+        }
+    }
+
     public function testPackageBug()
     {
         DB::beginTransaction();

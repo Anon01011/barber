@@ -116,11 +116,18 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
+        if (!auth()->user()->isSuperAdmin() && $employee->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this employee.');
+        }
         return redirect()->route('admin.employees.edit', $employee);
     }
 
     public function edit(Employee $employee)
     {
+        if (!auth()->user()->isSuperAdmin() && $employee->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this employee.');
+        }
+
         $salons = Salon::all();
         $roles = \Spatie\Permission\Models\Role::where('name', '!=', 'super_admin')->get();
         $services = \App\Models\Service::where('salon_id', auth()->user()->salon_id)->get();
@@ -130,6 +137,10 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
+        if (!auth()->user()->isSuperAdmin() && $employee->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this employee.');
+        }
+
         $salonId = auth()->user()->salon_id;
         $superAdminRoleId = \Spatie\Permission\Models\Role::where('name', 'super_admin')->value('id');
 
@@ -223,6 +234,10 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee)
     {
+        if (!auth()->user()->isSuperAdmin() && $employee->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this employee.');
+        }
+
         $employee->delete();
         return redirect()->route('admin.employees.index')->with('success', 'Employee deleted successfully.');
     }
@@ -235,6 +250,10 @@ class EmployeeController extends Controller
     public function bookings($id)
     {
         $employee = Employee::findOrFail($id);
+
+        if (!auth()->user()->isSuperAdmin() && $employee->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this employee.');
+        }
 
         $bookings = $employee->bookings()
             ->with(['customer', 'services', 'staff'])

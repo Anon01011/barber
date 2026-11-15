@@ -2478,8 +2478,13 @@ class BookingController extends Controller
     public function update(Request $request, Booking $booking)
     {
         try {
+            $user = auth()->user();
+            if (!$user->isSuperAdmin() && $booking->salon_id !== $user->salon_id) {
+                return response()->json(['message' => 'Unauthorized access to this booking.'], 403);
+            }
+
             Log::info('Updating booking(s)', $request->all());
-            $salonId = auth()->user()->salon_id;
+            $salonId = $user->salon_id;
             $bookingGroupId = $booking->booking_group_id;
 
             // Check if this is a batch request
@@ -2926,6 +2931,11 @@ class BookingController extends Controller
     public function destroy(Booking $booking)
     {
         try {
+            $user = auth()->user();
+            if (!$user->isSuperAdmin() && $booking->salon_id !== $user->salon_id) {
+                return response()->json(['message' => 'Unauthorized access to this booking.'], 403);
+            }
+
             // Restore package balance if this was a package booking
             if ($booking->package_id && $booking->service_id && !in_array($booking->status, ['cancelled', 'no_show'])) {
                 $balance = CustomerPackageBalance::where('customer_id', $booking->customer_id)

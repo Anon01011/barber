@@ -185,6 +185,11 @@ class MembershipController extends Controller
      */
     public function show(Membership $membership)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $membership->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this membership.');
+        }
+
         $membership->load(['services', 'inventoryItems']);
 
         return view('admin.memberships.show', compact('membership'));
@@ -195,8 +200,14 @@ class MembershipController extends Controller
      */
     public function edit(Membership $membership)
     {
-        $services = Service::active()->get(['id', 'name', 'price']);
-        $inventoryItems = InventoryItem::where('is_active', true)->get(['id', 'name', 'selling_price']);
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $membership->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this membership.');
+        }
+
+        $salonId = $user->salon_id;
+        $services = Service::where('salon_id', $salonId)->active()->get(['id', 'name', 'price']);
+        $inventoryItems = InventoryItem::where('salon_id', $salonId)->where('is_active', true)->get(['id', 'name', 'selling_price']);
         $products = $inventoryItems;
         $membership->load(['services', 'inventoryItems']);
 
@@ -214,6 +225,10 @@ class MembershipController extends Controller
      */
     public function update(Request $request, Membership $membership)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $membership->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this membership.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -284,6 +299,11 @@ class MembershipController extends Controller
      */
     public function destroy(Membership $membership)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $membership->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this membership.');
+        }
+
         $membership->delete();
 
         return redirect()->route('admin.memberships.index')

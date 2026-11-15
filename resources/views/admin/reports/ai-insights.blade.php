@@ -86,7 +86,7 @@
             @foreach($aiData['executive_summary'] as $bullet)
                 <div class="col-md-6">
                     <div class="p-3 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10 text-white" style="backdrop-filter: blur(10px); font-size: 0.92rem; line-height: 1.55;">
-                        {!! Str::markdown($bullet) !!}
+                        {!! Str::markdown($bullet, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
                     </div>
                 </div>
             @endforeach

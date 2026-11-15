@@ -57,6 +57,11 @@ class ServiceController extends Controller
 
     public function edit(Service $service)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $service->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this service.');
+        }
+
         if (request()->ajax()) {
             $service->load('staff');
             return response()->json([
@@ -71,25 +76,38 @@ class ServiceController extends Controller
                 'staff_ids' => $service->staff->pluck('id'),
             ]);
         }
-        $categories = ServiceCategory::orderBy('name')->where('status', 'active')->get();
+        $salonId = $user->salon_id;
+        $categories = ServiceCategory::where('salon_id', $salonId)->orderBy('name')->where('status', 'active')->get();
         return view('admin.services.edit', compact('service', 'categories'));
     }
 
     public function update(Request $request, Service $service)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $service->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this service.');
+        }
+
+        $salonId = $user->salon_id;
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'duration' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:service_categories,id',
+            'category_id' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('service_categories', 'id')->where('salon_id', $salonId),
+            ],
             'status' => 'required|in:active,inactive',
         ]);
         $service->update($validated);
 
         if ($request->has('staff_ids')) {
-            $service->staff()->sync($request->staff_ids);
+            $validStaffIds = \App\Models\User::where('salon_id', $salonId)
+                ->whereIn('id', (array) $request->staff_ids)
+                ->pluck('id');
+            $service->staff()->sync($validStaffIds);
         } else {
             $service->staff()->detach();
         }
@@ -99,6 +117,11 @@ class ServiceController extends Controller
 
     public function destroy(Service $service)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $service->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this service.');
+        }
+
         $service->delete();
         return redirect()->route('admin.services.index')->with('success', 'Service deleted successfully.');
     }

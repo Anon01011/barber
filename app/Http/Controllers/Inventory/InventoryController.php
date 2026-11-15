@@ -498,9 +498,14 @@ class InventoryController extends Controller
      */
     public function edit(InventoryItem $inventory)
     {
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+
         try {
-            $categories = InventoryCategory::active()->orderBy('name')->get(['id', 'name']);
-            $suppliers = \App\Models\Supplier::active()->orderBy('name')->get(['id', 'name']);
+            $salonId = auth()->user()->salon_id;
+            $categories = InventoryCategory::where('salon_id', $salonId)->active()->orderBy('name')->get(['id', 'name']);
+            $suppliers = \App\Models\Supplier::where('salon_id', $salonId)->active()->orderBy('name')->get(['id', 'name']);
 
             return view('inventory.edit', [
                 'item' => $inventory,
@@ -520,6 +525,10 @@ class InventoryController extends Controller
      */
     public function update(Request $request, InventoryItem $inventory)
     {
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+
         $userBranchId = auth()->user()->branch_id;
         $salonId = auth()->user()->salon_id;
 
@@ -845,6 +854,10 @@ class InventoryController extends Controller
      */
     public function destroy(InventoryItem $inventory)
     {
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+
         if ($inventory->quantity_in_stock > 0) {
             return redirect()->back()
                 ->with('error', 'Cannot delete item with remaining stock. Please adjust stock to zero first.');
@@ -859,11 +872,12 @@ class InventoryController extends Controller
     /**
      * Update stock for an inventory item.
      */
-    /**
-     * Update stock for an inventory item.
-     */
     public function updateStock(Request $request, InventoryItem $inventory)
     {
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+
         $validated = $request->validate([
             'type' => 'required|in:purchase,adjustment,return,damaged,lost',
             'quantity' => 'required|numeric|min:0.0001',
@@ -1002,6 +1016,10 @@ class InventoryController extends Controller
      */
     public function transactions(InventoryItem $inventory)
     {
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+
         return redirect()->route('admin.inventory.index', ['search' => $inventory->sku]);
     }
 

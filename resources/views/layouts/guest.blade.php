@@ -25,18 +25,26 @@
 
     <!-- Header Button Styles -->
     <style>
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw;
+            width: 100%;
+        }
+
         .nav-link,
         .btn-primary,
         .btn-secondary {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.8125rem;
             border-radius: 6px;
             text-decoration: none;
             transition: all 0.2s ease;
-            font-weight: 500;
-            display: inline-block;
-            min-width: 80px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
+            white-space: nowrap;
         }
 
         .btn-primary {
@@ -54,7 +62,7 @@
         .btn-secondary {
             background: transparent;
             color: #d63384;
-            border: 1px solid #d63384;
+            border: 1.5px solid #d63384;
         }
 
         .btn-secondary:hover {
@@ -116,8 +124,8 @@
 
         .slider-container {
             display: flex;
-            width: 600px;
-            /* 3 images * 200px */
+            width: 100%;
+            max-width: 600px;
             animation: slide 9s infinite;
         }
 
@@ -193,39 +201,38 @@
     @endif
 </head>
 
-<body class="antialiased">
+<body class="antialiased overflow-x-hidden">
     <!-- Header -->
     <header class="bg-white shadow-sm fixed w-full z-50 top-0">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14 sm:h-16">
                 <!-- Left: Logo -->
-                <div class="flex items-center">
+                <div class="flex items-center min-w-0 pr-2">
                     @php
                         $logoUrl = app(\App\Services\SettingsService::class)->getLogoUrl($salon->id ?? null);
                         $salonName = \Illuminate\Support\Str::title($salon->name ?? config('app.name', 'Salon Name'));
                     @endphp
-                    <a href="{{ route('home') }}" class="flex items-center">
-                        <img src="{{ $logoUrl }}" alt="{{ $salonName }}" class="h-10 w-auto object-contain"
+                    <a href="{{ route('home') }}" class="flex items-center gap-2 min-w-0">
+                        <img src="{{ $logoUrl }}" alt="{{ $salonName }}" class="h-8 sm:h-10 w-auto object-contain max-w-[130px] sm:max-w-none flex-shrink-0"
                             onerror="this.style.display='none'; document.getElementById('header-salon-name').style.display='block';">
-                        <span id="header-salon-name" class="text-2xl font-playfair text-pink-600"
+                        <span id="header-salon-name" class="text-base sm:text-2xl font-bold font-playfair text-pink-600 truncate"
                             style="display: none;">{{ $salonName }}</span>
                     </a>
                 </div>
 
-
-                <!-- Right: Profile -->
-                <div class="flex items-center space-x-4">
+                <!-- Right: Profile / Actions -->
+                <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                     @if (Route::has('login'))
                         @auth
                             <div class="relative">
                                 <button id="profile-toggle"
-                                    class="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded-lg">
-                                    <i class="fas fa-user-circle text-2xl text-gray-600"></i>
-                                    <span class="text-sm font-medium">{{ Auth::user()->name ?? 'User' }}</span>
-                                    <i class="fas fa-chevron-down text-sm text-gray-400"></i>
+                                    class="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-colors">
+                                    <i class="fas fa-user-circle text-xl sm:text-2xl text-gray-600"></i>
+                                    <span class="text-xs sm:text-sm font-medium max-w-[90px] truncate sm:max-w-none">{{ Auth::user()->name ?? 'User' }}</span>
+                                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                                 </button>
                                 <!-- Dropdown -->
-                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden"
+                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden border border-gray-100"
                                     id="profile-dropdown">
                                     <a href="{{ url('/dashboard') }}"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
@@ -237,13 +244,14 @@
                                 </div>
                             </div>
                         @else
-                            @if (!empty($salon?->slug))
-                                <a href="{{ route('booking.guest', ['salon_slug' => $salon->slug]) }}" class="btn-primary">Book Now</a>
+                            @if (!request()->routeIs('booking.guest') && !empty($salon?->slug))
+                                <a href="{{ route('booking.guest', ['salon_slug' => $salon->slug]) }}" class="btn-primary text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-md">
+                                    <i class="fas fa-calendar-check mr-1"></i><span>Book Now</span>
+                                </a>
                             @endif
-                            <a href="{{ route('login') }}" class="btn-secondary">Login</a>
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="btn-secondary">Register</a>
-                            @endif
+                            <a href="{{ route('login') }}" class="btn-secondary text-xs sm:text-sm px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-md">
+                                <i class="fas fa-sign-in-alt sm:mr-1"></i><span class="hidden sm:inline">Sign In</span><span class="sm:hidden">Login</span>
+                            </a>
                         @endauth
                     @endif
                 </div>
@@ -252,7 +260,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="pt-16 min-h-screen bg-gray-50">
+    <main class="pt-14 sm:pt-16 min-h-screen bg-gray-50 overflow-x-hidden">
         @yield('content')
         {{ $slot ?? '' }}
     </main>

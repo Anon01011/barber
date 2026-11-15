@@ -147,6 +147,11 @@ class PackageController extends Controller
      */
     public function show(Package $package)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $package->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this package.');
+        }
+
         $package->load('services');
 
         return view('admin.packages.show', compact('package'));
@@ -157,7 +162,13 @@ class PackageController extends Controller
      */
     public function edit(Package $package)
     {
-        $services = Service::active()->get(['id', 'name', 'price']);
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $package->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this package.');
+        }
+
+        $salonId = $user->salon_id;
+        $services = Service::where('salon_id', $salonId)->active()->get(['id', 'name', 'price']);
         $taxRates = [0, 5, 8.25, 10, 15];
         $package->load('services');
 
@@ -169,6 +180,12 @@ class PackageController extends Controller
      */
     public function update(Request $request, Package $package)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $package->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this package.');
+        }
+
+        $salonId = $user->salon_id;
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -180,7 +197,10 @@ class PackageController extends Controller
             'validity_unit' => 'required|in:days,weeks,months,years',
             'validity_description' => 'nullable|string|max:500',
             'services' => 'required|array|min:1',
-            'services.*' => 'exists:services,id',
+            'services.*' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('services', 'id')->where('salon_id', $salonId),
+            ],
             'quantity.*' => 'nullable|integer|min:1|max:10',
             'is_active' => 'nullable|boolean',
             'service_limit' => 'nullable|integer|min:1',
@@ -221,6 +241,11 @@ class PackageController extends Controller
      */
     public function destroy(Package $package)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $package->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this package.');
+        }
+
         $package->delete();
 
         return redirect()->route('admin.packages.index')

@@ -769,17 +769,22 @@ class GuestBookingController extends Controller
         if (!$salon) {
             abort(500, 'Salon context not available');
         }
-        $query = Customer::where('salon_id', $salon->id);
-
-        if (!empty($validated['phone'])) {
-            $query->where('phone', $validated['phone']);
-            if (!empty($validated['country_code'])) {
-                $query->where('country_code', $validated['country_code']);
-            }
-        }
-        if (!empty($validated['email'])) {
-            $query->orWhere('email', $validated['email']);
-        }
+        $query = Customer::where('salon_id', $salon->id)
+            ->where(function ($q) use ($validated) {
+                if (!empty($validated['phone'])) {
+                    $q->where('phone', $validated['phone']);
+                    if (!empty($validated['country_code'])) {
+                        $q->where('country_code', $validated['country_code']);
+                    }
+                }
+                if (!empty($validated['email'])) {
+                    if (!empty($validated['phone'])) {
+                        $q->orWhere('email', $validated['email']);
+                    } else {
+                        $q->where('email', $validated['email']);
+                    }
+                }
+            });
         $customer = $query->first();
 
         if (!$customer) {
@@ -788,6 +793,7 @@ class GuestBookingController extends Controller
 
         $bookings = Booking::with(['service', 'staff'])
             ->where('customer_id', $customer->id)
+            ->where('salon_id', $salon->id)
             ->orderBy('start_time', 'desc')
             ->get()
             ->map(function ($booking) {
@@ -803,9 +809,17 @@ class GuestBookingController extends Controller
                 ];
             });
 
+        $maskedEmail = $customer->email ? \Illuminate\Support\Str::mask($customer->email, '*', 2, max(1, (strpos($customer->email, '@') ?: 2) - 2)) : null;
+        $maskedPhone = $customer->phone ? \Illuminate\Support\Str::mask($customer->phone, '*', 2, max(1, strlen($customer->phone) - 4)) : null;
+
         return response()->json([
             'bookings' => $bookings,
-            'customer' => $customer->only(['name', 'phone', 'email', 'country_code'])
+            'customer' => [
+                'name' => $customer->name,
+                'phone' => $maskedPhone,
+                'email' => $maskedEmail,
+                'country_code' => $customer->country_code,
+            ]
         ]);
     }
 

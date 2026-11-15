@@ -14,7 +14,10 @@ class BranchController extends Controller
      */
     public function index()
     {
-        $branches = Branch::latest()->paginate(10);
+        $user = auth()->user();
+        $branches = $user->isSuperAdmin()
+            ? Branch::latest()->paginate(10)
+            : Branch::where('salon_id', $user->salon_id)->latest()->paginate(10);
         return view('admin.branches.index', compact('branches'));
     }
 
@@ -56,7 +59,7 @@ class BranchController extends Controller
                 return back()->withInput()->with('error', 'Branch limit reached for your current plan. Please upgrade to add more branches.');
             }
 
-            Branch::create($validated);
+            Branch::create(array_merge($validated, ['salon_id' => auth()->user()->salon_id]));
 
             DB::commit();
 
@@ -74,6 +77,9 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
+        if (!auth()->user()->isSuperAdmin() && $branch->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this branch.');
+        }
         return view('admin.branches.show', compact('branch'));
     }
 
@@ -82,6 +88,9 @@ class BranchController extends Controller
      */
     public function edit(Branch $branch)
     {
+        if (!auth()->user()->isSuperAdmin() && $branch->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this branch.');
+        }
         return view('admin.branches.edit', compact('branch'));
     }
 
@@ -90,6 +99,10 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
+        if (!auth()->user()->isSuperAdmin() && $branch->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this branch.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string',
@@ -119,6 +132,10 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch)
     {
+        if (!auth()->user()->isSuperAdmin() && $branch->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this branch.');
+        }
+
         try {
             DB::beginTransaction();
 

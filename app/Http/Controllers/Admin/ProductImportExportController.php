@@ -118,7 +118,13 @@ class ProductImportExportController extends Controller
         $csv = Writer::createFromFileObject(new SplTempFileObject());
         
         foreach ($data as $row) {
-            $csv->insertOne($row);
+            $sanitizedRow = array_map(function ($val) {
+                if (is_string($val) && strlen($val) > 0 && in_array($val[0], ['=', '+', '-', '@', "\t", "\r"])) {
+                    return "'" . $val;
+                }
+                return $val;
+            }, (array) $row);
+            $csv->insertOne($sanitizedRow);
         }
         
         return Response::make($csv->toString(), 200, [

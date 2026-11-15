@@ -12,6 +12,7 @@ use App\Models\Package;
 use App\Models\StaffCommission;
 use App\Services\CommissionService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CommissionProfileController extends Controller
 {
@@ -212,7 +213,7 @@ class CommissionProfileController extends Controller
     public function destroy(CommissionProfile $profile)
     {
         // Ensure profile belongs to current salon
-        if ($profile->salon_id !== auth()->user()->salon_id) {
+        if (!auth()->user()->isSuperAdmin() && $profile->salon_id !== auth()->user()->salon_id) {
             abort(403);
         }
 
@@ -270,12 +271,16 @@ class CommissionProfileController extends Controller
      */
     public function approveCommissions(Request $request)
     {
+        $salonId = auth()->user()->salon_id;
         $validated = $request->validate([
             'commission_ids' => 'required|array',
-            'commission_ids.*' => 'exists:staff_commissions,id',
+            'commission_ids.*' => [
+                'required',
+                Rule::exists('staff_commissions', 'id')->where('salon_id', $salonId)
+            ],
         ]);
 
-        $count = $this->commissionService->approveCommissions($validated['commission_ids']);
+        $count = $this->commissionService->approveCommissions($validated['commission_ids'], $salonId);
 
         return back()->with('success', "{$count} commission(s) approved successfully.");
     }
@@ -285,12 +290,16 @@ class CommissionProfileController extends Controller
      */
     public function markAsPaid(Request $request)
     {
+        $salonId = auth()->user()->salon_id;
         $validated = $request->validate([
             'commission_ids' => 'required|array',
-            'commission_ids.*' => 'exists:staff_commissions,id',
+            'commission_ids.*' => [
+                'required',
+                Rule::exists('staff_commissions', 'id')->where('salon_id', $salonId)
+            ],
         ]);
 
-        $count = $this->commissionService->markCommissionsAsPaid($validated['commission_ids']);
+        $count = $this->commissionService->markCommissionsAsPaid($validated['commission_ids'], $salonId);
 
         return back()->with('success', "{$count} commission(s) marked as paid successfully.");
     }

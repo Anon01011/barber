@@ -343,6 +343,10 @@ class StaffController extends Controller
      */
     public function show(User $staff)
     {
+        if (!auth()->user()->isSuperAdmin() && $staff->salon_id !== auth()->user()->salon_id) {
+            abort(403, 'Unauthorized access to this staff member.');
+        }
+
         return view('staff.show', compact('staff'));
     }
 
@@ -351,6 +355,13 @@ class StaffController extends Controller
      */
     public function edit(User $staff)
     {
+        if (!auth()->user()->isSuperAdmin() && $staff->salon_id !== auth()->user()->salon_id) {
+            if (request()->ajax()) {
+                return response()->json(['error' => 'Unauthorized access.'], 403);
+            }
+            abort(403, 'Unauthorized access to this staff member.');
+        }
+
         // Return JSON for modal if AJAX request
         if (request()->ajax()) {
             // Load roles relationship to avoid N+1 query
@@ -482,6 +493,15 @@ class StaffController extends Controller
      */
     public function destroy(User $staff)
     {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && $staff->salon_id !== $user->salon_id) {
+            abort(403, 'Unauthorized access to this staff member.');
+        }
+
+        if ($staff->hasRole('super_admin') || ($staff->hasRole('salon_admin') && $staff->id === $user->id)) {
+            return back()->with('error', 'Cannot delete primary salon administrator.');
+        }
+
         try {
             // Check if staff has bookings (optional but good practice)
             // if ($staff->bookings()->exists()) { ... }

@@ -107,8 +107,17 @@ class ServiceImportExportController extends Controller
             'Online Booking'
         ]);
 
+        $sanitizeRow = function (array $row) {
+            return array_map(function ($val) {
+                if (is_string($val) && strlen($val) > 0 && in_array($val[0], ['=', '+', '-', '@', "\t", "\r"])) {
+                    return "'" . $val;
+                }
+                return $val;
+            }, $row);
+        };
+
         foreach ($services as $service) {
-            $csv->insertOne([
+            $csv->insertOne($sanitizeRow([
                 $service->category->name ?? '',
                 $service->category->description ?? '',
                 $service->name,
@@ -117,7 +126,7 @@ class ServiceImportExportController extends Controller
                 $service->duration,
                 $service->status,
                 $service->available_for_online_booking ? 'yes' : 'no'
-            ]);
+            ]));
         }
 
         return Response::make($csv->toString(), 200, [

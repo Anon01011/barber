@@ -268,13 +268,15 @@ Route::middleware('auth')->group(function () {
 // SALON ROUTES (Scoped by Slug)
 Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::class, \App\Http\Middleware\ConfigureSalonMail::class, \App\Http\Middleware\SetBranchContext::class, \App\Http\Middleware\CheckSalonApproval::class])->group(function () {
 
-    // Guest Online Booking Routes (Public)
-    Route::get('/booking/guest', [GuestBookingController::class, 'index'])->name('booking.guest');
-    Route::post('/booking/guest', [GuestBookingController::class, 'store'])->name('booking.guest.store');
-    Route::get('/booking/guest/services', [GuestBookingController::class, 'getServices'])->name('booking.guest.services');
-    Route::get('/booking/guest/slots', [GuestBookingController::class, 'getAvailableSlots'])->name('booking.guest.slots');
-    Route::post('/booking/guest/check', [GuestBookingController::class, 'checkExistingBookings'])->name('booking.guest.check');
-    Route::post('/booking/guest/reschedule/{id}', [GuestBookingController::class, 'reschedule'])->name('guest.booking.reschedule');
+    // Guest Online Booking Routes (Public - rate limited to prevent spam & enumeration)
+    Route::middleware(['throttle:60,1'])->group(function () {
+        Route::get('/booking/guest', [GuestBookingController::class, 'index'])->name('booking.guest');
+        Route::post('/booking/guest', [GuestBookingController::class, 'store'])->name('booking.guest.store')->middleware('throttle:15,1');
+        Route::get('/booking/guest/services', [GuestBookingController::class, 'getServices'])->name('booking.guest.services');
+        Route::get('/booking/guest/slots', [GuestBookingController::class, 'getAvailableSlots'])->name('booking.guest.slots');
+        Route::post('/booking/guest/check', [GuestBookingController::class, 'checkExistingBookings'])->name('booking.guest.check')->middleware('throttle:10,1');
+        Route::post('/booking/guest/reschedule/{id}', [GuestBookingController::class, 'reschedule'])->name('guest.booking.reschedule')->middleware('throttle:10,1');
+    });
 
     // Customer Services API (Public)
     Route::get('/customer/services', function () {
@@ -818,7 +820,5 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 });
 // Stripe Webhook (must be outside auth middleware)
 Route::post('/stripe/webhook', [App\Http\Controllers\SaaS\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
-
-Route::get('/test-package-bug', [App\Http\Controllers\TestController::class, 'testPackageBug']);
 
 require __DIR__ . '/auth.php';

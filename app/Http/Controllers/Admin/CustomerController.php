@@ -432,6 +432,11 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
+        $salonId = auth()->user()?->salon_id;
+        if (!auth()->user()->isSuperAdmin() && (!$salonId || $customer->salon_id !== $salonId)) {
+            abort(403, 'Unauthorized access to customer');
+        }
+
         if (request()->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -687,8 +692,17 @@ class CustomerController extends Controller
                 ])
                 ->cursor();
 
+            $sanitizeRow = function (array $row) {
+                return array_map(function ($val) {
+                    if (is_string($val) && strlen($val) > 0 && in_array($val[0], ['=', '+', '-', '@', "\t", "\r"])) {
+                        return "'" . $val;
+                    }
+                    return $val;
+                }, $row);
+            };
+
             foreach ($customers as $customer) {
-                fputcsv($file, [
+                fputcsv($file, $sanitizeRow([
                     $customer->name,
                     $customer->display_email,
                     $customer->display_phone,
@@ -697,7 +711,7 @@ class CustomerController extends Controller
                     $customer->status,
                     $customer->created_at->format('Y-m-d'),
                     $customer->last_visit_at ? $customer->last_visit_at->format('Y-m-d') : 'Never'
-                ]);
+                ]));
             }
 
             fclose($file);
@@ -852,6 +866,11 @@ class CustomerController extends Controller
      */
     public function showDetails(Customer $customer)
     {
+        $salonId = auth()->user()?->salon_id;
+        if (!auth()->user()->isSuperAdmin() && (!$salonId || $customer->salon_id !== $salonId)) {
+            abort(403, 'Unauthorized access to customer');
+        }
+
         \Log::info('DEBUG: showDetails hit for customer ' . $customer->id);
 
         // For AJAX requests (from booking modal), return JSON

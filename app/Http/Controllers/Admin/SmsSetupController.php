@@ -108,12 +108,19 @@ class SmsSetupController extends Controller
                         'body' => $message,
                     ]);
             } elseif ($gateway === 'custom') {
+                if (!$this->isSafeWebhookUrl($request->custom_sms_url)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid or restricted custom gateway URL. Internal and private network addresses are blocked for security.'
+                    ], 422);
+                }
+
                 $headers = json_decode($request->input('custom_sms_headers', '[]'), true);
                 $payload = json_decode($request->input('custom_sms_payload', '[]'), true);
                 $payload[$request->custom_sms_to_key] = $request->phone;
                 $payload[$request->custom_sms_message_key] = $message;
 
-                $req = \Illuminate\Support\Facades\Http::withHeaders($headers ?: []);
+                $req = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders($headers ?: []);
                 $response = ($request->custom_sms_method === 'GET')
                     ? $req->get($request->custom_sms_url, $payload)
                     : $req->post($request->custom_sms_url, $payload);
@@ -122,11 +129,57 @@ class SmsSetupController extends Controller
             if ($response && $response->successful()) {
                 return response()->json(['success' => true, 'message' => 'Test SMS sent successfully!']);
             } else {
-                $error = $response ? ($response->json('message') ?? $response->body()) : 'Unknown error';
+                $error = $response ? ($response->json('message') ?? 'Gateway returned an error code ' . $response->status()) : 'Unknown error';
                 return response()->json(['success' => false, 'message' => 'Gateway Error: ' . $error]);
             }
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error: Failed to deliver test message.']);
         }
+    }
+
+    /**
+     * Validate that a webhook URL does not resolve to private/reserved networks (SSRF defense).
+     */
+    protected function isSafeWebhookUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || empty($parsed['scheme']) || empty($parsed['host'])) {
+            return false;
+        }
+
+        if (!in_array(strtolower($parsed['scheme']), ['https', 'http'], true)) {
+            return false;
+        }
+
+        $host = strtolower($parsed['host']);
+
+        // Explicit blocked hostnames
+        $blockedHosts = ['localhost', '127.0.0.1', '::1', 'metadata.google.internal', 'instance-data'];
+        if (in_array($host, $blockedHosts, true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local')) {
+            return false;
+        }
+
+        // Resolve IP addresses
+        $ipList = [];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ipList[] = $host;
+        } else {
+            $ip = @gethostbyname($host);
+            if ($ip && $ip !== $host) {
+                $ipList[] = $ip;
+            }
+        }
+
+        if (empty($ipList)) {
+            return false;
+        }
+
+        foreach ($ipList as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
