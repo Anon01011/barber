@@ -4,394 +4,317 @@
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.css" rel="stylesheet">
-    <style>
-        .stat-card {
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .trend-up {
-            color: #198754;
-        }
-
-        .trend-down {
-            color: #dc3545;
-        }
-
-        .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .table th {
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-        }
-
-        .badge {
-            font-weight: 500;
-            padding: 0.35em 0.65em;
-        }
-    </style>
+    <link href="{{ asset('css/pos-analytics.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
-    <div class="container-fluid py-3">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div
-                    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3">
-                    <div class="mb-3 mb-md-0">
-                        <h1 class="h3 mb-2">
-                            <i class="fas fa-chart-line text-primary me-2"></i>Sales Analytics
-                        </h1>
-                        <nav aria-label="breadcrumb" class="d-none d-md-block">
-                            <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">Sales Analytics</li>
-                            </ol>
-                        </nav>
-                    </div>
+<div class="analytics-wrapper py-3 px-2 px-md-3">
+    <!-- Top Bar: Header & Date Filter Bar -->
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="metric-icon-box bg-primary text-white shadow-sm">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <h1 class="h4 fw-bold mb-0 text-dark">Sales Analytics</h1>
+                    <span class="text-muted small">Real-time performance, revenue, tenders &amp; inventory insights</span>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Date Range Picker -->
-                    <div class="mt-3 mt-md-0">
-                        <form action="" method="GET" class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                <label for="start_date" class="col-form-label">From:</label>
-                            </div>
-                            <div class="col-auto">
-                                <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
-                                    class="form-control form-control-sm">
-                            </div>
-                            <div class="col-auto">
-                                <label for="end_date" class="col-form-label">To:</label>
-                            </div>
-                            <div class="col-auto">
-                                <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
-                                    class="form-control form-control-sm">
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-filter me-1"></i> Apply
-                                </button>
-                            </div>
-                        </form>
+        <!-- Filter Presets & Date Range -->
+        <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 flex-wrap">
+            <!-- Quick Date Presets -->
+            <div class="d-flex align-items-center gap-1 overflow-x-auto pb-1 pb-sm-0" id="filterPresetsContainer">
+                <button type="button" class="filter-preset-btn" data-range="today">Today</button>
+                <button type="button" class="filter-preset-btn" data-range="yesterday">Yesterday</button>
+                <button type="button" class="filter-preset-btn" data-range="last7">7 Days</button>
+                <button type="button" class="filter-preset-btn" data-range="thisMonth">This Month</button>
+                <button type="button" class="filter-preset-btn" data-range="last30">30 Days</button>
+            </div>
+
+            <!-- Custom Date Range Form -->
+            <form action="" method="GET" id="analyticsDateFilterForm" class="d-flex align-items-center gap-1 bg-white p-1 rounded-3 border shadow-sm">
+                <div class="input-group input-group-sm" style="width: 125px;">
+                    <span class="input-group-text bg-transparent border-0 px-1 text-muted" style="font-size:0.75rem;">From</span>
+                    <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" class="form-control form-control-sm border-0 p-0" style="font-size: 0.78rem;">
+                </div>
+                <span class="text-muted" style="font-size:0.8rem;">&ndash;</span>
+                <div class="input-group input-group-sm" style="width: 125px;">
+                    <span class="input-group-text bg-transparent border-0 px-1 text-muted" style="font-size:0.75rem;">To</span>
+                    <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" class="form-control form-control-sm border-0 p-0" style="font-size: 0.78rem;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm px-2 py-1 rounded-2" title="Apply Filter">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @php
+        $sym = currency_symbol();
+        $pmTotal   = $paymentMethodBreakdown['total_collected'] ?? 0;
+        $pmRevenue = $paymentMethodBreakdown['revenue_paid'] ?? 0;
+        $pmTip     = $paymentMethodBreakdown['tip_total'] ?? 0;
+    @endphp
+
+    <!-- ============================================================== -->
+    <!-- SECTION 1: CORE FINANCIAL HEALTH METRICS (Unified 8-Card Grid) -->
+    <!-- ============================================================== -->
+    <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+        <!-- 1. Net Revenue -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #10b981;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-success">Net Revenue</div>
+                        <div class="analytics-metric-val text-success">{{ $sym }}{{ number_format($salesData['netRevenue'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">Paid Revenue &minus; Refunds</div>
+                    </div>
+                    <div class="metric-icon-box bg-success bg-opacity-10 text-success ms-2">
+                        <i class="fas fa-wallet"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Cards Row 1 -->
-        <div class="row g-3 mb-3">
-            <!-- Total Revenue (Net) -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="text-uppercase text-muted small fw-bold mb-1">Net Revenue</p>
-                                <h3 class="mb-0 fw-bold text-success">
-                                    {{ currency_symbol() }}{{ number_format($salesData['netRevenue'] ?? 0, 2) }}
-                                </h3>
-                                <small class="text-muted">Total Paid - Net Refunds</small>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px;">
-                                <i class="fas fa-wallet text-success fs-5"></i>
-                            </div>
-                        </div>
+        <!-- 2. Total Invoiced -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #334155;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-dark">Total Invoiced</div>
+                        <div class="analytics-metric-val text-dark">{{ $sym }}{{ number_format($salesData['totalSales'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">{{ $salesData['totalTransactions'] ?? 0 }} total transactions</div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Total Refunded (Actual) -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="text-uppercase text-muted small fw-bold mb-1">Net Refunded</p>
-                                <h3 class="mb-0 fw-bold text-danger">
-                                    {{ currency_symbol() }}{{ number_format($salesData['netRefunded'] ?? 0, 2) }}
-                                </h3>
-                                <small class="text-muted">Actual amount returned</small>
-                            </div>
-                            <div class="bg-danger bg-opacity-10 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px;">
-                                <i class="fas fa-undo text-danger fs-5"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total Refund Fees -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="text-uppercase text-muted small fw-bold mb-1">Refund Fees</p>
-                                <h3 class="mb-0 fw-bold text-primary">
-                                    {{ currency_symbol() }}{{ number_format($salesData['refundFees'] ?? 0, 2) }}
-                                </h3>
-                                <small class="text-muted">Retained by salon</small>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px;">
-                                <i class="fas fa-percentage text-primary fs-5"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total Tips -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="text-uppercase text-muted small fw-bold mb-1">Total Tips</p>
-                                <h3 class="mb-0 fw-bold text-info">
-                                    {{ currency_symbol() }}{{ number_format($salesData['totalTips'] ?? 0, 2) }}
-                                </h3>
-                            </div>
-                            <div class="bg-info bg-opacity-10 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px;">
-                                <i class="fas fa-hand-holding-usd text-info fs-5"></i>
-                            </div>
-                        </div>
+                    <div class="metric-icon-box bg-dark bg-opacity-10 text-dark ms-2">
+                        <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Cards Row 2 (Secondary Metrics) -->
-        <div class="row g-3 mb-4">
-            <!-- Total Paid Inflow -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4 text-center">
-                        <p class="text-uppercase text-muted small fw-bold mb-1">Total Paid (Revenue)</p>
-                        <h4 class="mb-0 font-weight-bold text-success">
-                            {{ currency_symbol() }}{{ number_format($salesData['totalPaid'] ?? 0, 2) }}</h4>
-                        <small class="text-muted" style="font-size: 0.75rem;">+ {{ currency_symbol() }}{{ number_format($salesData['totalTips'] ?? 0, 2) }} tips = {{ currency_symbol() }}{{ number_format(($salesData['totalPaid'] ?? 0) + ($salesData['totalTips'] ?? 0), 2) }} inflow</small>
+        <!-- 3. Total Paid / Cash Inflow -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #0d6efd;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-primary">Total Paid (Inflow)</div>
+                        <div class="analytics-metric-val text-primary">{{ $sym }}{{ number_format($salesData['totalPaid'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">+ {{ $sym }}{{ number_format($salesData['totalTips'] ?? 0, 2) }} tips = {{ $sym }}{{ number_format(($salesData['totalPaid'] ?? 0) + ($salesData['totalTips'] ?? 0), 2) }} inflow</div>
                     </div>
-                </div>
-            </div>
-            <!-- Total Discounts -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4 text-center">
-                        <p class="text-uppercase text-muted small fw-bold mb-1">Total Discounts</p>
-                        <h4 class="mb-0 font-weight-bold text-secondary">
-                            {{ currency_symbol() }}{{ number_format($salesData['totalDiscounts'] ?? 0, 2) }}</h4>
-                    </div>
-                </div>
-            </div>
-            <!-- Total Invoiced -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4 text-center">
-                        <p class="text-uppercase text-muted small fw-bold mb-1">Total Invoiced</p>
-                        <h4 class="mb-0 font-weight-bold text-dark">
-                            {{ currency_symbol() }}{{ number_format($salesData['totalSales'] ?? 0, 2) }}</h4>
-                    </div>
-                </div>
-            </div>
-            <!-- Total Outstanding -->
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div class="card stat-card h-100 border-0 shadow-sm">
-                    <div class="card-body p-4 text-center">
-                        <p class="text-uppercase text-muted small fw-bold mb-1">Total Outstanding</p>
-                        <h4 class="mb-0 font-weight-bold text-warning">
-                            {{ currency_symbol() }}{{ number_format($salesData['totalUnpaid'] ?? 0, 2) }}</h4>
+                    <div class="metric-icon-box bg-primary bg-opacity-10 text-primary ms-2">
+                        <i class="fas fa-hand-holding-usd"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================================================================
-             Payment Collection by Method — Cards Row
-        ================================================================ -->
-        @php
-            $sym = currency_symbol();
-            $pmTotal   = $paymentMethodBreakdown['total_collected'] ?? 0;
-            $pmRevenue = $paymentMethodBreakdown['revenue_paid'] ?? 0;
-            $pmTip     = $paymentMethodBreakdown['tip_total'] ?? 0;
-        @endphp
-        <div class="row g-3 mb-2">
-            <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <h6 class="text-uppercase text-muted fw-bold mb-0" style="font-size:0.75rem; letter-spacing:0.5px;">
-                    <i class="fas fa-credit-card me-1 text-primary"></i> Collection by Payment Method
+        <!-- 4. Total Outstanding -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #f59e0b;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-warning">Total Outstanding</div>
+                        <div class="analytics-metric-val text-warning">{{ $sym }}{{ number_format($salesData['totalUnpaid'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">{{ $salesData['unpaidTransactions'] ?? 0 }} unpaid/pending</div>
+                    </div>
+                    <div class="metric-icon-box bg-warning bg-opacity-10 text-warning ms-2">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Total Tips -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #06b6d4;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-info">Total Tips</div>
+                        <div class="analytics-metric-val text-info">{{ $sym }}{{ number_format($salesData['totalTips'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">Earned by staff</div>
+                    </div>
+                    <div class="metric-icon-box bg-info bg-opacity-10 text-info ms-2">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Total Discounts -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #8b5cf6;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title" style="color: #8b5cf6;">Discounts</div>
+                        <div class="analytics-metric-val" style="color: #8b5cf6;">{{ $sym }}{{ number_format($salesData['totalDiscounts'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">Coupons &amp; reductions</div>
+                    </div>
+                    <div class="metric-icon-box ms-2" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                        <i class="fas fa-tag"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Net Refunded -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #ef4444;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title text-danger">Net Refunded</div>
+                        <div class="analytics-metric-val text-danger">{{ $sym }}{{ number_format($salesData['netRefunded'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">Gross refunds &minus; fees</div>
+                    </div>
+                    <div class="metric-icon-box bg-danger bg-opacity-10 text-danger ms-2">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Refund Fees -->
+        <div class="col">
+            <div class="analytics-card p-3 h-100 position-relative overflow-hidden" style="border-top: 3px solid #6366f1;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="w-100">
+                        <div class="analytics-metric-title" style="color: #6366f1;">Refund Fees</div>
+                        <div class="analytics-metric-val" style="color: #6366f1;">{{ $sym }}{{ number_format($salesData['refundFees'] ?? 0, 2) }}</div>
+                        <div class="analytics-metric-sub">Retained fee revenue</div>
+                    </div>
+                    <div class="metric-icon-box ms-2" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 2: COLLECTION BY PAYMENT METHOD (Tender Channels)       -->
+    <!-- ============================================================== -->
+    <div class="analytics-card p-3 mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-credit-card text-primary"></i> Collection by Payment Method
                 </h6>
-                <span class="badge bg-light text-dark border fw-normal" style="font-size:0.75rem;">
-                    Total Inflow: <strong>{{ $sym }}{{ number_format($pmTotal, 2) }}</strong> (Sales: {{ $sym }}{{ number_format($pmRevenue, 2) }} + Tips: {{ $sym }}{{ number_format($pmTip, 2) }})
+                <span class="text-muted small">Breakdown of cash drawer, card machines, and digital receipts</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-dark text-white rounded-pill px-3 py-1 fw-normal" style="font-size:0.75rem;">
+                    Total Inflow: <strong>{{ $sym }}{{ number_format($pmTotal, 2) }}</strong> &bull; Sales: {{ $sym }}{{ number_format($pmRevenue, 2) }} &bull; Tips: {{ $sym }}{{ number_format($pmTip, 2) }}
                 </span>
             </div>
         </div>
-        <div class="row g-3 mb-4">
+
+        <!-- 6 Compact Cards Grid -->
+        <div class="row g-2 mb-3">
             {{-- Cash --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #198754 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="bg-success bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                <i class="fas fa-money-bill-wave text-success"></i>
-                            </div>
-                            <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size:0.72rem;">
-                                {{ number_format($paymentMethodBreakdown['cash_pct'] ?? 0, 1) }}%
-                            </span>
-                        </div>
-                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Cash</p>
-                        <h5 class="mb-0 fw-bold text-success">{{ $sym }}{{ number_format($paymentMethodBreakdown['cash'] ?? 0, 2) }}</h5>
-                        @php $cashMethod = $paymentMethodBreakdown['by_method']['cash'] ?? null; @endphp
-                        <small class="text-muted">{{ $cashMethod ? $cashMethod->cnt : 0 }} cash-only sales</small>
+                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between" style="border-left: 3px solid #10b981 !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold text-success"><i class="fas fa-money-bill-wave me-1"></i>Cash</span>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-size:0.68rem;">{{ number_format($paymentMethodBreakdown['cash_pct'] ?? 0, 1) }}%</span>
                     </div>
+                    <div class="h5 fw-bold text-dark mb-0">{{ $sym }}{{ number_format($paymentMethodBreakdown['cash'] ?? 0, 2) }}</div>
+                    @php $cashMethod = $paymentMethodBreakdown['by_method']['cash'] ?? null; @endphp
+                    <span class="text-muted" style="font-size:0.7rem;">{{ $cashMethod ? $cashMethod->cnt : 0 }} direct transactions</span>
                 </div>
             </div>
 
             {{-- Card --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #0d6efd !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                <i class="fas fa-credit-card text-primary"></i>
-                            </div>
-                            <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold" style="font-size:0.72rem;">
-                                {{ number_format($paymentMethodBreakdown['card_pct'] ?? 0, 1) }}%
-                            </span>
-                        </div>
-                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Card</p>
-                        <h5 class="mb-0 fw-bold text-primary">{{ $sym }}{{ number_format($paymentMethodBreakdown['card'] ?? 0, 2) }}</h5>
-                        @php $cardMethod = $paymentMethodBreakdown['by_method']['card'] ?? null; @endphp
-                        <small class="text-muted">{{ $cardMethod ? $cardMethod->cnt : 0 }} card-only sales</small>
+                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between" style="border-left: 3px solid #0d6efd !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold text-primary"><i class="fas fa-credit-card me-1"></i>Card</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill" style="font-size:0.68rem;">{{ number_format($paymentMethodBreakdown['card_pct'] ?? 0, 1) }}%</span>
                     </div>
+                    <div class="h5 fw-bold text-dark mb-0">{{ $sym }}{{ number_format($paymentMethodBreakdown['card'] ?? 0, 2) }}</div>
+                    @php $cardMethod = $paymentMethodBreakdown['by_method']['card'] ?? null; @endphp
+                    <span class="text-muted" style="font-size:0.7rem;">{{ $cardMethod ? $cardMethod->cnt : 0 }} direct transactions</span>
                 </div>
             </div>
 
             {{-- Online --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #0dcaf0 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                <i class="fas fa-globe text-info"></i>
-                            </div>
-                            <span class="badge bg-info bg-opacity-10 text-info fw-semibold" style="font-size:0.72rem;">
-                                {{ number_format($paymentMethodBreakdown['online_pct'] ?? 0, 1) }}%
-                            </span>
-                        </div>
-                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Online</p>
-                        <h5 class="mb-0 fw-bold text-info">{{ $sym }}{{ number_format($paymentMethodBreakdown['online'] ?? 0, 2) }}</h5>
-                        @php $onlineMethod = $paymentMethodBreakdown['by_method']['online'] ?? null; @endphp
-                        <small class="text-muted">{{ $onlineMethod ? $onlineMethod->cnt : 0 }} sales</small>
+                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between" style="border-left: 3px solid #0dcaf0 !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold text-info"><i class="fas fa-globe me-1"></i>Online</span>
+                        <span class="badge bg-info bg-opacity-10 text-info rounded-pill" style="font-size:0.68rem;">{{ number_format($paymentMethodBreakdown['online_pct'] ?? 0, 1) }}%</span>
                     </div>
+                    <div class="h5 fw-bold text-dark mb-0">{{ $sym }}{{ number_format($paymentMethodBreakdown['online'] ?? 0, 2) }}</div>
+                    @php $onlineMethod = $paymentMethodBreakdown['by_method']['online'] ?? null; @endphp
+                    <span class="text-muted" style="font-size:0.7rem;">{{ $onlineMethod ? $onlineMethod->cnt : 0 }} direct transactions</span>
                 </div>
             </div>
 
             {{-- Other --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #6f42c1 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(111,66,193,.1);">
-                                <i class="fas fa-ellipsis-h" style="color:#6f42c1;"></i>
-                            </div>
-                            <span class="badge fw-semibold" style="background:rgba(111,66,193,.1);color:#6f42c1;font-size:0.72rem;">
-                                {{ number_format($paymentMethodBreakdown['other_pct'] ?? 0, 1) }}%
-                            </span>
-                        </div>
-                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Other</p>
-                        <h5 class="mb-0 fw-bold" style="color:#6f42c1;">{{ $sym }}{{ number_format($paymentMethodBreakdown['other'] ?? 0, 2) }}</h5>
-                        @php $otherMethod = $paymentMethodBreakdown['by_method']['other'] ?? null; @endphp
-                        <small class="text-muted">{{ $otherMethod ? $otherMethod->cnt : 0 }} sales</small>
+                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between" style="border-left: 3px solid #6f42c1 !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold" style="color: #6f42c1;"><i class="fas fa-ellipsis-h me-1"></i>Other</span>
+                        <span class="badge rounded-pill" style="background: rgba(111,66,193,0.1); color:#6f42c1; font-size:0.68rem;">{{ number_format($paymentMethodBreakdown['other_pct'] ?? 0, 1) }}%</span>
                     </div>
+                    <div class="h5 fw-bold text-dark mb-0">{{ $sym }}{{ number_format($paymentMethodBreakdown['other'] ?? 0, 2) }}</div>
+                    @php $otherMethod = $paymentMethodBreakdown['by_method']['other'] ?? null; @endphp
+                    <span class="text-muted" style="font-size:0.7rem;">{{ $otherMethod ? $otherMethod->cnt : 0 }} direct transactions</span>
                 </div>
             </div>
 
             {{-- Tips Included --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #20c997 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(32,201,151,.1);">
-                                <i class="fas fa-hand-holding-usd" style="color:#20c997;"></i>
-                            </div>
-                            <span class="badge fw-semibold" style="background:rgba(32,201,151,.1);color:#20c997;font-size:0.72rem;">
-                                Included
-                            </span>
-                        </div>
-                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Tips Collected</p>
-                        <h5 class="mb-0 fw-bold" style="color:#20c997;">{{ $sym }}{{ number_format($pmTip, 2) }}</h5>
-                        <small class="text-muted">Staff tips in sales</small>
+                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between" style="border-left: 3px solid #20c997 !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold" style="color: #20c997;"><i class="fas fa-hand-holding-usd me-1"></i>Tips</span>
+                        <span class="badge bg-light text-secondary border rounded-pill" style="font-size:0.68rem;">Included</span>
                     </div>
+                    <div class="h5 fw-bold text-dark mb-0">{{ $sym }}{{ number_format($pmTip, 2) }}</div>
+                    <span class="text-muted" style="font-size:0.7rem;">Inflow tip portion</span>
                 </div>
             </div>
 
-            {{-- Total Collected summary card --}}
+            {{-- Total Collected --}}
             <div class="col-6 col-sm-4 col-xl-2">
-                <div class="card stat-card h-100 border-0 shadow-sm bg-dark text-white" style="border-left:4px solid #343a40 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(255,255,255,.1);">
-                                <i class="fas fa-coins text-white"></i>
-                            </div>
-                            <span class="badge bg-light text-dark fw-semibold" style="font-size:0.72rem;">100%</span>
-                        </div>
-                        <p class="text-uppercase small fw-bold mb-1 text-white-50" style="font-size:0.68rem;">Total Inflow</p>
-                        <h5 class="mb-0 fw-bold text-white">{{ $sym }}{{ number_format($pmTotal, 2) }}</h5>
-                        <small class="text-white-50">Sales {{ $sym }}{{ number_format($pmRevenue, 2) }} + Tips {{ $sym }}{{ number_format($pmTip, 2) }}</small>
+                <div class="p-2 rounded-3 border bg-dark text-white h-100 d-flex flex-column justify-content-between">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold text-white-50"><i class="fas fa-coins me-1 text-warning"></i>Total Inflow</span>
+                        <span class="badge bg-white text-dark rounded-pill fw-bold" style="font-size:0.68rem;">100%</span>
                     </div>
+                    <div class="h5 fw-bold text-white mb-0">{{ $sym }}{{ number_format($pmTotal, 2) }}</div>
+                    <span class="text-white-50" style="font-size:0.68rem;">All payment tenders</span>
                 </div>
             </div>
-
-            {{-- Split / Mixed Transactions Info Notice --}}
-            @if(!empty($paymentMethodBreakdown['mixed_count']) && $paymentMethodBreakdown['mixed_count'] > 0)
-            <div class="col-12 mt-1">
-                <div class="alert alert-light border py-2 px-3 mb-0 small text-muted d-flex align-items-center justify-content-between">
-                    <div>
-                        <i class="fas fa-layer-group text-warning me-2"></i>
-                        <span><strong>Split Payments:</strong> {{ $paymentMethodBreakdown['mixed_count'] }} transaction ({{ $sym }}{{ number_format($paymentMethodBreakdown['mixed_amount'], 2) }}) was split across Cash &amp; Card. Its payments are already included in the Cash and Card totals above.</span>
-                    </div>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary fw-normal">Reconciled</span>
-                </div>
-            </div>
-            @endif
         </div>
 
-        <!-- Payment Method Chart + Progress Bars Row -->
-        <div class="row g-3 mb-4">
-            {{-- Bar chart --}}
+        {{-- Split Payments Reconciliation Banner --}}
+        @if(!empty($paymentMethodBreakdown['mixed_count']) && $paymentMethodBreakdown['mixed_count'] > 0)
+            <div class="alert alert-light border py-2 px-3 mb-3 small text-muted d-flex align-items-center justify-content-between rounded-3">
+                <div>
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <span><strong>Split Payments:</strong> {{ $paymentMethodBreakdown['mixed_count'] }} transaction ({{ $sym }}{{ number_format($paymentMethodBreakdown['mixed_amount'], 2) }}) was split across Cash &amp; Card. Its split amounts are already counted in the Cash and Card totals above.</span>
+                </div>
+                <span class="badge bg-secondary bg-opacity-10 text-secondary fw-normal">Reconciled</span>
+            </div>
+        @endif
+
+        <!-- Chart + Method Breakdown Row -->
+        <div class="row g-3">
             <div class="col-12 col-lg-7">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Collection by Payment Method</h5>
+                <div class="p-2 bg-light rounded-3 border">
+                    <div class="d-flex align-items-center justify-content-between mb-2 px-2 pt-1">
+                        <span class="small fw-bold text-dark"><i class="fas fa-chart-bar me-1 text-primary"></i>Tender Volume (excl. split double-counting)</span>
+                        <span class="text-muted small" style="font-size:0.75rem;">Amounts by Channel</span>
                     </div>
-                    <div class="card-body p-3">
-                        <div id="paymentMethodChart" style="height:280px;"></div>
-                    </div>
+                    <div id="paymentMethodChart" style="height: 240px;"></div>
                 </div>
             </div>
-
-            {{-- Progress breakdown --}}
             <div class="col-12 col-lg-5">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0"><i class="fas fa-list-ul me-2 text-primary"></i>Method Breakdown</h5>
-                    </div>
-                    <div class="card-body p-3">
+                <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="small fw-bold text-dark d-block mb-3"><i class="fas fa-list-ul me-1 text-primary"></i>Collection Summary</span>
                         @php
                             $methods = [
                                 ['label'=>'Cash',   'amount'=>$paymentMethodBreakdown['cash']??0,   'pct'=>$paymentMethodBreakdown['cash_pct']??0,   'color'=>'success',  'icon'=>'money-bill-wave'],
@@ -401,709 +324,385 @@
                             ];
                         @endphp
                         @foreach($methods as $m)
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="fas fa-{{ $m['icon'] }} text-{{ $m['color'] }}" style="width:16px;"></i>
-                                    <span class="small fw-semibold">{{ $m['label'] }}</span>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold text-dark"><i class="fas fa-{{ $m['icon'] }} text-{{ $m['color'] }} me-1" style="width:14px;"></i>{{ $m['label'] }}</span>
+                                    <div>
+                                        <span class="small fw-bold text-dark">{{ $sym }}{{ number_format($m['amount'], 2) }}</span>
+                                        <span class="text-muted small ms-1" style="font-size:0.72rem;">({{ $m['pct'] }}%)</span>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="fw-bold small">{{ $sym }}{{ number_format($m['amount'], 2) }}</span>
-                                    <span class="text-muted small ms-1">({{ $m['pct'] }}%)</span>
-                                </div>
-                            </div>
-                            <div class="progress" style="height:8px;border-radius:4px;">
-                                <div class="progress-bar bg-{{ $m['color'] }}" role="progressbar"
-                                     style="width:{{ $m['pct'] }}%;"
-                                     aria-valuenow="{{ $m['pct'] }}" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress" style="height: 6px; border-radius: 3px;">
+                                    <div class="progress-bar bg-{{ $m['color'] }}" role="progressbar" style="width: {{ $m['pct'] }}%;" aria-valuenow="{{ $m['pct'] }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
-                        </div>
                         @endforeach
+                    </div>
 
-                        <hr class="my-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1 text-muted small">
-                            <span>Sales Revenue Portion</span>
-                            <span>{{ $sym }}{{ number_format($pmRevenue, 2) }}</span>
+                    <div class="pt-2 mt-2 border-top">
+                        <div class="d-flex justify-content-between text-muted small mb-1" style="font-size:0.75rem;">
+                            <span>Sales Revenue Portion:</span>
+                            <span class="fw-semibold text-dark">{{ $sym }}{{ number_format($pmRevenue, 2) }}</span>
                         </div>
                         @if($pmTip > 0)
-                        <div class="d-flex justify-content-between align-items-center mb-1 text-muted small">
-                            <span>Tips Portion</span>
-                            <span>+ {{ $sym }}{{ number_format($pmTip, 2) }}</span>
-                        </div>
+                            <div class="d-flex justify-content-between text-muted small mb-1" style="font-size:0.75rem;">
+                                <span>Tips Portion:</span>
+                                <span class="fw-semibold text-info">+ {{ $sym }}{{ number_format($pmTip, 2) }}</span>
+                            </div>
                         @endif
-                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                            <span class="fw-bold">Total Inflow Collected</span>
+                        <div class="d-flex justify-content-between align-items-center pt-1 border-top">
+                            <span class="fw-bold text-dark small">Total Inflow Collected:</span>
                             <span class="fw-bold text-dark fs-6">{{ $sym }}{{ number_format($pmTotal, 2) }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Charts Row 1 -->
-        <div class="row g-3 mb-4">
-            <!-- Revenue Trends -->
-            <div class="col-12 col-lg-8">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Revenue Trends</h5>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-secondary active"
-                                onclick="updateRevenueChart('day')">Day</button>
-                            <button type="button" class="btn btn-outline-secondary"
-                                onclick="updateRevenueChart('week')">Week</button>
-                            <button type="button" class="btn btn-outline-secondary"
-                                onclick="updateRevenueChart('month')">Month</button>
-                        </div>
+    <!-- ============================================================== -->
+    <!-- SECTION 3: REVENUE TRENDS & PAYMENT DISTRIBUTION               -->
+    <!-- ============================================================== -->
+    <div class="row g-3 mb-3">
+        <!-- Revenue Trends Area Chart -->
+        <div class="col-12 col-lg-8">
+            <div class="analytics-card chart-container-card h-100">
+                <div class="analytics-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-area text-primary me-2"></i>Revenue Trends</h6>
+                        <span class="text-muted small">Daily, weekly, and monthly revenue flow</span>
                     </div>
-                    <div class="card-body p-3">
-                        <div id="revenueChart" style="height: 300px;"></div>
+                    <div class="btn-group btn-group-sm segmented-btn-group" role="group">
+                        <button type="button" class="btn active" onclick="updateRevenueChart('day', this)">Day</button>
+                        <button type="button" class="btn" onclick="updateRevenueChart('week', this)">Week</button>
+                        <button type="button" class="btn" onclick="updateRevenueChart('month', this)">Month</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Payment Distribution -->
-            <div class="col-12 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0">Payment Distribution</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="paymentDistributionChart" style="height: 280px;"></div>
-                        <div class="mt-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Paid Revenue</span>
-                                <span>{{ currency_symbol() }}{{ number_format($paymentAnalytics['paid_amount'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['paid_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1 text-danger">
-                                <span>Net Refunded</span>
-                                <span>-
-                                    {{ currency_symbol() }}{{ number_format($paymentAnalytics['net_refunded'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['refund_net_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Tips</span>
-                                <span>{{ currency_symbol() }}{{ number_format($paymentAnalytics['tip_amount'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['tip_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1 text-warning">
-                                <span>Unpaid</span>
-                                <span>{{ currency_symbol() }}{{ number_format($paymentAnalytics['unpaid_amount'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['unpaid_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1 text-muted">
-                                <span>Discounts</span>
-                                <span>{{ currency_symbol() }}{{ number_format($paymentAnalytics['discount_amount'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['discount_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                            <div class="d-flex justify-content-between text-danger">
-                                <span>Voided</span>
-                                <span>{{ currency_symbol() }}{{ number_format($paymentAnalytics['voided_amount'] ?? 0, 2) }}
-                                    ({{ number_format($paymentAnalytics['voided_percentage'] ?? 0, 1) }}%)</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="card-body">
+                    <div id="revenueChart" style="height: 280px;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Row 2 -->
-        <div class="row g-3 mb-4">
-            <!-- Sales by Category -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Sales by Type</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="categoryChart" style="height: 300px;"></div>
-                        <div class="mt-3">
-                            @forelse($salesByCategory as $category)
-                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <div class="category-color me-2"
-                                            style="width: 12px; height: 12px; background-color: {{ $loop->index < 6 ? $categoryColors[$loop->index] : '#6c757d' }}; border-radius: 2px;">
-                                        </div>
-                                        <span class="small">{{ $category['name'] }}</span>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-semibold">
-                                            {{ currency_symbol() }}{{ number_format($category['total_revenue'] ?? 0, 2) }}
-                                        </div>
-                                        <div class="text-muted small">{{ $category['total_quantity'] }} items</div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="text-center py-4">
-                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                    <p class="mb-0 text-muted">No data available</p>
-                                </div>
-                            @endforelse
+        <!-- Payment Distribution Donut Chart -->
+        <div class="col-12 col-lg-4">
+            <div class="analytics-card chart-container-card h-100">
+                <div class="analytics-card-header">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie text-primary me-2"></i>Payment Distribution</h6>
+                    <span class="text-muted small">Status breakdown of potential value</span>
+                </div>
+                <div class="card-body">
+                    <div id="paymentDistributionChart" style="height: 230px;"></div>
+                    <div class="mt-2 pt-2 border-top" style="font-size: 0.78rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted"><i class="fas fa-circle text-success me-1" style="font-size:0.5rem;"></i>Paid Revenue</span>
+                            <span class="fw-semibold">{{ $sym }}{{ number_format($paymentAnalytics['paid_amount'] ?? 0, 2) }} <small class="text-muted">({{ number_format($paymentAnalytics['paid_percentage'] ?? 0, 1) }}%)</small></span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hourly Sales (Working Graph) -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0">Hourly Sales Distribution</h5>
-                    </div>
-                    <div class="card-body p-3">
-                        <div id="hourlyChart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Row 3 -->
-        <!-- Void Analysis -->
-        <div class="row g-3 mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Void Analysis</h5>
-                        <span class="badge bg-warning text-dark">{{ $voidAnalytics['total_voided'] }} Voided
-                            Transactions</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="text-center p-3">
-                                    <h3 class="text-warning">
-                                        {{ currency_symbol() }}{{ number_format($voidAnalytics['total_voided_amount'] ?? 0, 2) }}
-                                    </h3>
-                                    <p class="text-muted mb-0">Total Voided Amount</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center p-3">
-                                    <h3>{{ currency_symbol() }}{{ number_format($voidAnalytics['average_voided_amount'] ?? 0, 2) }}
-                                    </h3>
-                                    <p class="text-muted mb-0">Average per Void</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div id="voidReasonsChart" style="height: 200px;"></div>
-                            </div>
+                        <div class="d-flex justify-content-between mb-1 text-danger">
+                            <span><i class="fas fa-circle text-danger me-1" style="font-size:0.5rem;"></i>Net Refunded</span>
+                            <span class="fw-semibold">&minus;{{ $sym }}{{ number_format($paymentAnalytics['net_refunded'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['refund_net_percentage'] ?? 0, 1) }}%)</small></span>
                         </div>
-
-                        @if(!$voidAnalytics['void_reasons']->isEmpty())
-                            <div class="mt-4">
-                                <h6>Top Void Reasons</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Reason</th>
-                                                <th class="text-end">Count</th>
-                                                <th class="text-end">Total Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($voidAnalytics['void_reasons'] as $reason)
-                                                <tr>
-                                                    <td>{{ $reason->void_reason ?: 'No reason specified' }}</td>
-                                                    <td class="text-end">{{ $reason->count }}</td>
-                                                    <td class="text-end">
-                                                        {{ currency_symbol() }}{{ number_format($reason->total_amount ?? 0, 2) }}
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3">
-            <!-- Top Products -->
-            <div class="col-12 col-lg-8">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0">Top Selling Products</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Product</th>
-                                        <th class="text-end">Quantity</th>
-                                        <th class="text-end">Revenue</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($topProducts as $product)
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="ms-2">
-                                                        <h6 class="mb-0">{{ $product->name }}</h6>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-end">
-                                                <span
-                                                    class="badge bg-primary bg-opacity-10 text-primary">{{ $product->total_quantity }}</span>
-                                            </td>
-                                            <td class="text-end fw-semibold">
-                                                {{ currency_symbol() }}{{ number_format($product->total_revenue ?? 0, 2) }}
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="3" class="text-center py-4 text-muted">
-                                                <i class="fas fa-inbox me-2"></i> No sales data available
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                        <div class="d-flex justify-content-between mb-1 text-info">
+                            <span><i class="fas fa-circle text-info me-1" style="font-size:0.5rem;"></i>Tips</span>
+                            <span class="fw-semibold">{{ $sym }}{{ number_format($paymentAnalytics['tip_amount'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['tip_percentage'] ?? 0, 1) }}%)</small></span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Transactions -->
-            <div class="col-12 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Recent Transactions</h5>
-                        <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-sm btn-outline-primary">
-                            View All
-                            <i class="fas fa-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            @forelse($recentTransactions as $transaction)
-                                <a href="{{ route('admin.pos.sales.show', $transaction['id']) }}"
-                                    class="list-group-item list-group-item-action border-0 py-3 text-decoration-none">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
-                                                <i class="fas fa-shopping-cart text-primary"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0 text-dark">{{ $transaction['invoice_number'] }}</h6>
-                                                <small class="text-muted">{{ $transaction['time_ago'] }}</small>
-                                                <div class="text-muted small mt-1">
-                                                    <i class="fas fa-user me-1"></i>{{ $transaction['customer_name'] }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center">
-                                            @php
-                                                $status = $transaction['status'] ?? '';
-                                                $paymentStatus = $transaction['payment_status'] ?? '';
-                                                $refundedAmount = $transaction['refunded_amount'] ?? 0;
-                                                $badgeClass = 'bg-success';
-                                                $labelText = ucfirst($paymentStatus);
-
-                                                if ($status === 'voided') {
-                                                    $badgeClass = 'bg-secondary';
-                                                    $labelText = 'Voided';
-                                                } elseif ($status === 'refunded' || $paymentStatus === 'refunded') {
-                                                    $badgeClass = 'bg-danger';
-                                                    $labelText = 'Refunded';
-                                                } elseif ($refundedAmount > 0) {
-                                                    $badgeClass = 'bg-info';
-                                                    $labelText = 'Partial Refund';
-                                                } elseif ($paymentStatus === 'partial' || $paymentStatus === 'partial_paid') {
-                                                    $badgeClass = 'bg-warning';
-                                                    $labelText = 'Partial';
-                                                }
-                                            @endphp
-                                            <span class="badge {{ $badgeClass }} bg-opacity-10 text-{{ str_replace('bg-', '', $badgeClass) }} me-2">
-                                                {{ $labelText }}
-                                            </span>
-                                            <span class="fw-bold text-dark">{{ currency_symbol() }}{{ number_format($transaction['total'] ?? 0, 2) }}</span>
-                                            <i class="fas fa-chevron-right text-muted small ms-2"></i>
-                                        </div>
-                                    </div>
-                                </a>
-                            @empty
-                                <div class="text-center py-4">
-                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                    <p class="mb-0 text-muted">No recent transactions</p>
-                                </div>
-                            @endforelse
+                        <div class="d-flex justify-content-between mb-1 text-warning">
+                            <span><i class="fas fa-circle text-warning me-1" style="font-size:0.5rem;"></i>Unpaid</span>
+                            <span class="fw-semibold">{{ $sym }}{{ number_format($paymentAnalytics['unpaid_amount'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['unpaid_percentage'] ?? 0, 1) }}%)</small></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-secondary">
+                            <span><i class="fas fa-circle text-secondary me-1" style="font-size:0.5rem;"></i>Discounts</span>
+                            <span class="fw-semibold">{{ $sym }}{{ number_format($paymentAnalytics['discount_amount'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['discount_percentage'] ?? 0, 1) }}%)</small></span>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted">
+                            <span><i class="fas fa-circle text-muted me-1" style="font-size:0.5rem;"></i>Voided</span>
+                            <span class="fw-semibold">{{ $sym }}{{ number_format($paymentAnalytics['voided_amount'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['voided_percentage'] ?? 0, 1) }}%)</small></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 4: SALES BY TYPE & HOURLY SALES DISTRIBUTION           -->
+    <!-- ============================================================== -->
+    <div class="row g-3 mb-3">
+        <!-- Sales by Type -->
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-container-card h-100">
+                <div class="analytics-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-tags text-primary me-2"></i>Sales by Category</h6>
+                        <span class="text-muted small">Services, Products, Packages &amp; Other</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-12 col-sm-6 text-center">
+                            <div id="categoryChart" style="height: 220px;"></div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="mt-2 mt-sm-0">
+                                @forelse($salesByCategory as $category)
+                                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2 rounded-circle" style="width: 10px; height: 10px; background-color: {{ $loop->index < 6 ? $categoryColors[$loop->index] : '#6c757d' }};"></div>
+                                            <span class="small fw-semibold text-dark">{{ $category['name'] }}</span>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="small fw-bold text-dark">{{ $sym }}{{ number_format($category['total_revenue'] ?? 0, 2) }}</div>
+                                            <span class="text-muted" style="font-size:0.7rem;">{{ $category['total_quantity'] }} items</span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-center py-3 text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-1 opacity-25"></i>
+                                        <p class="mb-0 small">No category sales data</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Sales Distribution -->
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-container-card h-100">
+                <div class="analytics-card-header">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-business-time text-primary me-2"></i>Hourly Sales Distribution</h6>
+                    <span class="text-muted small">Peak traffic and revenue density by operating hour</span>
+                </div>
+                <div class="card-body">
+                    <div id="hourlyChart" style="height: 250px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 5: VOID ANALYSIS                                       -->
+    <!-- ============================================================== -->
+    <div class="analytics-card p-3 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+            <div>
+                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-ban text-warning me-2"></i>Void Analysis</h6>
+                <span class="text-muted small">Audit cancelled / voided tickets</span>
+            </div>
+            <span class="badge bg-warning bg-opacity-25 text-dark px-3 py-1 rounded-pill fw-semibold" style="font-size:0.75rem;">
+                {{ $voidAnalytics['total_voided'] }} Voided Transactions
+            </span>
+        </div>
+
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-3">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <span class="analytics-metric-title text-warning d-block">Total Voided Amount</span>
+                    <h4 class="fw-bold text-warning mb-0">{{ $sym }}{{ number_format($voidAnalytics['total_voided_amount'] ?? 0, 2) }}</h4>
+                    <span class="text-muted small" style="font-size:0.7rem;">Loss / uncollected value</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <span class="analytics-metric-title text-muted d-block">Average per Void</span>
+                    <h4 class="fw-bold text-dark mb-0">{{ $sym }}{{ number_format($voidAnalytics['average_voided_amount'] ?? 0, 2) }}</h4>
+                    <span class="text-muted small" style="font-size:0.7rem;">Mean transaction ticket size</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="p-2 bg-light rounded-3 border">
+                    <span class="small fw-semibold text-muted d-block mb-1 px-2">Void Reasons Chart</span>
+                    <div id="voidReasonsChart" style="height: 140px;"></div>
+                </div>
+            </div>
+        </div>
+
+        @if(!$voidAnalytics['void_reasons']->isEmpty())
+            <div class="mt-3 pt-2 border-top">
+                <span class="small fw-bold text-muted d-block mb-2">Void Reasons Detail</span>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover analytics-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Reason</th>
+                                <th class="text-end">Count</th>
+                                <th class="text-end">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($voidAnalytics['void_reasons'] as $reason)
+                                <tr>
+                                    <td>{{ $reason->void_reason ?: 'No reason specified' }}</td>
+                                    <td class="text-end fw-semibold">{{ $reason->count }}</td>
+                                    <td class="text-end fw-bold text-dark">{{ $sym }}{{ number_format($reason->total_amount ?? 0, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 6: TOP SELLING PRODUCTS & RECENT TRANSACTIONS          -->
+    <!-- ============================================================== -->
+    <div class="row g-3">
+        <!-- Top Products -->
+        <div class="col-12 col-lg-7">
+            <div class="analytics-card h-100">
+                <div class="analytics-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-trophy text-warning me-2"></i>Top Selling Products / Services</h6>
+                        <span class="text-muted small">Best performing catalog items</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive analytics-table-scroll">
+                        <table class="table table-hover analytics-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px;">#</th>
+                                    <th>Item Name</th>
+                                    <th class="text-end">Units Sold</th>
+                                    <th class="text-end">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($topProducts as $product)
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-secondary border rounded-circle" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">
+                                                {{ $loop->iteration }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold text-dark">{{ $product->name }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill font-monospace">
+                                                {{ $product->total_quantity }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end fw-bold text-dark font-monospace">
+                                            {{ $sym }}{{ number_format($product->total_revenue ?? 0, 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2 opacity-25"></i>
+                                            <p class="mb-0 small">No sales data available for this date range.</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="col-12 col-lg-5">
+            <div class="analytics-card h-100">
+                <div class="analytics-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-receipt text-primary me-2"></i>Recent Transactions</h6>
+                        <span class="text-muted small">Latest closed sales feed</span>
+                    </div>
+                    <a href="{{ route('admin.pos.sales.index') }}" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size:0.75rem;">
+                        View All <i class="fas fa-chevron-right ms-1" style="font-size:0.65rem;"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush analytics-table-scroll">
+                        @forelse($recentTransactions as $transaction)
+                            <a href="{{ route('admin.pos.sales.show', $transaction['id']) }}" class="list-group-item list-group-item-action p-2 px-3 border-0 border-bottom text-decoration-none">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="metric-icon-box bg-light text-primary border me-2" style="width:32px;height:32px;font-size:0.8rem;">
+                                            <i class="fas fa-receipt"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small mb-0">{{ $transaction['invoice_number'] }}</div>
+                                            <span class="text-muted" style="font-size:0.7rem;"><i class="fas fa-user text-secondary me-1"></i>{{ $transaction['customer_name'] }} &bull; {{ $transaction['time_ago'] }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        @php
+                                            $status = $transaction['status'] ?? '';
+                                            $paymentStatus = $transaction['payment_status'] ?? '';
+                                            $refundedAmount = $transaction['refunded_amount'] ?? 0;
+                                            $badgeClass = 'bg-success';
+                                            $labelText = ucfirst($paymentStatus);
+
+                                            if ($status === 'voided') {
+                                                $badgeClass = 'bg-secondary';
+                                                $labelText = 'Voided';
+                                            } elseif ($status === 'refunded' || $paymentStatus === 'refunded') {
+                                                $badgeClass = 'bg-danger';
+                                                $labelText = 'Refunded';
+                                            } elseif ($refundedAmount > 0) {
+                                                $badgeClass = 'bg-info';
+                                                $labelText = 'Refund';
+                                            } elseif ($paymentStatus === 'partial' || $paymentStatus === 'partial_paid') {
+                                                $badgeClass = 'bg-warning';
+                                                $labelText = 'Partial';
+                                            }
+                                        @endphp
+                                        <div class="fw-bold text-dark font-monospace" style="font-size:0.88rem;">{{ $sym }}{{ number_format($transaction['total'] ?? 0, 2) }}</div>
+                                        <span class="badge {{ $badgeClass }} bg-opacity-10 text-{{ str_replace('bg-', '', $badgeClass) }} rounded-pill" style="font-size:0.65rem;">
+                                            {{ $labelText }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 opacity-25"></i>
+                                <p class="mb-0 small">No recent transactions</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.js"></script>
     <script>
-        // Currency settings
-        const currencySymbol = '{{ currency_symbol() }}';
-
-        // Payment Distribution Chart
-        const paymentDistributionOptions = {
-            series: [
-                        {{ $paymentAnalytics['paid_amount'] }},
-                        {{ $paymentAnalytics['net_refunded'] }},
-                        {{ $paymentAnalytics['tip_amount'] }},
-                        {{ $paymentAnalytics['unpaid_amount'] }},
-                        {{ $paymentAnalytics['discount_amount'] }},
-                {{ $paymentAnalytics['voided_amount'] }}
-            ],
-            chart: {
-                type: 'donut',
-                height: 280
+        window.posAnalyticsConfig = {
+            currencySymbol: '{{ currency_symbol() }}',
+            dailyData: {!! json_encode($revenueTrends) !!},
+            weeklyData: {!! json_encode($weeklySales->pluck('total', 'week')) !!},
+            monthlyData: {!! json_encode($monthlySales->pluck('total', 'month')) !!},
+            hourlyData: {!! json_encode($hourlySales) !!},
+            paymentAnalytics: {
+                paidAmount: {{ $paymentAnalytics['paid_amount'] ?? 0 }},
+                netRefunded: {{ $paymentAnalytics['net_refunded'] ?? 0 }},
+                tipAmount: {{ $paymentAnalytics['tip_amount'] ?? 0 }},
+                unpaidAmount: {{ $paymentAnalytics['unpaid_amount'] ?? 0 }},
+                discountAmount: {{ $paymentAnalytics['discount_amount'] ?? 0 }},
+                voidedAmount: {{ $paymentAnalytics['voided_amount'] ?? 0 }}
             },
-            labels: ['Paid Revenue', 'Net Refunded', 'Tips', 'Unpaid', 'Discounts', 'Voided'],
-            colors: ['#28a745', '#dc3545', '#17a2b8', '#ffc107', '#6c757d', '#adb5bd'],
-            legend: {
-                position: 'bottom'
+            categoryData: @json($salesByCategory),
+            categoryColors: @json($categoryColors),
+            paymentMethodData: {
+                cash: {{ number_format($paymentMethodBreakdown['cash'] ?? 0, 2, '.', '') }},
+                card: {{ number_format($paymentMethodBreakdown['card'] ?? 0, 2, '.', '') }},
+                online: {{ number_format($paymentMethodBreakdown['online'] ?? 0, 2, '.', '') }},
+                other: {{ number_format($paymentMethodBreakdown['other'] ?? 0, 2, '.', '') }}
             },
-            dataLabels: {
-                enabled: true,
-                formatter: function (val) {
-                    return Math.round(val) + '%';
-                }
-            },
-            tooltip: {
-                y: {
-                    formatter: function (value) {
-                        return currencySymbol + value.toFixed(2);
-                    }
-                }
-            },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        labels: {
-                            show: true,
-                            total: {
-                                show: true,
-                                label: 'Total',
-                                formatter: function (w) {
-                                    const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                    return currencySymbol + total.toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            voidReasonsData: @json($voidAnalytics['void_reasons']),
+            voidReasonsLabels: @json($voidAnalytics['void_reasons']->pluck('void_reason')->map(fn($r) => $r ?: 'No reason')),
+            voidReasonsCounts: @json($voidAnalytics['void_reasons']->pluck('count'))
         };
-
-        // Void Reasons Chart
-        const voidReasonsData = @json($voidAnalytics['void_reasons']);
-        const voidReasonsLabels = @json($voidAnalytics['void_reasons']->pluck('void_reason')->map(fn($reason) => $reason ?: 'No reason'));
-        const voidReasonsCounts = @json($voidAnalytics['void_reasons']->pluck('count'));
-
-        const voidReasonsOptions = {
-            series: [{
-                name: 'Void Count',
-                data: voidReasonsCounts
-            }],
-            chart: {
-                type: 'bar',
-                height: 200,
-                toolbar: {
-                    show: false
-                }
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: true,
-                    barHeight: '80%',
-                    distributed: true,
-                    borderRadius: 4,
-                }
-            },
-            colors: ['#ffc107', '#ffd54f', '#ffe082', '#ffecb3', '#fff8e1'],
-            dataLabels: {
-                enabled: false
-            },
-            xaxis: {
-                categories: voidReasonsLabels,
-                labels: {
-                    show: false
-                }
-            },
-            yaxis: {
-                labels: {
-                    show: true
-                }
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val + (val === 1 ? ' void' : ' voids');
-                    }
-                }
-            }
-        };
-
-        // Data from Controller
-        const dailyData = {!! json_encode($revenueTrends) !!};
-        const weeklyData = {!! json_encode($weeklySales->pluck('total', 'week')) !!};
-        const monthlyData = {!! json_encode($monthlySales->pluck('total', 'month')) !!};
-
-        const hourlyData = {!! json_encode($hourlySales) !!};
-
-        // --- Revenue Trends Chart ---
-        let revenueChart;
-
-        function initRevenueChart(data, type) {
-            const dates = Object.keys(data);
-            const values = Object.values(data);
-
-            const options = {
-                chart: {
-                    type: 'area',
-                    height: 300,
-                    toolbar: { show: false },
-                    animations: { enabled: true }
-                },
-                series: [{
-                    name: 'Revenue',
-                    data: values.map((value, index) => ({
-                        x: dates[index],
-                        y: value
-                    }))
-                }],
-                xaxis: {
-                    type: type === 'day' ? 'datetime' : 'category',
-                    labels: {
-                        style: { colors: '#6B7280', fontSize: '12px' }
-                    }
-                },
-                yaxis: {
-                    labels: {
-                        formatter: function (value) {
-                            return currencySymbol + value.toLocaleString(undefined, {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            });
-                        }
-                    }
-                },
-                colors: ['#3B82F6'],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.7,
-                        opacityTo: 0.3,
-                    }
-                },
-                stroke: { width: 3, curve: 'smooth' },
-                tooltip: {
-                    y: {
-                        formatter: function (value) {
-                            return currencySymbol + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        }
-                    }
-                }
-            };
-
-            if (revenueChart) {
-                revenueChart.destroy();
-            }
-            revenueChart = new ApexCharts(document.querySelector("#revenueChart"), options);
-            revenueChart.render();
-        }
-
-        // Initialize with daily data
-        initRevenueChart(dailyData, 'day');
-
-        // Function to update chart
-        window.updateRevenueChart = function (period) {
-            // Update active button
-            document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            if (period === 'day') {
-                initRevenueChart(dailyData, 'day');
-            } else if (period === 'week') {
-                initRevenueChart(weeklyData, 'category');
-            } else if (period === 'month') {
-                initRevenueChart(monthlyData, 'category');
-            }
-        };
-
-        // --- Hourly Sales Chart ---
-        const hours = Array.from({ length: 24 }, (_, i) => i);
-        const hourlyValues = hours.map(h => hourlyData[h] || 0);
-
-        const hourlyOptions = {
-            chart: {
-                type: 'bar',
-                height: 300,
-                toolbar: { show: false }
-            },
-            series: [{
-                name: 'Sales',
-                data: hourlyValues
-            }],
-            xaxis: {
-                categories: hours.map(h => `${h}:00`),
-                labels: {
-                    style: { colors: '#6B7280', fontSize: '12px' }
-                }
-            },
-            yaxis: {
-                labels: {
-                    formatter: function (value) {
-                        return currencySymbol + value.toLocaleString();
-                    }
-                }
-            },
-            colors: ['#10B981'],
-            plotOptions: {
-                bar: {
-                    borderRadius: 4,
-                    columnWidth: '60%',
-                }
-            },
-            tooltip: {
-                y: {
-                    formatter: function (value) {
-                        return currencySymbol + value.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    }
-                }
-            }
-        };
-
-        const hourlyChart = new ApexCharts(document.querySelector("#hourlyChart"), hourlyOptions);
-        hourlyChart.render();
-
-        // --- Category Chart ---
-        // Initialize charts when document is ready
-        document.addEventListener('DOMContentLoaded', function () {
-            // Payment Distribution Chart
-            const paymentDistributionChart = new ApexCharts(
-                document.querySelector("#paymentDistributionChart"),
-                paymentDistributionOptions
-            );
-            paymentDistributionChart.render();
-
-            // Void Reasons Chart
-            if (voidReasonsData.length > 0) {
-                const voidReasonsChart = new ApexCharts(
-                    document.querySelector("#voidReasonsChart"),
-                    voidReasonsOptions
-                );
-                voidReasonsChart.render();
-            }
-        });
-
-        const categoryData = @json($salesByCategory);
-        const categoryColors = @json($categoryColors);
-        const categoryLabels = categoryData.map(item => item.name);
-        const categorySeries = categoryData.map(item => item.total_revenue);
-
-        const categoryOptions = {
-            chart: {
-                type: 'donut',
-                height: 200,
-                toolbar: { show: false }
-            },
-            series: categorySeries,
-            labels: categoryLabels,
-            colors: categoryColors,
-            legend: { show: false },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '70%',
-                        labels: {
-                            show: true,
-                            total: {
-                                show: true,
-                                label: 'Total',
-                                formatter: function (w) {
-                                    const sum = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                    return currencySymbol + sum.toLocaleString(undefined, {
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 0
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            tooltip: {
-                y: {
-                    formatter: function (value) {
-                        return currencySymbol + value.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    }
-                }
-            }
-        };
-
-        const categoryChart = new ApexCharts(document.querySelector("#categoryChart"), categoryOptions);
-        categoryChart.render();
-
-        // ---- Payment Method Bar Chart ----
-        const pmLabels  = ['Cash', 'Card', 'Online', 'Other'];
-        const pmAmounts = [
-            {{ number_format($paymentMethodBreakdown['cash']   ?? 0, 2, '.', '') }},
-            {{ number_format($paymentMethodBreakdown['card']   ?? 0, 2, '.', '') }},
-            {{ number_format($paymentMethodBreakdown['online'] ?? 0, 2, '.', '') }},
-            {{ number_format($paymentMethodBreakdown['other']  ?? 0, 2, '.', '') }},
-        ];
-        const pmColors = ['#198754', '#0d6efd', '#0dcaf0', '#6f42c1'];
-
-        const paymentMethodChartOptions = {
-            chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
-            series: [{ name: 'Collected', data: pmAmounts }],
-            xaxis:  { categories: pmLabels, labels: { style: { fontSize: '12px' } } },
-            yaxis:  {
-                labels: {
-                    formatter: v => currencySymbol + v.toLocaleString(undefined, { minimumFractionDigits: 2 })
-                }
-            },
-            colors: pmColors,
-            plotOptions: {
-                bar: {
-                    distributed: true,
-                    borderRadius: 6,
-                    columnWidth: '55%',
-                    dataLabels: { position: 'top' }
-                }
-            },
-            dataLabels: {
-                enabled: true,
-                formatter: v => currencySymbol + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 }),
-                offsetY: -22,
-                style: { fontSize: '11px', colors: ['#333'] }
-            },
-            legend: { show: false },
-            tooltip: {
-                y: {
-                    formatter: v => currencySymbol + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })
-                }
-            },
-            grid: { borderColor: '#f1f1f1', strokeDashArray: 4 },
-        };
-
-        const paymentMethodChart = new ApexCharts(document.querySelector("#paymentMethodChart"), paymentMethodChartOptions);
-        paymentMethodChart.render();
-
-        // Resize handler
-        window.addEventListener('resize', function () {
-            revenueChart.updateOptions({ chart: { width: '100%' } });
-            hourlyChart.updateOptions({ chart: { width: '100%' } });
-            categoryChart.updateOptions({ chart: { width: '100%' } });
-            paymentMethodChart.updateOptions({ chart: { width: '100%' } });
-        });
     </script>
+    <script src="{{ asset('js/pos-analytics.js') }}"></script>
 @endpush
