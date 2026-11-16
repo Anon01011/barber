@@ -1376,7 +1376,10 @@
                     });
                 });
 
-                // Helper to get all active booking IDs currently present in cart or active input
+                let pendingLoadReservation = null;
+                let nextReservationToken = 0;
+
+                // Helper to get all active booking IDs currently present in cart rows
                 function getActiveCartBookingIds() {
                     const ids = new Set();
                     if (typeof cart !== 'undefined' && Array.isArray(cart)) {
@@ -1388,10 +1391,6 @@
                                 });
                             }
                         });
-                    }
-                    const inputVal = $('#booking_id').val();
-                    if (inputVal) {
-                        ids.add(String(inputVal));
                     }
                     return Array.from(ids);
                 }
@@ -1468,6 +1467,12 @@
                     const isGroup = btn.data('is-group') == '1';
                     const groupId = btn.data('group-id');
 
+                    // 0. Prevent concurrent or competing loads
+                    if (pendingLoadReservation !== null) {
+                        showAlert('An appointment is currently being loaded. Please wait.', 'info');
+                        return false;
+                    }
+
                     // 1. Check if ANY appointment is ALREADY loaded in the active cart
                     const activeBookingIds = getActiveCartBookingIds();
                     if (activeBookingIds.length > 0) {
@@ -1480,6 +1485,10 @@
                         return false;
                     }
 
+                    // Reserve a single pending load before starting the request
+                    const reservationToken = ++nextReservationToken;
+                    pendingLoadReservation = reservationToken;
+
                     // 2. Set loading state on button
                     const originalHtml = btn.html();
                     btn.prop('disabled', true).addClass('disabled').html('<i class="fas fa-spinner fa-spin me-1"></i>Loading...');
@@ -1487,6 +1496,11 @@
                     // 3. Fetch booking & group details
                     fetchBookingDetails({ booking_id: bookingId }, function (success, response) {
                         btn.prop('disabled', false).removeClass('disabled').html(originalHtml);
+                        if (pendingLoadReservation !== reservationToken) {
+                            return;
+                        }
+                        pendingLoadReservation = null;
+
                         if (success) {
                             $('#booking_id').val(bookingId);
                             syncAppointmentsTabUI();
@@ -1500,7 +1514,7 @@
                         } else {
                             showAlert('Failed to load appointment details. Please try again.', 'danger');
                         }
-                    });
+                    }, reservationToken);
                 });
 
                 // Quick Tip Percentage Pills
@@ -1687,12 +1701,16 @@
                     fetchBookingDetails({ sale_id: saleId });
                 }
 
-                function fetchBookingDetails(params, callback = null) {
+                function fetchBookingDetails(params, callback = null, reservationToken = null) {
                     $.ajax({
                         url: '{{ route("admin.pos.booking-details") }}',
                         method: 'GET',
                         data: params,
                         success: function (response) {
+                            // Check that the response still owns the reservation before modifying the cart or customer
+                            if (reservationToken !== null && pendingLoadReservation !== reservationToken) {
+                                return;
+                            }
                             if (response.customer_id) {
                                 // Select customer
                                 const newOption = new Option(response.customer_name + ' (' + response.customer_phone + ')', response.customer_id, true, true);
@@ -1944,6 +1962,9 @@
                             }
                         },
                         error: function (xhr) {
+                            if (reservationToken !== null && pendingLoadReservation === reservationToken) {
+                                pendingLoadReservation = null;
+                            }
                             showAlert('Error loading booking details', 'danger');
                             if (typeof callback === 'function') {
                                 callback(false, xhr);
@@ -2935,9 +2956,13 @@
                         }
                     }
 
-                    // If cart has no items, clear booking_id as well
-                    if (cart.length === 0) {
+                    // Reconcile booking_id based on remaining booking rows in cart
+                    const activeCartBookingIds = getActiveCartBookingIds();
+                    const currentBookingId = String($('#booking_id').val() || '');
+                    if (activeCartBookingIds.length === 0) {
                         $('#booking_id').val('');
+                    } else if (!currentBookingId || !activeCartBookingIds.includes(currentBookingId)) {
+                        $('#booking_id').val(activeCartBookingIds[0]);
                     }
 
                     // Always sync appointments tab state
@@ -3133,6 +3158,8 @@
 
                 // Function to reset POS terminal
                 function resetPosTerminal() {
+                    pendingLoadReservation = null;
+                    nextReservationToken++;
                     cart = [];
                     discountAmount = 0;
                     discountPercent = 0;

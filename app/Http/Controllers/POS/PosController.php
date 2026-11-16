@@ -203,14 +203,16 @@ class PosController extends Controller
             ];
         });
 
-        $salon = auth()->user()->salon;
+        $salon = (app()->bound('current_salon') && app('current_salon') && app('current_salon')->id == $salonId)
+            ? app('current_salon')
+            : Salon::find($salonId);
         $salonData = [
-            'name' => $salon->name,
-            'address' => $salon->address,
-            'phone' => $salon->phone,
-            'email' => $salon->email,
-            'website' => $salon->website,
-            'logo' => $salon->logo ? asset('storage/' . $salon->logo) : null,
+            'name' => $salon?->name,
+            'address' => $salon?->address,
+            'phone' => $salon?->phone,
+            'email' => $salon?->email,
+            'website' => $salon?->website,
+            'logo' => $salon?->logo ? asset('storage/' . $salon->logo) : null,
         ];
 
         // Settings retrieval (uses salonId which we now have at top)
@@ -247,6 +249,23 @@ class PosController extends Controller
         $bookingId = $request->input('booking_id');
         $saleId = $request->input('sale_id');
         $salonId = $this->getSalonId();
+
+        // Block direct platform-admin sessions (not impersonating)
+        $user = auth()->user();
+        if ($user && $user->hasRole('super_admin') && !$user->salon_id) {
+            \App\Models\SuperAdminAuditLog::logAction(
+                'BLOCKED_POS_BOOKING_DETAILS_DIRECT_SESSION',
+                $salonId,
+                null,
+                null,
+                ['booking_id' => $bookingId, 'sale_id' => $saleId, 'ip' => $request->ip()]
+            );
+            abort(403, 'Platform administrators must use impersonation to access tenant booking data.');
+        }
+
+        if (!$salonId) {
+            abort(403, 'Salon context required.');
+        }
 
         if ($saleId && !$bookingId) {
             // If sale_id is provided, find bookings linked to this sale
