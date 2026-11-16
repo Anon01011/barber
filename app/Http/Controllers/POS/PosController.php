@@ -394,24 +394,91 @@ class PosController extends Controller
             'bookings' => $bookings->map(function ($b) {
                 $hasBalance = false;
                 $hasAnyPackageBalance = false;
+                $packageId = $b->package_id;
+                $package = $b->package;
+                $packageName = $package ? $package->name : null;
+                $packagePrice = $package ? (float) $package->price : 0;
 
-                if ($b->package_id) {
-                    // (Keep existing package balance check logic...)
+                // 1. Check Package Balance if booking already has package_id
+                if ($packageId) {
                     $hasBalance = \App\Models\CustomerPackageBalance::where('customer_id', $b->customer_id)
-                        ->where('package_id', $b->package_id)
+                        ->where('package_id', $packageId)
                         ->where('service_id', $b->service_id)
                         ->where('quantity_remaining', '>', 0)
                         ->where('payment_status', 'paid')
                         ->where(function ($query) {
-                        $query->whereNull('expiry_date')
-                            ->orWhere('expiry_date', '>=', now()->toDateString());
-                    })
+                            $query->whereNull('expiry_date')
+                                ->orWhere('expiry_date', '>=', now()->toDateString());
+                        })
                         ->exists();
 
                     $hasAnyPackageBalance = \App\Models\CustomerPackageBalance::where('customer_id', $b->customer_id)
-                        ->where('package_id', $b->package_id)
+                        ->where('package_id', $packageId)
                         ->where('payment_status', 'paid')
                         ->exists();
+                }
+
+                // 2. If no package on booking or no balance, check if customer owns any active package with balance for this service
+                if (!$hasBalance && $b->customer_id) {
+                    $custPkgBalance = \App\Models\CustomerPackageBalance::where('customer_id', $b->customer_id)
+                        ->where('service_id', $b->service_id)
+                        ->where('quantity_remaining', '>', 0)
+                        ->where('payment_status', 'paid')
+                        ->where(function ($query) {
+                            $query->whereNull('expiry_date')
+                                ->orWhere('expiry_date', '>=', now()->toDateString());
+                        })
+                        ->first();
+
+                    if ($custPkgBalance) {
+                        $hasBalance = true;
+                        $hasAnyPackageBalance = true;
+                        $packageId = $custPkgBalance->package_id;
+                        $package = $custPkgBalance->package;
+                        $packageName = $package ? $package->name : null;
+                        $packagePrice = $package ? (float) $package->price : 0;
+                    }
+                }
+
+                $servicePrice = $b->service ? (float) $b->service->price : 0;
+                $price = (float) ($b->amount ?? $servicePrice);
+                $isCoveredByMembership = false;
+                $membershipDiscount = 0;
+                $membershipName = null;
+
+                // 3. If covered by package, price is 0
+                if ($hasBalance) {
+                    $price = 0;
+                }
+                // 4. If booking was already marked paid, price is 0
+                elseif ($b->payment_status === 'paid') {
+                    $price = 0;
+                }
+                // 5. Check if customer has active membership covering or discounting this service
+                elseif ($b->customer_id) {
+                    $customerMembership = \App\Models\CustomerMembership::active()
+                        ->where('customer_id', $b->customer_id)
+                        ->with('membership.services')
+                        ->first();
+
+                    if ($customerMembership && $customerMembership->membership) {
+                        $membership = $customerMembership->membership;
+                        $membershipName = $membership->name;
+                        $discount = $this->calculateMembershipDiscount([
+                            'id' => $b->service_id,
+                            'type' => 'service',
+                            'quantity' => 1
+                        ], $membership);
+
+                        if ($discount >= $servicePrice && $servicePrice > 0) {
+                            $isCoveredByMembership = true;
+                            $price = 0;
+                            $membershipDiscount = $servicePrice;
+                        } elseif ($discount > 0) {
+                            $price = max(0, $servicePrice - $discount);
+                            $membershipDiscount = $discount;
+                        }
+                    }
                 }
 
                 return [
@@ -419,19 +486,22 @@ class PosController extends Controller
                     'booking_group_id' => $b->booking_group_id,
                     'service_id' => $b->service_id,
                     'service_name' => $b->service?->name ?? 'Service',
-                    'service_price' => $b->service ? (float) $b->service->price : 0,
-                    'price' => $hasBalance ? 0 : (float) ($b->amount ?? ($b->service?->price ?? 0)),
+                    'service_price' => $servicePrice,
+                    'price' => round($price, 2),
                     'staff_id' => $b->staff_id,
                     'staff_name' => $b->staff?->name ?? 'Staff',
                     'status' => $b->status,
                     'payment_status' => $b->payment_status,
-                    'package_id' => $b->package_id,
-                    'package_name' => $b->package ? $b->package->name : null,
-                    'package_price' => $b->package ? (float) $b->package->price : 0,
+                    'package_id' => $packageId,
+                    'package_name' => $packageName,
+                    'package_price' => $packagePrice,
                     'has_package_balance' => $hasBalance,
                     'has_any_package_balance' => $hasAnyPackageBalance ?? false,
                     'package_service_status' => $b->package_service_status,
                     'selected_services' => $b->selected_services,
+                    'is_covered_by_membership' => $isCoveredByMembership,
+                    'membership_discount' => round($membershipDiscount, 2),
+                    'membership_name' => $membershipName,
                     'start_time' => $b->start_time ? $b->start_time->timezone(salon_timezone())->toIso8601String() : null,
                 ];
             })
@@ -701,7 +771,9 @@ class PosController extends Controller
                             // Apply membership discount if applicable
                             if ($customerMembership && $customerMembership->membership) {
                                 $membershipDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership);
-                                $lineDiscount += $membershipDiscount;
+                                if ($lineDiscount < $membershipDiscount) {
+                                    $lineDiscount = $membershipDiscount;
+                                }
                             }
 
                             $itemBookingIds = $item['booking_ids'] ?? [];
@@ -907,8 +979,46 @@ class PosController extends Controller
                                 // Handle service items
                                 $service = Service::findOrFail($item['id']);
 
-                                // If this service is part of a package, use price 0 for individual service items
-                                $unitPrice = $packageId ? 0 : $service->price;
+                                // Check if this service is linked to an already-paid booking
+                                $isBookingPaid = false;
+                                if (!empty($itemBookingIds)) {
+                                    $isBookingPaid = \App\Models\Booking::whereIn('id', $itemBookingIds)
+                                        ->where('payment_status', 'paid')
+                                        ->exists();
+                                }
+
+                                // If no packageId sent, check if customer has active package balance for this service
+                                if (!$packageId && !empty($validated['customer_id'])) {
+                                    $pkgBalance = \App\Models\CustomerPackageBalance::where('customer_id', $validated['customer_id'])
+                                        ->where('service_id', $service->id)
+                                        ->where('quantity_remaining', '>', 0)
+                                        ->where('payment_status', 'paid')
+                                        ->where(function ($query) {
+                                            $query->whereNull('expiry_date')
+                                                ->orWhere('expiry_date', '>=', now()->toDateString());
+                                        })
+                                        ->first();
+                                    if ($pkgBalance) {
+                                        $packageId = $pkgBalance->package_id;
+                                    }
+                                }
+
+                                // Check if service is 100% covered by membership
+                                $isCoveredByMembership = false;
+                                if ($customerMembership && $customerMembership->membership) {
+                                    $memDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership);
+                                    if ($memDiscount >= $service->price && $service->price > 0) {
+                                        $isCoveredByMembership = true;
+                                    }
+                                }
+
+                                // If service is part of a package, already paid booking, or 100% membership covered, price is 0
+                                if ($packageId || $isBookingPaid || $isCoveredByMembership || (isset($item['price']) && (float)$item['price'] == 0 && !empty($itemBookingIds))) {
+                                    $unitPrice = 0;
+                                    $lineDiscount = 0;
+                                } else {
+                                    $unitPrice = $service->price;
+                                }
                                 $lineGross = round($unitPrice * $item['quantity'], 2);
                                 $lineNet = round($lineGross - $lineDiscount, 2);
                                 // Calculate tax if tax rate is > 0 and services tax is enabled
@@ -1027,6 +1137,18 @@ class PosController extends Controller
                         }
 
                         $paid = round($cash + $card + $online + $other, 2);
+
+                        // If paid exceeds payable and cash was tendered, excess cash is change returned to customer
+                        if ($paid > $payable) {
+                            $overpayment = round($paid - $payable, 2);
+                            if ($cash > 0) {
+                                $excessCash = min($cash, $overpayment);
+                                $cash = round($cash - $excessCash, 2);
+                                $paid = round($cash + $card + $online + $other, 2);
+                                $changeAmount = round(($changeAmount ?? 0) + $excessCash, 2);
+                                $validated['change_amount'] = $changeAmount;
+                            }
+                        }
 
                         // Prevent overpayment
                         if ($paid > $payable + 0.10) { // Slightly larger buffer for rounding

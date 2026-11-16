@@ -1541,14 +1541,31 @@
                                         }
                                     } else {
                                         // Handle regular service booking
+                                        let notes = `From Booking #${booking.id}`;
+                                        let itemPrice = parseFloat(booking.price);
+                                        let discountAmt = parseFloat(booking.discount_amount || booking.membership_discount || 0);
+
+                                        if (booking.is_covered_by_membership) {
+                                            notes = `Included in Membership: ${booking.membership_name || ''}`;
+                                            itemPrice = 0;
+                                            discountAmt = 0;
+                                        } else if (booking.membership_name && discountAmt > 0) {
+                                            notes = `Membership (${booking.membership_name}): -$${discountAmt.toFixed(2)}`;
+                                        } else if (booking.payment_status === 'paid') {
+                                            notes = `Already Paid (Booking #${booking.id})`;
+                                            itemPrice = 0;
+                                            discountAmt = 0;
+                                        }
+
                                         addToCart({
                                             type: 'service',
                                             id: booking.service_id,
                                             name: booking.service_name,
-                                            price: parseFloat(booking.price),
+                                            price: itemPrice,
                                             quantity: 1,
                                             staff_id: booking.staff_id,
-                                            notes: `From Booking #${booking.id}`,
+                                            discount_amount: discountAmt,
+                                            notes: notes,
                                             booking_id: booking.id
                                         });
                                         addedCount++;
