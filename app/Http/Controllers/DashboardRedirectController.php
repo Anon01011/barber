@@ -41,11 +41,6 @@ class DashboardRedirectController extends Controller
                         return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
                     }
 
-                    // If user's salon operates as barber or has barber plan, route directly to terminal POS interface
-                    if ($user->salon->isBarber()) {
-                        return redirect()->route('admin.pos.index', ['salon_slug' => $slug]);
-                    }
-
                     return redirect()->route('dashboard', ['salon_slug' => $slug]);
                 }
             }

@@ -406,7 +406,12 @@
                     <span class="sidebar-text">Dashboard</span>
                 </a>
     @else
-                        <a href="{{ route('home.dashboard') }}"
+                        @php
+                            $dashRoute = auth()->user()->hasRole('super_admin') 
+                                ? route('admin.super.dashboard') 
+                                : ($salonSlug ? route('dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard'));
+                        @endphp
+                        <a href="{{ $dashRoute }}"
                             class="sidebar-item {{ request()->routeIs('dashboard') || request()->routeIs('admin.super.dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}"
                             data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
                             <i class="fas fa-home sidebar-icon"></i>
@@ -1349,9 +1354,12 @@
                     <span>Menu</span>
                 </a>
             @elseif(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
-                <a href="{{ route('home.dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}">
+                @php
+                    $mobileDashRoute = $salonSlug ? route('dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard');
+                @endphp
+                <a href="{{ $mobileDashRoute }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home"></i>
-                    <span>Home</span>
+                    <span>Dashboard</span>
                 </a>
                 @can('pos.view')
                     <a href="{{ $salonSlug ? route('admin.pos.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
