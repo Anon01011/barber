@@ -1442,6 +1442,7 @@ class ReportController extends Controller
             ->when($statusFilter, function ($q) use ($statusFilter) {
                 return $q->where('status', $statusFilter);
             })
+            ->whereNotNull('staff_id')
             ->select(
                 'staff_id',
                 DB::raw('count(*) as total'),
@@ -1467,6 +1468,7 @@ class ReportController extends Controller
             ->when($serviceId, function ($q) use ($serviceId) {
                 return $q->where('item_id', $serviceId)->where('item_type', 'App\Models\Service');
             })
+            ->whereNotNull('staff_id')
             ->select('staff_id', DB::raw('sum(subtotal) as revenue'), DB::raw('count(*) as count'))
             ->groupBy('staff_id')
             ->get()
@@ -2015,7 +2017,7 @@ class ReportController extends Controller
         if ($customerId)
             $bookingStatsQuery->where('customer_id', $customerId);
 
-        $bookingStats = $bookingStatsQuery->select(
+        $bookingStats = $bookingStatsQuery->whereNotNull('staff_id')->select(
             'staff_id',
             DB::raw('count(*) as total_count'),
             DB::raw('SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM pos_sale_items WHERE pos_sale_items.booking_id = bookings.id) THEN amount ELSE 0 END) as direct_revenue'),
@@ -2128,7 +2130,7 @@ class ReportController extends Controller
         if ($staffIdFilter)
             $commissionStatsQuery->where('staff_id', $staffIdFilter);
 
-        $commissionStats = $commissionStatsQuery->select(
+        $commissionStats = $commissionStatsQuery->whereNotNull('staff_id')->select(
             'staff_id',
             DB::raw('sum(case when item_type != "tip" then commission_amount else 0 end) as total_commission'),
             DB::raw('sum(case when item_type = "tip" then commission_amount else 0 end) as tip_commissions')
@@ -2905,13 +2907,12 @@ class ReportController extends Controller
             'Unpaid/Due',
             'Status'
         ];
-        $col = 'A';
-        foreach ($headers as $header) {
+        foreach ($headers as $index => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
             $sheet->setCellValue($col . $row, $header);
             $sheet->getStyle($col . $row)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
             $sheet->getStyle($col . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4e73df');
             $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $col++;
         }
         $row++;
 
@@ -3360,13 +3361,12 @@ class ReportController extends Controller
             'Gross Total',
             'Status'
         ];
-        $col = 'A';
-        foreach ($headers as $header) {
+        foreach ($headers as $index => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
             $sheet->setCellValue($col . $row, $header);
             $sheet->getStyle($col . $row)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
             $sheet->getStyle($col . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('2c3e50');
             $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $col++;
         }
         $row++;
 
@@ -3733,7 +3733,7 @@ class ReportController extends Controller
         if ($customerId)
             $bookingStatsQuery->where('customer_id', $customerId);
 
-        $bookingStats = $bookingStatsQuery->select(
+        $bookingStats = $bookingStatsQuery->whereNotNull('staff_id')->select(
             'staff_id',
             DB::raw('count(*) as total_count'),
             DB::raw('SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM pos_sale_items WHERE pos_sale_items.booking_id = bookings.id) THEN amount ELSE 0 END) as direct_revenue'),
@@ -3843,7 +3843,7 @@ class ReportController extends Controller
         if ($staffIdFilter)
             $commissionStatsQuery->where('staff_id', $staffIdFilter);
 
-        $commissionStats = $commissionStatsQuery->select(
+        $commissionStats = $commissionStatsQuery->whereNotNull('staff_id')->select(
             'staff_id',
             DB::raw('sum(case when item_type = "booking" then commission_amount else 0 end) as booking_commission'),
             DB::raw('sum(case when item_type = "pos" then commission_amount else 0 end) as pos_commission'),
@@ -3913,13 +3913,12 @@ class ReportController extends Controller
             'TIPS',
             'TOTAL EARNINGS'
         ];
-        $col = 'A';
-        foreach ($headers as $header) {
+        foreach ($headers as $index => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
             $sheet->setCellValue($col . $row, $header);
             $sheet->getStyle($col . $row)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
             $sheet->getStyle($col . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('26A69A');
             $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $col++;
         }
         $row++;
 
@@ -4107,7 +4106,7 @@ class ReportController extends Controller
         if ($statusFilter)
             $bookingStatsQuery->where('status', $statusFilter);
 
-        $bookingStats = $bookingStatsQuery->select('customer_id', DB::raw('count(*) as count'), DB::raw('sum(amount) as revenue'), DB::raw('sum(tip_amount) as tips'))
+        $bookingStats = $bookingStatsQuery->whereNotNull('customer_id')->select('customer_id', DB::raw('count(*) as count'), DB::raw('sum(amount) as revenue'), DB::raw('sum(tip_amount) as tips'))
             ->groupBy('customer_id')->get()->keyBy('customer_id');
 
         $posStatsQuery = PosSale::where('salon_id', $salonId)
@@ -4126,7 +4125,7 @@ class ReportController extends Controller
             });
         }
 
-        $posStats = $posStatsQuery->select(
+        $posStats = $posStatsQuery->whereNotNull('customer_id')->select(
             'customer_id',
             DB::raw('count(*) as count'),
             DB::raw('SUM(total - tip) as revenue'),
@@ -4138,6 +4137,7 @@ class ReportController extends Controller
             $refundStatsData = DB::table('pos_refunds')
                 ->join('pos_sales', 'pos_refunds.sale_id', '=', 'pos_sales.id')
                 ->where('pos_sales.salon_id', $salonId)
+                ->whereNotNull('pos_sales.customer_id')
                 ->whereBetween('pos_refunds.processed_at', [$startDateTime, $endDateTime])
                 ->select('pos_sales.customer_id', DB::raw('SUM(net_refund_amount) as net_refunded'), DB::raw('SUM(fee_amount) as refund_fees'))
                 ->groupBy('pos_sales.customer_id')
@@ -4148,12 +4148,14 @@ class ReportController extends Controller
         }
 
         $refundedBookings = Booking::where('salon_id', $salonId)
+            ->whereNotNull('customer_id')
             ->where('payment_status', 'refunded')
             ->select('customer_id', DB::raw('sum(amount) as amount'))
             ->groupBy('customer_id')->get()->keyBy('customer_id');
 
         $firstVisits = DB::table('bookings')
             ->where('salon_id', $salonId)
+            ->whereNotNull('customer_id')
             ->whereIn('status', ['completed', 'staff_completed'])
             ->select('customer_id', DB::raw('MIN(start_time) as first_visit'))
             ->groupBy('customer_id')
@@ -4162,6 +4164,7 @@ class ReportController extends Controller
 
         $firstSales = DB::table('pos_sales')
             ->where('salon_id', $salonId)
+            ->whereNotNull('customer_id')
             ->where('payment_status', 'paid')
             ->where('status', '!=', 'voided')
             ->select('customer_id', DB::raw('MIN(created_at) as first_visit'))
@@ -4203,13 +4206,12 @@ class ReportController extends Controller
         // Column Headers
         $headerRow = $row;
         $headers = ['NAME', 'EMAIL', 'PHONE', 'GENDER', 'AGE', 'CUSTOMER SINCE', 'FIRST VISIT', 'TOTAL VISITS', 'TOTAL PAID', 'REFUNDED', 'TOTAL SPEND', 'SEGMENT', 'STATUS'];
-        $col = 'A';
-        foreach ($headers as $header) {
+        foreach ($headers as $index => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
             $sheet->setCellValue($col . $row, $header);
             $sheet->getStyle($col . $row)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
             $sheet->getStyle($col . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('FF6F00');
             $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $col++;
         }
         $row++;
 

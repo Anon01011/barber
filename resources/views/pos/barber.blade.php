@@ -32,6 +32,43 @@
             --theme-color-hover: rgba({{ $themeRgb }}, 0.15) !important;
         }
 
+        /* POS Barber Appointment Cards Styling */
+        .pos-appointment-card {
+            transition: all 0.25s ease-in-out;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+        .pos-appointment-card.pos-appointment-single {
+            border-left: 5px solid #3b82f6 !important;
+        }
+        .pos-appointment-card.pos-appointment-group {
+            border: 1px solid #ddd6fe !important;
+            border-left: 5px solid #7c3aed !important;
+            background-color: #faf5ff !important;
+        }
+        .pos-appointment-card.appointment-card-loaded {
+            border: 1.5px solid #10b981 !important;
+            border-left: 6px solid #10b981 !important;
+            background-color: #ecfdf5 !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15) !important;
+        }
+        .pos-appointment-card.appointment-card-completed {
+            opacity: 0.65 !important;
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-left: 4px solid #94a3b8 !important;
+        }
+        .btn-purple {
+            background-color: #7c3aed !important;
+            border-color: #6d28d9 !important;
+            color: #ffffff !important;
+        }
+        .btn-purple:hover, .btn-purple:focus {
+            background-color: #6d28d9 !important;
+            border-color: #5b21b6 !important;
+            color: #ffffff !important;
+        }
+
         /* Mobile Viewport Fixes (< 992px) */
         @media (max-width: 991.98px) {
             html, body, body.pos-body {
@@ -381,38 +418,76 @@
                         <!-- Appointments Tab Section -->
                         <div class="grid-section d-none" id="appointmentsGridSection">
                             @if(isset($todayBookings) && count($todayBookings) > 0)
+                                @php
+                                    $groupCounts = $todayBookings->whereNotNull('booking_group_id')->groupBy('booking_group_id')->map->count();
+                                @endphp
                                 <div class="row g-2">
                                     @foreach($todayBookings as $booking)
+                                        @php
+                                            $isGroup = !empty($booking->booking_group_id);
+                                            $groupCount = $isGroup ? ($groupCounts[$booking->booking_group_id] ?? 1) : 1;
+                                            $isCompleted = in_array(strtolower($booking->status), ['completed', 'cancelled']) || strtolower($booking->payment_status ?? '') === 'paid';
+                                        @endphp
                                         <div class="col-12 col-md-6">
-                                            <div class="pos-appointment-card p-3 border rounded-3 bg-white shadow-sm d-flex justify-content-between align-items-center">
+                                            <div class="pos-appointment-card p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center position-relative transition-all {{ $isGroup ? 'pos-appointment-group' : 'pos-appointment-single' }} {{ $isCompleted ? 'appointment-card-completed' : '' }}"
+                                                data-booking-id="{{ $booking->id }}"
+                                                data-is-group="{{ $isGroup ? '1' : '0' }}"
+                                                data-group-id="{{ $booking->booking_group_id ?? '' }}"
+                                                data-status="{{ strtolower($booking->status) }}">
                                                 <div class="d-flex align-items-center gap-3">
-                                                    <div class="text-center px-2 py-1 bg-light rounded border">
-                                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ \Carbon\Carbon::parse($booking->start_time)->format('h:i A') }}</div>
+                                                    <div class="text-center px-2 py-1 bg-light rounded border appointment-time-badge">
+                                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ \Carbon\Carbon::parse($booking->start_time)->timezone(salon_timezone())->format('h:i A') }}</div>
                                                         <small class="text-muted" style="font-size: 0.7rem;">Today</small>
                                                     </div>
                                                     <div>
-                                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">
-                                                            {{ optional($booking->customer)->name ?? 'Walk-in' }}
+                                                        <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                                                            <span>{{ optional($booking->customer)->name ?? 'Walk-in' }}</span>
                                                         </div>
                                                         <div class="text-muted small" style="font-size: 0.775rem;">
                                                             <i class="fas fa-scissors me-1 text-primary"></i>{{ optional($booking->service)->name ?? 'Service' }}
                                                             &bull; <i class="fas fa-user me-1 text-secondary"></i>{{ optional($booking->staff)->name ?? 'Staff' }}
                                                         </div>
+                                                        <div class="appointment-badges-container d-flex align-items-center gap-1 mt-1 flex-wrap">
+                                                            @if($isGroup)
+                                                                <span class="badge rounded-pill group-status-badge" style="background-color: #7c3aed; color: #fff; font-size: 0.68rem; padding: 3px 8px;">
+                                                                    <i class="fas fa-users me-1"></i>Group ({{ $groupCount }})
+                                                                </span>
+                                                            @else
+                                                                <span class="badge rounded-pill bg-light text-secondary border single-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
+                                                                    <i class="fas fa-user me-1"></i>Single
+                                                                </span>
+                                                            @endif
+
+                                                            @if($isCompleted)
+                                                                <span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
+                                                                    <i class="fas fa-check-double me-1"></i>Completed
+                                                                </span>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <button type="button" class="btn btn-sm btn-primary btn-load-booking"
-                                                        data-booking-id="{{ $booking->id }}"
-                                                        data-customer-id="{{ $booking->customer_id }}"
-                                                        data-customer-name="{{ optional($booking->customer)->name }}"
-                                                        data-customer-phone="{{ optional($booking->customer)->phone }}"
-                                                        data-customer-email="{{ optional($booking->customer)->email }}"
-                                                        data-service-id="{{ $booking->service_id }}"
-                                                        data-service-name="{{ optional($booking->service)->name }}"
-                                                        data-service-price="{{ optional($booking->service)->price ?? 0 }}"
-                                                        data-staff-id="{{ $booking->staff_id }}">
-                                                        <i class="fas fa-plus me-1"></i>Load
-                                                    </button>
+                                                    @if($isCompleted)
+                                                        <button type="button" class="btn btn-sm btn-secondary disabled" disabled style="pointer-events: none; font-size: 0.8rem;">
+                                                            <i class="fas fa-check-double me-1"></i>Completed
+                                                        </button>
+                                                    @else
+                                                        <button type="button" class="btn btn-sm {{ $isGroup ? 'btn-purple text-white' : 'btn-primary' }} btn-load-booking"
+                                                            data-booking-id="{{ $booking->id }}"
+                                                            data-is-group="{{ $isGroup ? '1' : '0' }}"
+                                                            data-group-id="{{ $booking->booking_group_id ?? '' }}"
+                                                            data-customer-id="{{ $booking->customer_id }}"
+                                                            data-customer-name="{{ optional($booking->customer)->name }}"
+                                                            data-customer-phone="{{ optional($booking->customer)->phone }}"
+                                                            data-customer-email="{{ optional($booking->customer)->email }}"
+                                                            data-service-id="{{ $booking->service_id }}"
+                                                            data-service-name="{{ optional($booking->service)->name }}"
+                                                            data-service-price="{{ optional($booking->service)->price ?? 0 }}"
+                                                            data-staff-id="{{ $booking->staff_id }}"
+                                                            style="font-size: 0.8rem; {{ $isGroup ? 'background-color: #7c3aed; border-color: #6d28d9;' : '' }}">
+                                                            <i class="fas fa-plus me-1"></i>{{ $isGroup ? 'Load Group' : 'Load' }}
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -576,6 +651,7 @@
 
                         <input type="hidden" id="customerId" value="">
                         <input type="hidden" id="existingSaleId" value="">
+                        <input type="hidden" id="booking_id" value="">
 
                         <!-- Customer Info Display Card (compact) -->
                         <div id="customerDisplay" class="mt-1 px-2 py-1 bg-light rounded-2 border d-none">
@@ -1300,38 +1376,131 @@
                     });
                 });
 
-                // Load Booking into Order
-                $(document).on('click', '.btn-load-booking', function () {
-                    const btn = $(this);
-                    const customerId = btn.data('customer-id');
-                    const customerName = btn.data('customer-name');
-                    const customerPhone = btn.data('customer-phone');
-                    const customerEmail = btn.data('customer-email');
-                    const serviceId = btn.data('service-id');
-                    const serviceName = btn.data('service-name');
-                    const servicePrice = parseFloat(btn.data('service-price') || 0);
-                    const staffId = btn.data('staff-id');
-
-                    if (customerId) {
-                        selectCustomer(customerId, customerName, customerPhone, customerEmail);
-                        $('#customerSelect').val(customerId).trigger('change');
-                    }
-
-                    if (serviceId) {
-                        addToCart({
-                            type: 'service',
-                            id: serviceId,
-                            name: serviceName,
-                            price: servicePrice,
-                            quantity: 1,
-                            staff_id: staffId || activeStaffId || null,
-                            discount_amount: 0,
-                            notes: 'Loaded from Booking'
+                // Helper to get all active booking IDs currently present in cart or active input
+                function getActiveCartBookingIds() {
+                    const ids = new Set();
+                    if (typeof cart !== 'undefined' && Array.isArray(cart)) {
+                        cart.forEach(item => {
+                            if (item.booking_id) ids.add(String(item.booking_id));
+                            if (item.booking_ids && Array.isArray(item.booking_ids)) {
+                                item.booking_ids.forEach(id => {
+                                    if (id) ids.add(String(id));
+                                });
+                            }
                         });
                     }
+                    const inputVal = $('#booking_id').val();
+                    if (inputVal) {
+                        ids.add(String(inputVal));
+                    }
+                    return Array.from(ids);
+                }
 
-                    $('#tabPillServices').click();
-                    showAlert('Booking loaded into order!', 'success');
+                // Synchronize Appointments Tab UI based on loaded/completed appointments
+                function syncAppointmentsTabUI() {
+                    const activeBookingIds = getActiveCartBookingIds();
+                    const hasActiveBooking = activeBookingIds.length > 0;
+
+                    $('.pos-appointment-card').each(function () {
+                        const card = $(this);
+                        const cardBookingId = String(card.data('booking-id') || '');
+                        const cardGroupId = String(card.data('group-id') || '');
+                        const isGroup = card.data('is-group') == '1';
+                        const isCompleted = card.hasClass('appointment-card-completed') || card.data('status') === 'completed';
+                        const loadBtn = card.find('.btn-load-booking');
+                        const badgeContainer = card.find('.appointment-badges-container');
+                        let loadedBadge = badgeContainer.find('.loaded-status-badge');
+
+                        if (isCompleted) {
+                            card.removeClass('appointment-card-loaded');
+                            loadBtn.prop('disabled', true).addClass('disabled').css('pointer-events', 'none')
+                                   .html('<i class="fas fa-check-double me-1"></i>Completed')
+                                   .removeClass('btn-primary btn-purple btn-success').addClass('btn-secondary');
+                            if (loadedBadge.length) loadedBadge.remove();
+                            return;
+                        }
+
+                        const isThisLoaded = activeBookingIds.includes(cardBookingId);
+
+                        if (isThisLoaded) {
+                            card.addClass('appointment-card-loaded');
+                            if (!loadedBadge.length) {
+                                badgeContainer.append('<span class="badge rounded-pill bg-success text-white loaded-status-badge" style="font-size: 0.68rem; padding: 3px 8px;"><i class="fas fa-check-circle me-1"></i>Loaded in Cart</span>');
+                            } else {
+                                loadedBadge.removeClass('d-none');
+                            }
+                            loadBtn.prop('disabled', true)
+                                   .addClass('disabled')
+                                   .css('pointer-events', 'none')
+                                   .html('<i class="fas fa-check me-1"></i>Loaded')
+                                   .removeClass('btn-primary btn-purple')
+                                   .addClass('btn-success');
+                        } else {
+                            card.removeClass('appointment-card-loaded');
+                            if (loadedBadge.length) loadedBadge.remove();
+
+                            if (isGroup) {
+                                loadBtn.removeClass('btn-success btn-secondary')
+                                       .addClass('btn-purple text-white')
+                                       .css({ 'pointer-events': '' })
+                                       .html('<i class="fas fa-plus me-1"></i>Load Group');
+                            } else {
+                                loadBtn.removeClass('btn-success btn-secondary btn-purple')
+                                       .addClass('btn-primary')
+                                       .css({ 'pointer-events': '' })
+                                       .html('<i class="fas fa-plus me-1"></i>Load');
+                            }
+
+                            loadBtn.prop('disabled', false).removeClass('disabled');
+                        }
+                    });
+                }
+
+                // Load Booking into Order (Single or Group)
+                $(document).on('click', '.btn-load-booking', function (e) {
+                    e.preventDefault();
+                    const btn = $(this);
+                    if (btn.prop('disabled') || btn.hasClass('disabled')) {
+                        return false;
+                    }
+
+                    const bookingId = btn.data('booking-id');
+                    const isGroup = btn.data('is-group') == '1';
+                    const groupId = btn.data('group-id');
+
+                    // 1. Check if ANY appointment is ALREADY loaded in the active cart
+                    const activeBookingIds = getActiveCartBookingIds();
+                    if (activeBookingIds.length > 0) {
+                        if (activeBookingIds.includes(String(bookingId))) {
+                            showAlert('This appointment is already loaded in the active order.', 'info');
+                            $('#tabPillServices').click();
+                            return false;
+                        }
+                        showAlert('An appointment is already loaded in the active order! Please complete or clear the current order before loading another appointment.', 'warning');
+                        return false;
+                    }
+
+                    // 2. Set loading state on button
+                    const originalHtml = btn.html();
+                    btn.prop('disabled', true).addClass('disabled').html('<i class="fas fa-spinner fa-spin me-1"></i>Loading...');
+
+                    // 3. Fetch booking & group details
+                    fetchBookingDetails({ booking_id: bookingId }, function (success, response) {
+                        btn.prop('disabled', false).removeClass('disabled').html(originalHtml);
+                        if (success) {
+                            $('#booking_id').val(bookingId);
+                            syncAppointmentsTabUI();
+                            $('#tabPillServices').click();
+                            const bookingsCount = (response && response.bookings) ? response.bookings.length : 1;
+                            if (bookingsCount > 1) {
+                                showAlert(`Group booking with ${bookingsCount} appointments loaded into order!`, 'success');
+                            } else {
+                                showAlert('Appointment loaded into order!', 'success');
+                            }
+                        } else {
+                            showAlert('Failed to load appointment details. Please try again.', 'danger');
+                        }
+                    });
                 });
 
                 // Quick Tip Percentage Pills
@@ -1518,7 +1687,7 @@
                     fetchBookingDetails({ sale_id: saleId });
                 }
 
-                function fetchBookingDetails(params) {
+                function fetchBookingDetails(params, callback = null) {
                     $.ajax({
                         url: '{{ route("admin.pos.booking-details") }}',
                         method: 'GET',
@@ -1747,9 +1916,21 @@
                                     showAlert('All bookings in this group are already paid.', 'info');
                                 }
                             }
+
+                            if (params && params.booking_id) {
+                                $('#booking_id').val(params.booking_id);
+                            }
+                            syncAppointmentsTabUI();
+
+                            if (typeof callback === 'function') {
+                                callback(true, response);
+                            }
                         },
-                        error: function () {
+                        error: function (xhr) {
                             showAlert('Error loading booking details', 'danger');
+                            if (typeof callback === 'function') {
+                                callback(false, xhr);
+                            }
                         }
                     });
                 }
@@ -2737,6 +2918,14 @@
                         }
                     }
 
+                    // If cart has no items, clear booking_id as well
+                    if (cart.length === 0) {
+                        $('#booking_id').val('');
+                    }
+
+                    // Always sync appointments tab state
+                    syncAppointmentsTabUI();
+
                     $('#checkoutBtn').prop('disabled', isCheckoutDisabled);
                 }
 
@@ -3354,6 +3543,28 @@
                             // Show receipt
                             if (response.sale) {
                                 showReceipt(response.sale, response.receipt_url);
+                            }
+
+                            // Mark completed bookings permanently in the Appointments tab
+                            if (typeof uniqueBookingIds !== 'undefined' && Array.isArray(uniqueBookingIds) && uniqueBookingIds.length > 0) {
+                                uniqueBookingIds.forEach(id => {
+                                    const $card = $(`.pos-appointment-card[data-booking-id="${id}"]`);
+                                    if ($card.length) {
+                                        $card.addClass('appointment-card-completed').removeClass('appointment-card-loaded');
+                                        $card.attr('data-status', 'completed');
+                                        $card.find('.loaded-status-badge').remove();
+                                        if (!$card.find('.completed-status-badge').length) {
+                                            $card.find('.appointment-badges-container').append('<span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size: 0.68rem; padding: 3px 8px;"><i class="fas fa-check-double me-1"></i>Completed</span>');
+                                        }
+                                        $card.find('.btn-load-booking')
+                                            .prop('disabled', true)
+                                            .addClass('disabled')
+                                            .css('pointer-events', 'none')
+                                            .html('<i class="fas fa-check-double me-1"></i>Completed')
+                                            .removeClass('btn-primary btn-purple btn-success')
+                                            .addClass('btn-secondary');
+                                    }
+                                });
                             }
 
                             // Reset terminal for next sale
@@ -4058,6 +4269,7 @@
 
                 // Initial Cart & UI calculation on page load
                 updateCart(true);
+                syncAppointmentsTabUI();
 
             });
 

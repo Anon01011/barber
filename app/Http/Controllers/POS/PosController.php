@@ -24,6 +24,19 @@ use App\Mail\PosSaleReceiptMail;
 class PosController extends Controller
 {
     /**
+     * Get the active salon ID safely across tenant contexts.
+     *
+     * @return int|null
+     */
+    protected function getSalonId()
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon')->id;
+        }
+        return auth()->user()?->salon_id ?? auth()->user()?->salon?->id;
+    }
+
+    /**
      * Display the POS interface.
      *
      * @return \Illuminate\View\View
@@ -31,7 +44,7 @@ class PosController extends Controller
     public function index()
     {
         // 1. Get salon ID first to scope all queries
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         if (!$salonId) {
             abort(403, 'Unauthorized action.');
         }
@@ -233,7 +246,7 @@ class PosController extends Controller
     {
         $bookingId = $request->input('booking_id');
         $saleId = $request->input('sale_id');
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
 
         if ($saleId && !$bookingId) {
             // If sale_id is provided, find bookings linked to this sale
@@ -367,11 +380,14 @@ class PosController extends Controller
 
         return response()->json([
             'customer_id' => $booking->customer_id,
-            'customer_name' => $booking->customer->name,
-            'customer_phone' => $booking->customer->phone,
-            'customer_email' => $booking->customer->email,
+            'customer_name' => $booking->customer?->name ?? 'Walk-in',
+            'customer_phone' => $booking->customer?->phone,
+            'customer_email' => $booking->customer?->email,
             'all_completed' => $allCompleted,
             'all_paid' => $allPaid,
+            'is_group' => !empty($booking->booking_group_id),
+            'booking_group_id' => $booking->booking_group_id,
+            'group_count' => $bookings->count(),
             'sale_id' => $saleId,
             'sale_data' => $sale,
             'items' => $items,
@@ -400,22 +416,23 @@ class PosController extends Controller
 
                 return [
                     'id' => $b->id,
+                    'booking_group_id' => $b->booking_group_id,
                     'service_id' => $b->service_id,
-                    'service_name' => $b->service->name,
-                    'service_price' => $b->service->price,
-                    'price' => $hasBalance ? 0 : ($b->amount ?? $b->service->price),
+                    'service_name' => $b->service?->name ?? 'Service',
+                    'service_price' => $b->service ? (float) $b->service->price : 0,
+                    'price' => $hasBalance ? 0 : (float) ($b->amount ?? ($b->service?->price ?? 0)),
                     'staff_id' => $b->staff_id,
-                    'staff_name' => $b->staff->name,
+                    'staff_name' => $b->staff?->name ?? 'Staff',
                     'status' => $b->status,
                     'payment_status' => $b->payment_status,
                     'package_id' => $b->package_id,
                     'package_name' => $b->package ? $b->package->name : null,
-                    'package_price' => $b->package ? $b->package->price : 0,
+                    'package_price' => $b->package ? (float) $b->package->price : 0,
                     'has_package_balance' => $hasBalance,
                     'has_any_package_balance' => $hasAnyPackageBalance ?? false,
                     'package_service_status' => $b->package_service_status,
                     'selected_services' => $b->selected_services,
-                    'start_time' => $b->start_time->toIso8601String(),
+                    'start_time' => $b->start_time ? $b->start_time->timezone(salon_timezone())->toIso8601String() : null,
                 ];
             })
         ]);

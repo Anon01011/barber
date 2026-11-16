@@ -119,6 +119,12 @@ class AppServiceProvider extends ServiceProvider
                 return false;
             }
 
+            // Do not convert deprecation notices to fatal exceptions
+            if ($errno === E_DEPRECATED || $errno === E_USER_DEPRECATED) {
+                \Log::warning("PHP Deprecation: {$errstr} in {$errfile} on line {$errline}");
+                return true;
+            }
+
             throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
         });
 
