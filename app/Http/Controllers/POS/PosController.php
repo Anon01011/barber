@@ -1196,7 +1196,10 @@ class PosController extends Controller
 
 
                         $prevTotal = array_sum($previousPayments);
-                        $billTotal = round($grossSubtotal - $totalItemDiscount + $totalTax + $tip, 2);
+                        // NOTE: $billTotal must include $overallDiscount so it matches $payable below.
+                        // Using only grossSubtotal - itemDiscount + tax would be pre-global-discount,
+                        // causing the idempotency guard to fire too early when a cart-level discount is applied.
+                        $billTotal = round($grossSubtotal - $totalItemDiscount - $overallDiscount + $totalTax + $tip, 2);
 
                         if ($prevTotal >= $billTotal && ($newCash + $newCard + $newOnline + $newOther) > 0) {
                             \Log::info("POS Idempotency: Bill already paid. Ignoring redundant payment amounts.", [
@@ -1243,20 +1246,46 @@ class PosController extends Controller
 
                         $paid = round($cash + $card + $online + $other, 2);
 
-                        // If paid exceeds payable and cash was tendered, excess cash is change returned to customer
+                        // If the accumulated total (prev + new payments) exceeds the bill, trim the
+                        // excess from the newly-added portion of each tender channel.
+                        // This handles: (a) cash overpayment with wrong change=0, (b) card/online/other
+                        // partial-payment accumulation exceeding the bill after a membership discount.
                         if ($paid > $payable) {
                             $overpayment = round($paid - $payable, 2);
-                            if ($cash > 0) {
+
+                            // 1. Try to absorb overpayment into cash change first
+                            if ($cash > 0 && $newCash > 0) {
                                 $excessCash = min($cash, $overpayment);
-                                $cash = round($cash - $excessCash, 2);
-                                $paid = round($cash + $card + $online + $other, 2);
+                                $cash        = round($cash - $excessCash, 2);
+                                $paid        = round($cash + $card + $online + $other, 2);
                                 $changeAmount = round(($changeAmount ?? 0) + $excessCash, 2);
                                 $validated['change_amount'] = $changeAmount;
+                                $overpayment = max(0, round($paid - $payable, 2));
+                            }
+
+                            // 2. For card/online/other: trim only the newly-added amount,
+                            //    never the previous payment that was already recorded.
+                            if ($overpayment > 0 && $card > 0 && $newCard > 0) {
+                                $excessCard = min($newCard, $overpayment);
+                                $card        = round($card - $excessCard, 2);
+                                $paid        = round($cash + $card + $online + $other, 2);
+                                $overpayment = max(0, round($paid - $payable, 2));
+                            }
+                            if ($overpayment > 0 && $online > 0 && $newOnline > 0) {
+                                $excessOnline = min($newOnline, $overpayment);
+                                $online       = round($online - $excessOnline, 2);
+                                $paid         = round($cash + $card + $online + $other, 2);
+                                $overpayment  = max(0, round($paid - $payable, 2));
+                            }
+                            if ($overpayment > 0 && $other > 0 && $newOther > 0) {
+                                $excessOther = min($newOther, $overpayment);
+                                $other       = round($other - $excessOther, 2);
+                                $paid        = round($cash + $card + $online + $other, 2);
                             }
                         }
 
-                        // Prevent overpayment
-                        if ($paid > $payable + 0.10) { // Slightly larger buffer for rounding
+                        // Prevent genuine overpayment (> 0.10 tolerance for float rounding)
+                        if ($paid > $payable + 0.10) {
                             throw new \Exception("Payment amount (" . number_format($paid, 2) . ") cannot be more than the bill amount (" . number_format($payable, 2) . "). Check if payment was already recorded.");
                         }
 
