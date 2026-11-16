@@ -315,6 +315,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                     // Main POS page - requires view permission
                     Route::get('/', [POSController::class, 'index'])->name('index')->middleware('permission:pos.view');
                     Route::get('/booking-details', [POSController::class, 'getBookingDetailsForPos'])->name('booking-details')->middleware('permission:pos.view');
+                    Route::get('/appointments', [POSController::class, 'getAppointments'])->name('appointments')->middleware('permission:pos.view');
 
                     // Analytics - requires reports permission
                     Route::get('/analytics', [\App\Http\Controllers\POS\AnalyticsController::class, 'index'])

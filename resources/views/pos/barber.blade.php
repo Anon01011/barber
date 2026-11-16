@@ -58,6 +58,9 @@
             border: 1px solid #e2e8f0 !important;
             border-left: 4px solid #94a3b8 !important;
         }
+        .appointments-hide-completed .pos-appointment-col.has-completed-appointment {
+            display: none !important;
+        }
         .btn-purple {
             background-color: #7c3aed !important;
             border-color: #6d28d9 !important;
@@ -279,9 +282,7 @@
                     @endif
                     <button type="button" class="pos-nav-pill" data-tab="appointments" id="tabPillAppointments">
                         <i class="fas fa-calendar-check me-1"></i>Appointments
-                        @if(isset($todayBookings) && count($todayBookings) > 0)
-                            <span class="badge bg-primary text-white rounded-pill ms-1" style="font-size: 0.65rem;">{{ count($todayBookings) }}</span>
-                        @endif
+                        <span class="badge bg-primary text-white rounded-pill ms-1 appointment-tab-count {{ (isset($todayBookings) && count($todayBookings) > 0) ? '' : 'd-none' }}" style="font-size: 0.65rem;">{{ isset($todayBookings) ? count($todayBookings) : 0 }}</span>
                     </button>
                     @if($canPackages)
                         <button type="button" class="pos-nav-pill" data-tab="packages" id="tabPillPackages">
@@ -417,88 +418,133 @@
 
                         <!-- Appointments Tab Section -->
                         <div class="grid-section d-none" id="appointmentsGridSection">
-                            @if(isset($todayBookings) && count($todayBookings) > 0)
-                                @php
-                                    $groupCounts = $todayBookings->whereNotNull('booking_group_id')->groupBy('booking_group_id')->map->count();
-                                @endphp
-                                <div class="row g-2">
-                                    @foreach($todayBookings as $booking)
-                                        @php
-                                            $isGroup = !empty($booking->booking_group_id);
-                                            $groupCount = $isGroup ? ($groupCounts[$booking->booking_group_id] ?? 1) : 1;
-                                            $isCompleted = in_array(strtolower($booking->status), ['completed', 'cancelled']) || strtolower($booking->payment_status ?? '') === 'paid';
-                                        @endphp
-                                        <div class="col-12 col-md-6">
-                                            <div class="pos-appointment-card p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center position-relative transition-all {{ $isGroup ? 'pos-appointment-group' : 'pos-appointment-single' }} {{ $isCompleted ? 'appointment-card-completed' : '' }}"
-                                                data-booking-id="{{ $booking->id }}"
-                                                data-is-group="{{ $isGroup ? '1' : '0' }}"
-                                                data-group-id="{{ $booking->booking_group_id ?? '' }}"
-                                                data-status="{{ strtolower($booking->status) }}">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="text-center px-2 py-1 bg-light rounded border appointment-time-badge">
-                                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ \Carbon\Carbon::parse($booking->start_time)->timezone(salon_timezone())->format('h:i A') }}</div>
-                                                        <small class="text-muted" style="font-size: 0.7rem;">Today</small>
-                                                    </div>
-                                                    <div>
-                                                        <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.9rem;">
-                                                            <span>{{ optional($booking->customer)->name ?? 'Walk-in' }}</span>
-                                                        </div>
-                                                        <div class="text-muted small" style="font-size: 0.775rem;">
-                                                            <i class="fas fa-scissors me-1 text-primary"></i>{{ optional($booking->service)->name ?? 'Service' }}
-                                                            &bull; <i class="fas fa-user me-1 text-secondary"></i>{{ optional($booking->staff)->name ?? 'Staff' }}
-                                                        </div>
-                                                        <div class="appointment-badges-container d-flex align-items-center gap-1 mt-1 flex-wrap">
-                                                            @if($isGroup)
-                                                                <span class="badge rounded-pill group-status-badge" style="background-color: #7c3aed; color: #fff; font-size: 0.68rem; padding: 3px 8px;">
-                                                                    <i class="fas fa-users me-1"></i>Group ({{ $groupCount }})
-                                                                </span>
-                                                            @else
-                                                                <span class="badge rounded-pill bg-light text-secondary border single-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
-                                                                    <i class="fas fa-user me-1"></i>Single
-                                                                </span>
-                                                            @endif
+                            <!-- Filter & Navigation Bar -->
+                            <div class="appointments-filter-bar bg-white p-2 mb-3 rounded-3 border shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <!-- Date Filter -->
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="text-muted small fw-bold"><i class="fas fa-calendar-alt text-primary me-1"></i>Date:</span>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary active btn-appt-date-quick" data-date="today">
+                                            Today
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-appt-date-quick" data-date="tomorrow">
+                                            Tomorrow (Next Day)
+                                        </button>
+                                    </div>
+                                    <div class="input-group input-group-sm" style="width: 145px;">
+                                        <input type="date" id="appointmentDateFilter" class="form-control form-control-sm" value="{{ $bookingDate ?? today()->toDateString() }}">
+                                    </div>
+                                </div>
 
-                                                            @if($isCompleted)
-                                                                <span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
-                                                                    <i class="fas fa-check-double me-1"></i>Completed
-                                                                </span>
-                                                            @endif
+                                <!-- Completed Appointments Filter -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleCompletedAppointmentsSwitch" style="cursor: pointer;">
+                                        <label class="form-check-label small fw-semibold text-muted" for="toggleCompletedAppointmentsSwitch" style="cursor: pointer; user-select: none;">
+                                            Show Completed
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2" id="refreshAppointmentsBtn" title="Refresh Appointments">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Appointments Cards Container (Default hide completed appointments) -->
+                            <div id="appointmentsContainer" class="appointments-hide-completed">
+                                <div id="appointmentsCardsRow" class="row g-2">
+                                    @if(isset($todayBookings) && count($todayBookings) > 0)
+                                        @php
+                                            $groupCounts = $todayBookings->whereNotNull('booking_group_id')->groupBy('booking_group_id')->map->count();
+                                        @endphp
+                                        @foreach($todayBookings as $booking)
+                                            @php
+                                                $isGroup = !empty($booking->booking_group_id);
+                                                $groupCount = $isGroup ? ($groupCounts[$booking->booking_group_id] ?? 1) : 1;
+                                                $isCompleted = in_array(strtolower($booking->status), ['completed', 'cancelled']) || strtolower($booking->payment_status ?? '') === 'paid';
+                                                $startTimeCarbon = \Carbon\Carbon::parse($booking->start_time)->timezone(salon_timezone());
+                                                $dateLabel = $startTimeCarbon->isTomorrow() ? 'Tomorrow' : ($startTimeCarbon->isToday() ? 'Today' : $startTimeCarbon->format('M d'));
+                                            @endphp
+                                            <div class="col-12 col-md-6 pos-appointment-col {{ $isCompleted ? 'has-completed-appointment' : '' }}">
+                                                <div class="pos-appointment-card p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center position-relative transition-all {{ $isGroup ? 'pos-appointment-group' : 'pos-appointment-single' }} {{ $isCompleted ? 'appointment-card-completed' : '' }}"
+                                                    data-booking-id="{{ $booking->id }}"
+                                                    data-is-group="{{ $isGroup ? '1' : '0' }}"
+                                                    data-group-id="{{ $booking->booking_group_id ?? '' }}"
+                                                    data-status="{{ strtolower($booking->status) }}">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="text-center px-2 py-1 bg-light rounded border appointment-time-badge">
+                                                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $startTimeCarbon->format('h:i A') }}</div>
+                                                            <small class="text-muted" style="font-size: 0.7rem;">{{ $dateLabel }}</small>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                                                                <span>{{ optional($booking->customer)->name ?? 'Walk-in' }}</span>
+                                                            </div>
+                                                            <div class="text-muted small" style="font-size: 0.775rem;">
+                                                                <i class="fas fa-scissors me-1 text-primary"></i>{{ optional($booking->service)->name ?? 'Service' }}
+                                                                &bull; <i class="fas fa-user me-1 text-secondary"></i>{{ optional($booking->staff)->name ?? 'Staff' }}
+                                                            </div>
+                                                            <div class="appointment-badges-container d-flex align-items-center gap-1 mt-1 flex-wrap">
+                                                                @if($isGroup)
+                                                                    <span class="badge rounded-pill group-status-badge" style="background-color: #7c3aed; color: #fff; font-size: 0.68rem; padding: 3px 8px;">
+                                                                        <i class="fas fa-users me-1"></i>Group ({{ $groupCount }})
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge rounded-pill bg-light text-secondary border single-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
+                                                                        <i class="fas fa-user me-1"></i>Single
+                                                                    </span>
+                                                                @endif
+
+                                                                @if($isCompleted)
+                                                                    <span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size: 0.68rem; padding: 3px 8px;">
+                                                                        <i class="fas fa-check-double me-1"></i>Completed
+                                                                    </span>
+                                                                @endif
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    @if($isCompleted)
-                                                        <button type="button" class="btn btn-sm btn-secondary disabled" disabled style="pointer-events: none; font-size: 0.8rem;">
-                                                            <i class="fas fa-check-double me-1"></i>Completed
-                                                        </button>
-                                                    @else
-                                                        <button type="button" class="btn btn-sm {{ $isGroup ? 'btn-purple text-white' : 'btn-primary' }} btn-load-booking"
-                                                            data-booking-id="{{ $booking->id }}"
-                                                            data-is-group="{{ $isGroup ? '1' : '0' }}"
-                                                            data-group-id="{{ $booking->booking_group_id ?? '' }}"
-                                                            data-customer-id="{{ $booking->customer_id }}"
-                                                            data-customer-name="{{ optional($booking->customer)->name }}"
-                                                            data-customer-phone="{{ optional($booking->customer)->phone }}"
-                                                            data-customer-email="{{ optional($booking->customer)->email }}"
-                                                            data-service-id="{{ $booking->service_id }}"
-                                                            data-service-name="{{ optional($booking->service)->name }}"
-                                                            data-service-price="{{ optional($booking->service)->price ?? 0 }}"
-                                                            data-staff-id="{{ $booking->staff_id }}"
-                                                            style="font-size: 0.8rem; {{ $isGroup ? 'background-color: #7c3aed; border-color: #6d28d9;' : '' }}">
-                                                            <i class="fas fa-plus me-1"></i>{{ $isGroup ? 'Load Group' : 'Load' }}
-                                                        </button>
-                                                    @endif
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        @if($isCompleted)
+                                                            <button type="button" class="btn btn-sm btn-secondary disabled" disabled style="pointer-events: none; font-size: 0.8rem;">
+                                                                <i class="fas fa-check-double me-1"></i>Completed
+                                                            </button>
+                                                        @else
+                                                            <button type="button" class="btn btn-sm {{ $isGroup ? 'btn-purple text-white' : 'btn-primary' }} btn-load-booking"
+                                                                data-booking-id="{{ $booking->id }}"
+                                                                data-is-group="{{ $isGroup ? '1' : '0' }}"
+                                                                data-group-id="{{ $booking->booking_group_id ?? '' }}"
+                                                                data-customer-id="{{ $booking->customer_id }}"
+                                                                data-customer-name="{{ optional($booking->customer)->name }}"
+                                                                data-customer-phone="{{ optional($booking->customer)->phone }}"
+                                                                data-customer-email="{{ optional($booking->customer)->email }}"
+                                                                data-service-id="{{ $booking->service_id }}"
+                                                                data-service-name="{{ optional($booking->service)->name }}"
+                                                                data-service-price="{{ optional($booking->service)->price ?? 0 }}"
+                                                                data-staff-id="{{ $booking->staff_id }}"
+                                                                style="font-size: 0.8rem; {{ $isGroup ? 'background-color: #7c3aed; border-color: #6d28d9;' : '' }}">
+                                                                <i class="fas fa-plus me-1"></i>{{ $isGroup ? 'Load Group' : 'Load' }}
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    @endif
                                 </div>
-                            @else
-                                <div class="text-center py-5 text-muted">
+
+                                <div id="appointmentsEmptyNotice" class="text-center py-5 text-muted {{ (isset($todayBookings) && count($todayBookings) > 0) ? 'd-none' : '' }}">
                                     <i class="fas fa-calendar-times fa-3x mb-2 opacity-25"></i>
-                                    <p class="mb-0">No active appointments scheduled for today.</p>
+                                    <p class="mb-0">No appointments scheduled for this date.</p>
                                 </div>
-                            @endif
+
+                                <div id="allCompletedHiddenNotice" class="text-center py-4 text-muted bg-light rounded-3 border mt-2 d-none">
+                                    <i class="fas fa-check-circle text-success mb-2 fs-4"></i>
+                                    <p class="mb-1 fw-semibold text-dark">All appointments for this date are completed!</p>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 btn-show-completed-trigger">
+                                        <i class="fas fa-eye me-1"></i>Show Completed Appointments
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         @if($canProducts)
@@ -1412,6 +1458,7 @@
 
                         if (isCompleted) {
                             card.removeClass('appointment-card-loaded');
+                            card.closest('.pos-appointment-col').addClass('has-completed-appointment');
                             loadBtn.prop('disabled', true).addClass('disabled').css('pointer-events', 'none')
                                    .html('<i class="fas fa-check-double me-1"></i>Completed')
                                    .removeClass('btn-primary btn-purple btn-success').addClass('btn-secondary');
@@ -1455,6 +1502,215 @@
                     });
                 }
 
+                // =========================================================
+                // Appointments Tab: Date Filter & Visibility Helpers
+                // =========================================================
+
+                /** Show/hide the empty / all-completed notices */
+                function checkAppointmentsVisibility() {
+                    const totalCols = $('#appointmentsCardsRow .pos-appointment-col').length;
+                    const isHideCompleted = $('#appointmentsContainer').hasClass('appointments-hide-completed');
+                    const visibleCols = $('#appointmentsCardsRow .pos-appointment-col:visible').length;
+
+                    if (totalCols === 0) {
+                        $('#appointmentsEmptyNotice').removeClass('d-none');
+                        $('#allCompletedHiddenNotice').addClass('d-none');
+                    } else if (visibleCols === 0 && isHideCompleted) {
+                        $('#appointmentsEmptyNotice').addClass('d-none');
+                        $('#allCompletedHiddenNotice').removeClass('d-none');
+                    } else {
+                        $('#appointmentsEmptyNotice').addClass('d-none');
+                        $('#allCompletedHiddenNotice').addClass('d-none');
+                    }
+                }
+
+                /** Render appointment cards from API response data */
+                function renderAppointmentCards(bookings) {
+                    const $row = $('#appointmentsCardsRow');
+                    $row.empty();
+
+                    if (!bookings || bookings.length === 0) {
+                        return;
+                    }
+
+                    bookings.forEach(function (b) {
+                        const isGroup = b.is_group;
+                        const isCompleted = b.is_completed;
+                        const groupBg = isGroup ? 'background-color: #7c3aed; border-color: #6d28d9;' : '';
+                        const cardClass = [
+                            'pos-appointment-card p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center position-relative transition-all',
+                            isGroup ? 'pos-appointment-group' : 'pos-appointment-single',
+                            isCompleted ? 'appointment-card-completed' : ''
+                        ].join(' ');
+                        const colClass = 'col-12 col-md-6 pos-appointment-col' + (isCompleted ? ' has-completed-appointment' : '');
+
+                        // Badges
+                        const groupBadge = isGroup
+                            ? `<span class="badge rounded-pill group-status-badge" style="background-color:#7c3aed;color:#fff;font-size:0.68rem;padding:3px 8px;"><i class="fas fa-users me-1"></i>Group (${b.group_count})</span>`
+                            : `<span class="badge rounded-pill bg-light text-secondary border single-status-badge" style="font-size:0.68rem;padding:3px 8px;"><i class="fas fa-user me-1"></i>Single</span>`;
+                        const completedBadge = isCompleted
+                            ? `<span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size:0.68rem;padding:3px 8px;"><i class="fas fa-check-double me-1"></i>Completed</span>`
+                            : '';
+
+                        // Action button
+                        const actionBtn = isCompleted
+                            ? `<button type="button" class="btn btn-sm btn-secondary disabled" disabled style="pointer-events:none;font-size:0.8rem;"><i class="fas fa-check-double me-1"></i>Completed</button>`
+                            : `<button type="button" class="btn btn-sm ${isGroup ? 'btn-purple text-white' : 'btn-primary'} btn-load-booking"
+                                    data-booking-id="${b.id}"
+                                    data-is-group="${isGroup ? '1' : '0'}"
+                                    data-group-id="${b.booking_group_id || ''}"
+                                    data-customer-id="${b.customer_id || ''}"
+                                    data-customer-name="${$('<span>').text(b.customer_name).html()}"
+                                    data-customer-phone="${$('<span>').text(b.customer_phone).html()}"
+                                    data-customer-email="${$('<span>').text(b.customer_email).html()}"
+                                    data-service-id="${b.service_id || ''}"
+                                    data-service-name="${$('<span>').text(b.service_name).html()}"
+                                    data-service-price="${b.service_price}"
+                                    data-staff-id="${b.staff_id || ''}"
+                                    style="font-size:0.8rem;${groupBg}">
+                                    <i class="fas fa-plus me-1"></i>${isGroup ? 'Load Group' : 'Load'}
+                               </button>`;
+
+                        const html = `
+                            <div class="${colClass}">
+                                <div class="${cardClass}"
+                                    data-booking-id="${b.id}"
+                                    data-is-group="${isGroup ? '1' : '0'}"
+                                    data-group-id="${b.booking_group_id || ''}"
+                                    data-status="${b.status}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="text-center px-2 py-1 bg-light rounded border appointment-time-badge">
+                                            <div class="fw-bold text-dark" style="font-size:0.85rem;">${b.start_time_formatted}</div>
+                                            <small class="text-muted" style="font-size:0.7rem;">${b.date_label}</small>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size:0.9rem;">
+                                                <span>${$('<span>').text(b.customer_name).html()}</span>
+                                            </div>
+                                            <div class="text-muted small" style="font-size:0.775rem;">
+                                                <i class="fas fa-scissors me-1 text-primary"></i>${$('<span>').text(b.service_name).html()}
+                                                &bull; <i class="fas fa-user me-1 text-secondary"></i>${$('<span>').text(b.staff_name).html()}
+                                            </div>
+                                            <div class="appointment-badges-container d-flex align-items-center gap-1 mt-1 flex-wrap">
+                                                ${groupBadge}
+                                                ${completedBadge}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        ${actionBtn}
+                                    </div>
+                                </div>
+                            </div>`;
+                        $row.append(html);
+                    });
+                }
+
+                /** Load appointments for a given date string (YYYY-MM-DD) via AJAX */
+                function loadAppointmentsByDate(dateStr) {
+                    const $row = $('#appointmentsCardsRow');
+                    const $refreshBtn = $('#refreshAppointmentsBtn');
+
+                    // Show loading spinner
+                    $row.html('<div class="col-12 text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><p class="mb-0 mt-2">Loading appointments...</p></div>');
+                    $('#appointmentsEmptyNotice').addClass('d-none');
+                    $('#allCompletedHiddenNotice').addClass('d-none');
+                    $refreshBtn.prop('disabled', true).find('i').addClass('fa-spin');
+
+                    $.ajax({
+                        url: '{{ route("admin.pos.appointments") }}',
+                        method: 'GET',
+                        data: { date: dateStr },
+                        success: function (response) {
+                            renderAppointmentCards(response.bookings || []);
+
+                            // Update tab badge count (exclude cancelled/completed from badge)
+                            const activeCount = (response.bookings || []).filter(function (b) { return !b.is_completed; }).length;
+                            const $badge = $('.appointment-tab-count');
+                            if (activeCount > 0) {
+                                $badge.text(activeCount).removeClass('d-none');
+                            } else {
+                                $badge.addClass('d-none');
+                            }
+
+                            syncAppointmentsTabUI();
+                            checkAppointmentsVisibility();
+                        },
+                        error: function () {
+                            $row.html('<div class="col-12 text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p class="mb-0 mt-2">Failed to load appointments. Please refresh.</p></div>');
+                        },
+                        complete: function () {
+                            $refreshBtn.prop('disabled', false).find('i').removeClass('fa-spin');
+                        }
+                    });
+                }
+
+                // ---- Date quick-select buttons (Today / Tomorrow) ----
+                $(document).on('click', '.btn-appt-date-quick', function () {
+                    const $btn = $(this);
+                    if ($btn.hasClass('active')) return; // Already selected
+
+                    $('.btn-appt-date-quick').removeClass('active');
+                    $btn.addClass('active');
+
+                    const val = $btn.data('date');
+                    let dateStr;
+                    if (val === 'tomorrow') {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        dateStr = d.toISOString().slice(0, 10);
+                    } else {
+                        dateStr = new Date().toISOString().slice(0, 10);
+                    }
+
+                    // Sync the date picker
+                    $('#appointmentDateFilter').val(dateStr);
+                    loadAppointmentsByDate(dateStr);
+                });
+
+                // ---- Date picker change ----
+                $('#appointmentDateFilter').on('change', function () {
+                    const dateStr = $(this).val();
+                    if (!dateStr) return;
+
+                    // Deactivate quick buttons if neither today/tomorrow
+                    const today = new Date().toISOString().slice(0, 10);
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+                    const tomorrow = d.toISOString().slice(0, 10);
+
+                    $('.btn-appt-date-quick').removeClass('active');
+                    if (dateStr === today) {
+                        $('.btn-appt-date-quick[data-date="today"]').addClass('active');
+                    } else if (dateStr === tomorrow) {
+                        $('.btn-appt-date-quick[data-date="tomorrow"]').addClass('active');
+                    }
+
+                    loadAppointmentsByDate(dateStr);
+                });
+
+                // ---- Refresh button ----
+                $('#refreshAppointmentsBtn').on('click', function () {
+                    const dateStr = $('#appointmentDateFilter').val() || new Date().toISOString().slice(0, 10);
+                    loadAppointmentsByDate(dateStr);
+                });
+
+                // ---- Show Completed toggle switch ----
+                $('#toggleCompletedAppointmentsSwitch').on('change', function () {
+                    if ($(this).is(':checked')) {
+                        $('#appointmentsContainer').removeClass('appointments-hide-completed');
+                    } else {
+                        $('#appointmentsContainer').addClass('appointments-hide-completed');
+                    }
+                    checkAppointmentsVisibility();
+                });
+
+                // ---- "Show Completed Appointments" button in allCompletedHiddenNotice ----
+                $(document).on('click', '.btn-show-completed-trigger', function () {
+                    $('#toggleCompletedAppointmentsSwitch').prop('checked', true).trigger('change');
+                });
+
+                // =========================================================
                 // Load Booking into Order (Single or Group)
                 $(document).on('click', '.btn-load-booking', function (e) {
                     e.preventDefault();
@@ -3596,6 +3852,7 @@
                                     if ($card.length) {
                                         $card.addClass('appointment-card-completed').removeClass('appointment-card-loaded');
                                         $card.attr('data-status', 'completed');
+                                        $card.closest('.pos-appointment-col').addClass('has-completed-appointment');
                                         $card.find('.loaded-status-badge').remove();
                                         if (!$card.find('.completed-status-badge').length) {
                                             $card.find('.appointment-badges-container').append('<span class="badge rounded-pill bg-secondary text-white completed-status-badge" style="font-size: 0.68rem; padding: 3px 8px;"><i class="fas fa-check-double me-1"></i>Completed</span>');
@@ -3609,6 +3866,7 @@
                                             .addClass('btn-secondary');
                                     }
                                 });
+                                checkAppointmentsVisibility();
                             }
 
                             // Reset terminal for next sale
@@ -4314,6 +4572,7 @@
                 // Initial Cart & UI calculation on page load
                 updateCart(true);
                 syncAppointmentsTabUI();
+                checkAppointmentsVisibility();
 
             });
 

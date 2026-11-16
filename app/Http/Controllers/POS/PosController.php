@@ -65,16 +65,17 @@ class PosController extends Controller
             ->select('id', 'name', 'salon_id')
             ->get();
 
+        $bookingDate = request()->query('booking_date', today()->toDateString());
         $todayBookings = \App\Models\Booking::with([
                 'customer:id,name,phone',
                 'service:id,name,duration,price',
                 'staff:id,name'
             ])
             ->where('salon_id', $salonId)
-            ->whereDate('start_time', today())
+            ->whereDate('start_time', $bookingDate)
             ->whereNotIn('status', ['cancelled'])
             ->orderBy('start_time')
-            ->limit(40)
+            ->limit(100)
             ->get();
 
         // 3. Optimize Products: Select only needed columns and eager load category with limit
@@ -238,7 +239,92 @@ class PosController extends Controller
             $viewName = 'pos.index';
         }
 
-        return view($viewName, compact('services', 'categories', 'todayBookings', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton'));
+        return view($viewName, compact('services', 'categories', 'todayBookings', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton', 'bookingDate'));
+    }
+
+    /**
+     * Get appointments list for POS appointments tab (filtered by date).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAppointments(Request $request)
+    {
+        $salonId = $this->getSalonId();
+        if (!$salonId) {
+            abort(403, 'Salon context required.');
+        }
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('super_admin') && !$user->salon_id) {
+            \App\Models\SuperAdminAuditLog::logAction(
+                'BLOCKED_POS_APPOINTMENTS_DIRECT_SESSION',
+                $salonId,
+                null,
+                null,
+                ['date' => $request->input('date'), 'ip' => $request->ip()]
+            );
+            abort(403, 'Platform administrators must use impersonation to access tenant booking data.');
+        }
+
+        $date = $request->input('date', today()->toDateString());
+
+        $bookings = \App\Models\Booking::with([
+                'customer:id,name,phone,email',
+                'service:id,name,duration,price',
+                'staff:id,name'
+            ])
+            ->where('salon_id', $salonId)
+            ->whereDate('start_time', $date)
+            ->whereNotIn('status', ['cancelled'])
+            ->orderBy('start_time')
+            ->limit(100)
+            ->get();
+
+        $groupCounts = $bookings->whereNotNull('booking_group_id')->groupBy('booking_group_id')->map->count();
+        $tz = salon_timezone();
+
+        $data = $bookings->map(function ($booking) use ($groupCounts, $tz) {
+            $isGroup = !empty($booking->booking_group_id);
+            $groupCount = $isGroup ? ($groupCounts[$booking->booking_group_id] ?? 1) : 1;
+            $isCompleted = in_array(strtolower($booking->status), ['completed', 'cancelled']) || strtolower($booking->payment_status ?? '') === 'paid';
+            $startTimeCarbon = \Carbon\Carbon::parse($booking->start_time)->timezone($tz);
+
+            $dateLabel = 'Today';
+            if ($startTimeCarbon->isTomorrow()) {
+                $dateLabel = 'Tomorrow';
+            } elseif (!$startTimeCarbon->isToday()) {
+                $dateLabel = $startTimeCarbon->format('M d');
+            }
+
+            return [
+                'id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'customer_name' => optional($booking->customer)->name ?? 'Walk-in',
+                'customer_phone' => optional($booking->customer)->phone ?? '',
+                'customer_email' => optional($booking->customer)->email ?? '',
+                'service_id' => $booking->service_id,
+                'service_name' => optional($booking->service)->name ?? 'Service',
+                'service_price' => (float) (optional($booking->service)->price ?? 0),
+                'staff_id' => $booking->staff_id,
+                'staff_name' => optional($booking->staff)->name ?? 'Staff',
+                'booking_group_id' => $booking->booking_group_id,
+                'is_group' => $isGroup,
+                'group_count' => $groupCount,
+                'status' => strtolower($booking->status),
+                'payment_status' => strtolower($booking->payment_status ?? ''),
+                'is_completed' => $isCompleted,
+                'start_time_formatted' => $startTimeCarbon->format('h:i A'),
+                'date_label' => $dateLabel,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'date' => $date,
+            'count' => $data->count(),
+            'bookings' => $data
+        ]);
     }
 
     /**
