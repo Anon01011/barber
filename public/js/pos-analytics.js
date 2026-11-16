@@ -292,17 +292,16 @@
                             }
                         }
                     }
-                }
-            },
-            tooltip: {
-                theme: 'dark',
-                y: {
-                    formatter: function (val) {
-                        return currencySymbol + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 });
+                },
+                tooltip: {
+                    theme: 'dark',
+                    y: {
+                        formatter: function (val) {
+                            return currencySymbol + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 });
+                        }
                     }
                 }
-            }
-        };
+            };
 
             catChart = new ApexCharts(catEl, categoryOptions);
             catChart.render();
