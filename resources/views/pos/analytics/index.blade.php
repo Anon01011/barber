@@ -220,6 +220,226 @@
             </div>
         </div>
 
+        <!-- ================================================================
+             Payment Collection by Method — Cards Row
+        ================================================================ -->
+        @php
+            $sym = currency_symbol();
+            $pmTotal = $paymentMethodBreakdown['total'] ?? 0;
+        @endphp
+        <div class="row g-3 mb-2">
+            <div class="col-12">
+                <h6 class="text-uppercase text-muted fw-bold mb-0" style="font-size:0.75rem; letter-spacing:0.5px;">
+                    <i class="fas fa-credit-card me-1 text-primary"></i> Collection by Payment Method
+                </h6>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            {{-- Cash --}}
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #198754 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="bg-success bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                <i class="fas fa-money-bill-wave text-success"></i>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size:0.72rem;">
+                                {{ number_format($paymentMethodBreakdown['cash_pct'] ?? 0, 1) }}%
+                            </span>
+                        </div>
+                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Cash</p>
+                        <h5 class="mb-0 fw-bold text-success">{{ $sym }}{{ number_format($paymentMethodBreakdown['cash'] ?? 0, 2) }}</h5>
+                        @php $cashMethod = $paymentMethodBreakdown['by_method']['cash'] ?? null; @endphp
+                        <small class="text-muted">{{ $cashMethod ? $cashMethod->cnt : 0 }} transactions</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card --}}
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #0d6efd !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                <i class="fas fa-credit-card text-primary"></i>
+                            </div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold" style="font-size:0.72rem;">
+                                {{ number_format($paymentMethodBreakdown['card_pct'] ?? 0, 1) }}%
+                            </span>
+                        </div>
+                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Card</p>
+                        <h5 class="mb-0 fw-bold text-primary">{{ $sym }}{{ number_format($paymentMethodBreakdown['card'] ?? 0, 2) }}</h5>
+                        @php $cardMethod = $paymentMethodBreakdown['by_method']['card'] ?? null; @endphp
+                        <small class="text-muted">{{ $cardMethod ? $cardMethod->cnt : 0 }} transactions</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Online --}}
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #0dcaf0 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                <i class="fas fa-globe text-info"></i>
+                            </div>
+                            <span class="badge bg-info bg-opacity-10 text-info fw-semibold" style="font-size:0.72rem;">
+                                {{ number_format($paymentMethodBreakdown['online_pct'] ?? 0, 1) }}%
+                            </span>
+                        </div>
+                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Online</p>
+                        <h5 class="mb-0 fw-bold text-info">{{ $sym }}{{ number_format($paymentMethodBreakdown['online'] ?? 0, 2) }}</h5>
+                        @php $onlineMethod = $paymentMethodBreakdown['by_method']['online'] ?? null; @endphp
+                        <small class="text-muted">{{ $onlineMethod ? $onlineMethod->cnt : 0 }} transactions</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Other --}}
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #6f42c1 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(111,66,193,.1);">
+                                <i class="fas fa-ellipsis-h" style="color:#6f42c1;"></i>
+                            </div>
+                            <span class="badge fw-semibold" style="background:rgba(111,66,193,.1);color:#6f42c1;font-size:0.72rem;">
+                                {{ number_format($paymentMethodBreakdown['other_pct'] ?? 0, 1) }}%
+                            </span>
+                        </div>
+                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Other</p>
+                        <h5 class="mb-0 fw-bold" style="color:#6f42c1;">{{ $sym }}{{ number_format($paymentMethodBreakdown['other'] ?? 0, 2) }}</h5>
+                        @php $otherMethod = $paymentMethodBreakdown['by_method']['other'] ?? null; @endphp
+                        <small class="text-muted">{{ $otherMethod ? $otherMethod->cnt : 0 }} transactions</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Mixed (split payments) if any --}}
+            @php
+                $mixedMethod = $paymentMethodBreakdown['by_method']['mixed'] ?? null;
+                $mixedAmt = $mixedMethod ? (float)$mixedMethod->collected : 0;
+                $mixedPct = $pmTotal > 0 ? round(($mixedAmt / $pmTotal) * 100, 1) : 0;
+            @endphp
+            @if($mixedMethod && $mixedMethod->cnt > 0)
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm" style="border-left:4px solid #fd7e14 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="bg-warning bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                <i class="fas fa-layer-group text-warning"></i>
+                            </div>
+                            <span class="badge bg-warning bg-opacity-10 text-warning fw-semibold" style="font-size:0.72rem;">
+                                {{ $mixedPct }}%
+                            </span>
+                        </div>
+                        <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size:0.68rem;">Mixed / Split</p>
+                        <h5 class="mb-0 fw-bold text-warning">{{ $sym }}{{ number_format($mixedAmt, 2) }}</h5>
+                        <small class="text-muted">{{ $mixedMethod->cnt }} transactions</small>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            {{-- Total Collected summary card --}}
+            <div class="col-6 col-sm-4 col-xl-2">
+                <div class="card stat-card h-100 border-0 shadow-sm bg-dark text-white" style="border-left:4px solid #343a40 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(255,255,255,.1);">
+                                <i class="fas fa-coins text-white"></i>
+                            </div>
+                            <span class="badge bg-light text-dark fw-semibold" style="font-size:0.72rem;">100%</span>
+                        </div>
+                        <p class="text-uppercase small fw-bold mb-1 text-white-50" style="font-size:0.68rem;">Total Collected</p>
+                        <h5 class="mb-0 fw-bold text-white">{{ $sym }}{{ number_format($pmTotal, 2) }}</h5>
+                        <small class="text-white-50">All payment types</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Chart + Progress Bars Row -->
+        <div class="row g-3 mb-4">
+            {{-- Bar chart --}}
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Collection by Payment Method</h5>
+                    </div>
+                    <div class="card-body p-3">
+                        <div id="paymentMethodChart" style="height:280px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Progress breakdown --}}
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-list-ul me-2 text-primary"></i>Method Breakdown</h5>
+                    </div>
+                    <div class="card-body p-3">
+                        @php
+                            $methods = [
+                                ['label'=>'Cash',   'amount'=>$paymentMethodBreakdown['cash']??0,   'pct'=>$paymentMethodBreakdown['cash_pct']??0,   'color'=>'success',  'icon'=>'money-bill-wave'],
+                                ['label'=>'Card',   'amount'=>$paymentMethodBreakdown['card']??0,   'pct'=>$paymentMethodBreakdown['card_pct']??0,   'color'=>'primary',  'icon'=>'credit-card'],
+                                ['label'=>'Online', 'amount'=>$paymentMethodBreakdown['online']??0, 'pct'=>$paymentMethodBreakdown['online_pct']??0, 'color'=>'info',     'icon'=>'globe'],
+                                ['label'=>'Other',  'amount'=>$paymentMethodBreakdown['other']??0,  'pct'=>$paymentMethodBreakdown['other_pct']??0,  'color'=>'secondary','icon'=>'ellipsis-h'],
+                            ];
+                        @endphp
+                        @foreach($methods as $m)
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-{{ $m['icon'] }} text-{{ $m['color'] }}" style="width:16px;"></i>
+                                    <span class="small fw-semibold">{{ $m['label'] }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold small">{{ $sym }}{{ number_format($m['amount'], 2) }}</span>
+                                    <span class="text-muted small ms-1">({{ $m['pct'] }}%)</span>
+                                </div>
+                            </div>
+                            <div class="progress" style="height:8px;border-radius:4px;">
+                                <div class="progress-bar bg-{{ $m['color'] }}" role="progressbar"
+                                     style="width:{{ $m['pct'] }}%;"
+                                     aria-valuenow="{{ $m['pct'] }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+
+                        @if($mixedMethod && $mixedMethod->cnt > 0)
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-layer-group text-warning" style="width:16px;"></i>
+                                    <span class="small fw-semibold">Mixed / Split</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold small">{{ $sym }}{{ number_format($mixedAmt, 2) }}</span>
+                                    <span class="text-muted small ms-1">({{ $mixedPct }}%)</span>
+                                </div>
+                            </div>
+                            <div class="progress" style="height:8px;border-radius:4px;">
+                                <div class="progress-bar bg-warning" role="progressbar"
+                                     style="width:{{ $mixedPct }}%;"
+                                     aria-valuenow="{{ $mixedPct }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <hr class="my-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Total Collected</span>
+                            <span class="fw-bold text-dark fs-6">{{ $sym }}{{ number_format($pmTotal, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts Row 1 -->
         <div class="row g-3 mb-4">
             <!-- Revenue Trends -->
@@ -831,11 +1051,63 @@
         const categoryChart = new ApexCharts(document.querySelector("#categoryChart"), categoryOptions);
         categoryChart.render();
 
+        // ---- Payment Method Bar Chart ----
+        const pmLabels  = ['Cash', 'Card', 'Online', 'Other'];
+        const pmAmounts = [
+            {{ number_format($paymentMethodBreakdown['cash']   ?? 0, 2, '.', '') }},
+            {{ number_format($paymentMethodBreakdown['card']   ?? 0, 2, '.', '') }},
+            {{ number_format($paymentMethodBreakdown['online'] ?? 0, 2, '.', '') }},
+            {{ number_format($paymentMethodBreakdown['other']  ?? 0, 2, '.', '') }},
+        ];
+        @if(isset($paymentMethodBreakdown['by_method']['mixed']) && $paymentMethodBreakdown['by_method']['mixed']->cnt > 0)
+        pmLabels.push('Mixed/Split');
+        pmAmounts.push({{ number_format($paymentMethodBreakdown['by_method']['mixed']->collected ?? 0, 2, '.', '') }});
+        @endif
+
+        const pmColors = ['#198754', '#0d6efd', '#0dcaf0', '#6c757d', '#fd7e14'];
+
+        const paymentMethodChartOptions = {
+            chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+            series: [{ name: 'Collected', data: pmAmounts }],
+            xaxis:  { categories: pmLabels, labels: { style: { fontSize: '12px' } } },
+            yaxis:  {
+                labels: {
+                    formatter: v => currencySymbol + v.toLocaleString(undefined, { minimumFractionDigits: 2 })
+                }
+            },
+            colors: pmColors,
+            plotOptions: {
+                bar: {
+                    distributed: true,
+                    borderRadius: 6,
+                    columnWidth: '55%',
+                    dataLabels: { position: 'top' }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: v => currencySymbol + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+                offsetY: -22,
+                style: { fontSize: '11px', colors: ['#333'] }
+            },
+            legend: { show: false },
+            tooltip: {
+                y: {
+                    formatter: v => currencySymbol + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })
+                }
+            },
+            grid: { borderColor: '#f1f1f1', strokeDashArray: 4 },
+        };
+
+        const paymentMethodChart = new ApexCharts(document.querySelector("#paymentMethodChart"), paymentMethodChartOptions);
+        paymentMethodChart.render();
+
         // Resize handler
         window.addEventListener('resize', function () {
             revenueChart.updateOptions({ chart: { width: '100%' } });
             hourlyChart.updateOptions({ chart: { width: '100%' } });
             categoryChart.updateOptions({ chart: { width: '100%' } });
+            paymentMethodChart.updateOptions({ chart: { width: '100%' } });
         });
     </script>
 @endpush

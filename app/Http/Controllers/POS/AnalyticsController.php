@@ -38,6 +38,7 @@ class AnalyticsController extends Controller
         // Get all analytics data
         $salesData = $this->getSalesData($startDate, $endDate, $salonId);
         $paymentAnalytics = $this->getPaymentAnalytics($startDate, $endDate, $salonId);
+        $paymentMethodBreakdown = $this->getPaymentMethodBreakdown($startDate, $endDate, $salonId);
         $voidAnalytics = $this->getVoidAnalytics($startDate, $endDate, $salonId);
         $salesTrends = $this->getRevenueTrends($startDate, $endDate, $salonId);
         $topProducts = $this->getTopProducts($startDate, $endDate, $salonId);
@@ -57,6 +58,7 @@ class AnalyticsController extends Controller
             'endDate' => $endDate->format('Y-m-d'),
             'salesData' => $salesData,
             'paymentAnalytics' => $paymentAnalytics,
+            'paymentMethodBreakdown' => $paymentMethodBreakdown,
             'voidAnalytics' => $voidAnalytics,
             'revenueTrends' => $salesTrends, // Renamed to match view
             'weeklySales' => $weeklySales,
@@ -497,6 +499,55 @@ class AnalyticsController extends Controller
             'voided_percentage' => $voidedPercentage,
             'discount_percentage' => $discountPercentage,
             'refund_net_percentage' => $refundNetPercentage,
+        ];
+    }
+
+    /**
+     * Get collection breakdown by payment method (cash, card, online, other).
+     * Uses the actual amount columns on pos_sales for non-voided sales.
+     */
+    private function getPaymentMethodBreakdown($startDate, $endDate, $salonId): array
+    {
+        $row = PosSale::where('salon_id', $salonId)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->where('status', '!=', 'voided')
+            ->select(
+                DB::raw('COALESCE(SUM(cash_amount),   0) as cash'),
+                DB::raw('COALESCE(SUM(card_amount),   0) as card'),
+                DB::raw('COALESCE(SUM(online_amount), 0) as online'),
+                DB::raw('COALESCE(SUM(other_amount),  0) as other'),
+                DB::raw('COUNT(*) as total_transactions')
+            )
+            ->first();
+
+        // Per-method transaction counts
+        $counts = PosSale::where('salon_id', $salonId)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->where('status', '!=', 'voided')
+            ->select(
+                'payment_method',
+                DB::raw('COUNT(*) as cnt'),
+                DB::raw('COALESCE(SUM(total - tip - outstanding_amount), 0) as collected')
+            )
+            ->groupBy('payment_method')
+            ->get()
+            ->keyBy('payment_method');
+
+        $total = (float)($row->cash + $row->card + $row->online + $row->other);
+
+        $pct = fn($v) => $total > 0 ? round(($v / $total) * 100, 1) : 0;
+
+        return [
+            'cash'    => (float) $row->cash,
+            'card'    => (float) $row->card,
+            'online'  => (float) $row->online,
+            'other'   => (float) $row->other,
+            'total'   => $total,
+            'cash_pct'   => $pct($row->cash),
+            'card_pct'   => $pct($row->card),
+            'online_pct' => $pct($row->online),
+            'other_pct'  => $pct($row->other),
+            'by_method'  => $counts,  // keyed by payment_method string (cash/card/online/mixed/other)
         ];
     }
 
