@@ -504,11 +504,15 @@ class AnalyticsController extends Controller
 
     /**
      * Get collection breakdown by payment method (cash, card, online, other).
-     * Uses the actual amount columns on pos_sales for non-voided sales.
+     *
+     * How POS figures reconcile:
+     * - Cash + Card + Online + Other = Total Money Collected (e.g. 3,115.00)
+     * - Total Money Collected = Sales Revenue Paid (3,092.00) + Tips (23.00)
+     * - Split/Mixed transactions are already distributed into Cash and Card columns.
      */
     private function getPaymentMethodBreakdown($startDate, $endDate, $salonId): array
     {
-        $row = PosSale::where('salon_id', $salonId)
+        $totals = PosSale::where('salon_id', $salonId)
             ->whereBetween('sale_date', [$startDate, $endDate])
             ->where('status', '!=', 'voided')
             ->select(
@@ -516,38 +520,58 @@ class AnalyticsController extends Controller
                 DB::raw('COALESCE(SUM(card_amount),   0) as card'),
                 DB::raw('COALESCE(SUM(online_amount), 0) as online'),
                 DB::raw('COALESCE(SUM(other_amount),  0) as other'),
-                DB::raw('COUNT(*) as total_transactions')
+                DB::raw('COALESCE(SUM(tip),           0) as tip_total'),
+                DB::raw('COALESCE(SUM(total - tip - outstanding_amount), 0) as revenue_paid'),
+                DB::raw('COALESCE(SUM(total - outstanding_amount), 0) as total_inflow')
             )
             ->first();
 
-        // Per-method transaction counts
-        $counts = PosSale::where('salon_id', $salonId)
+        $cash = (float) ($totals->cash ?? 0);
+        $card = (float) ($totals->card ?? 0);
+        $online = (float) ($totals->online ?? 0);
+        $other = (float) ($totals->other ?? 0);
+        $tipTotal = (float) ($totals->tip_total ?? 0);
+        $revenuePaid = (float) ($totals->revenue_paid ?? 0);
+
+        // Total money collected across all payment methods
+        $totalCollected = round($cash + $card + $online + $other, 2);
+
+        // Percentages of actual money collected
+        $pct = fn($v) => $totalCollected > 0 ? round(($v / $totalCollected) * 100, 1) : 0;
+
+        // Transaction counts by payment method recorded
+        $methodCounts = PosSale::where('salon_id', $salonId)
             ->whereBetween('sale_date', [$startDate, $endDate])
             ->where('status', '!=', 'voided')
             ->select(
                 'payment_method',
                 DB::raw('COUNT(*) as cnt'),
-                DB::raw('COALESCE(SUM(total - tip - outstanding_amount), 0) as collected')
+                DB::raw('COALESCE(SUM(total - outstanding_amount), 0) as total_collected')
             )
             ->groupBy('payment_method')
             ->get()
             ->keyBy('payment_method');
 
-        $total = (float)($row->cash + $row->card + $row->online + $row->other);
-
-        $pct = fn($v) => $total > 0 ? round(($v / $total) * 100, 1) : 0;
+        // Mixed / split transactions info
+        $mixedSale = $methodCounts->get('mixed');
+        $mixedCount = $mixedSale ? (int) $mixedSale->cnt : 0;
+        $mixedAmount = $mixedSale ? (float) $mixedSale->total_collected : 0;
 
         return [
-            'cash'    => (float) $row->cash,
-            'card'    => (float) $row->card,
-            'online'  => (float) $row->online,
-            'other'   => (float) $row->other,
-            'total'   => $total,
-            'cash_pct'   => $pct($row->cash),
-            'card_pct'   => $pct($row->card),
-            'online_pct' => $pct($row->online),
-            'other_pct'  => $pct($row->other),
-            'by_method'  => $counts,  // keyed by payment_method string (cash/card/online/mixed/other)
+            'cash'            => $cash,
+            'card'            => $card,
+            'online'          => $online,
+            'other'           => $other,
+            'total_collected' => $totalCollected,
+            'revenue_paid'    => $revenuePaid,
+            'tip_total'       => $tipTotal,
+            'cash_pct'        => $pct($cash),
+            'card_pct'        => $pct($card),
+            'online_pct'      => $pct($online),
+            'other_pct'       => $pct($other),
+            'by_method'       => $methodCounts,
+            'mixed_count'     => $mixedCount,
+            'mixed_amount'    => $mixedAmount,
         ];
     }
 
