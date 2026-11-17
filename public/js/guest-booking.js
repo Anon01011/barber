@@ -1119,8 +1119,58 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        function updateCartBookingPreview() {
+            const pStaff = document.getElementById('cart-preview-staff');
+            const pDate = document.getElementById('cart-preview-date');
+            const pTime = document.getElementById('cart-preview-time');
+
+            if (pStaff) {
+                const staffRadio = document.querySelector('input[name="staff_selection"]:checked');
+                let staffLabel = 'Any Staff';
+                if (staffRadio && staffRadio.value !== '') {
+                    const optLabel = staffRadio.closest('label');
+                    staffLabel = optLabel ? (optLabel.querySelector('.staff-name')?.textContent.trim() || optLabel.textContent.trim()) : 'Any Staff';
+                }
+                pStaff.textContent = staffLabel;
+            }
+            if (pDate) {
+                if (selectedDate) {
+                    try {
+                        const d = new Date(selectedDate + 'T00:00:00');
+                        pDate.textContent = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                    } catch (e) {
+                        pDate.textContent = selectedDate;
+                    }
+                } else {
+                    pDate.textContent = 'Select date';
+                }
+            }
+            if (pTime) {
+                if (selectedTime) {
+                    try {
+                        const [hours, minutes] = selectedTime.split(':');
+                        const td = new Date();
+                        td.setHours(parseInt(hours, 10));
+                        td.setMinutes(parseInt(minutes, 10));
+                        pTime.textContent = td.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } catch (e) {
+                        pTime.textContent = selectedTime;
+                    }
+                } else {
+                    pTime.textContent = 'Select time';
+                }
+            }
+        }
+
         function showBookingOptions() {
             updateStepper(2);
+
+            const mainContainer = document.getElementById('main-content-container');
+            if (mainContainer) {
+                mainContainer.classList.remove('step-1-active', 'step-3-active');
+                mainContainer.classList.add('step-2-active');
+            }
+
             document.getElementById('services-section').style.display = 'none';
             document.getElementById('category-sidebar-container').style.display = 'none';
             if (document.getElementById('guest-details-section'))
@@ -1129,9 +1179,21 @@ document.addEventListener('DOMContentLoaded', function () {
             const bookingSection = document.getElementById('booking-options-section');
             if (bookingSection) {
                 bookingSection.style.display = 'block';
-                bookingSection.classList.remove('lg:col-span-6');
-                bookingSection.classList.add('lg:col-span-9');
+                bookingSection.classList.remove('lg:col-span-6', 'lg:col-span-9');
+                bookingSection.classList.add('lg:col-span-8');
             }
+
+            const cartSection = document.querySelector('.cart-section');
+            if (cartSection) {
+                cartSection.classList.remove('lg:col-span-3');
+                cartSection.classList.add('lg:col-span-4');
+            }
+
+            const cartPreview = document.getElementById('cart-booking-preview');
+            if (cartPreview) {
+                cartPreview.style.display = 'block';
+            }
+            updateCartBookingPreview();
 
             // Hide mobile cart bar on step 2
             const mobileBar = document.getElementById('mobile-cart-bar');
@@ -1155,12 +1217,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (cartHeader && !document.getElementById('back-to-services')) {
                 const backBtn = document.createElement('button');
                 backBtn.id = 'back-to-services';
-                backBtn.className = 'text-sm text-gray-500 hover:text-gray-700 float-right font-normal';
-                backBtn.innerHTML = '<i class="fas fa-arrow-left mr-1"></i>Back';
+                backBtn.className = 'text-xs text-teal-600 hover:text-teal-800 float-right font-semibold flex items-center gap-1';
+                backBtn.innerHTML = '<i class="fas fa-chevron-left text-[10px]"></i> Change Services';
                 backBtn.onclick = showServices;
                 cartHeader.appendChild(backBtn);
             } else if (document.getElementById('back-to-services')) {
-                document.getElementById('back-to-services').style.display = 'inline-block';
+                document.getElementById('back-to-services').style.display = 'inline-flex';
             }
         }
 
@@ -1201,6 +1263,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function showServices() {
             updateStepper(1);
+
+            const mainContainer = document.getElementById('main-content-container');
+            if (mainContainer) {
+                mainContainer.classList.remove('step-2-active', 'step-3-active');
+                mainContainer.classList.add('step-1-active');
+            }
+
             document.getElementById('services-section').style.display = 'grid';
             document.getElementById('category-sidebar-container').style.display = 'block';
             if (document.getElementById('guest-details-section'))
@@ -1209,8 +1278,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const bookingSection = document.getElementById('booking-options-section');
             if (bookingSection) {
                 bookingSection.style.display = 'none';
-                bookingSection.classList.remove('lg:col-span-9');
+                bookingSection.classList.remove('lg:col-span-8', 'lg:col-span-9');
                 bookingSection.classList.add('lg:col-span-6');
+            }
+
+            const cartSection = document.querySelector('.cart-section');
+            if (cartSection) {
+                cartSection.classList.remove('lg:col-span-4');
+                cartSection.classList.add('lg:col-span-3');
+            }
+
+            const cartPreview = document.getElementById('cart-booking-preview');
+            if (cartPreview) {
+                cartPreview.style.display = 'none';
             }
 
             const proceedBtn = document.getElementById('proceed-booking');
@@ -1233,12 +1313,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function showGuestDetails() {
             updateStepper(3);
+
+            const mainContainer = document.getElementById('main-content-container');
+            if (mainContainer) {
+                mainContainer.classList.remove('step-1-active', 'step-2-active');
+                mainContainer.classList.add('step-3-active');
+            }
+
             document.getElementById('services-section').style.display = 'none';
             document.getElementById('category-sidebar-container').style.display = 'none';
             const bookingSection = document.getElementById('booking-options-section');
             if (bookingSection) {
                 bookingSection.style.display = 'none';
-                bookingSection.classList.remove('lg:col-span-9');
+                bookingSection.classList.remove('lg:col-span-8', 'lg:col-span-9');
                 bookingSection.classList.add('lg:col-span-6');
             }
 
@@ -1246,8 +1333,20 @@ document.addEventListener('DOMContentLoaded', function () {
             if (guestSection) {
                 guestSection.style.display = 'block';
                 guestSection.classList.remove('lg:col-span-6');
-                guestSection.classList.add('lg:col-span-9');
+                guestSection.classList.add('lg:col-span-8');
             }
+
+            const cartSection = document.querySelector('.cart-section');
+            if (cartSection) {
+                cartSection.classList.remove('lg:col-span-3');
+                cartSection.classList.add('lg:col-span-4');
+            }
+
+            const cartPreview = document.getElementById('cart-booking-preview');
+            if (cartPreview) {
+                cartPreview.style.display = 'block';
+            }
+            updateCartBookingPreview();
 
             const summaryServices = document.getElementById('summary-services');
             if (summaryServices) {
@@ -1322,6 +1421,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     selectedDate = this.dataset.date;
                     const hiddenDateEl = document.getElementById('hidden-date');
                     if (hiddenDateEl) hiddenDateEl.value = selectedDate;
+
+                    const dateSummary = document.getElementById('date-selected-summary');
+                    const timeDateLabel = document.getElementById('time-card-date-label');
+                    try {
+                        const d = new Date(selectedDate + 'T00:00:00');
+                        const formattedDate = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                        if (dateSummary) dateSummary.textContent = 'Selected: ' + formattedDate;
+                        if (timeDateLabel) timeDateLabel.textContent = formattedDate;
+                    } catch (e) {
+                        if (dateSummary) dateSummary.textContent = selectedDate;
+                        if (timeDateLabel) timeDateLabel.textContent = selectedDate;
+                    }
+
+                    updateCartBookingPreview();
                     fetchInlineSlots();
                 });
 
@@ -1335,12 +1448,36 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Hook up date horizontal scroll buttons
+        const dateScrollLeft = document.getElementById('date-scroll-left');
+        const dateScrollRight = document.getElementById('date-scroll-right');
+        if (dateScrollLeft) {
+            dateScrollLeft.addEventListener('click', function () {
+                const c = document.getElementById('date-selection-container');
+                if (c) c.scrollBy({ left: -260, behavior: 'smooth' });
+            });
+        }
+        if (dateScrollRight) {
+            dateScrollRight.addEventListener('click', function () {
+                const c = document.getElementById('date-selection-container');
+                if (c) c.scrollBy({ left: 260, behavior: 'smooth' });
+            });
+        }
+
         // Staff Selection Listener
         document.querySelectorAll('input[name="staff_selection"]').forEach(radio => {
             radio.addEventListener('change', function () {
                 selectedStaff = this.value;
                 const hiddenStaffEl = document.getElementById('hidden-staff');
                 if (hiddenStaffEl) hiddenStaffEl.value = selectedStaff;
+
+                // Toggle active card class
+                document.querySelectorAll('.staff-card-option').forEach(opt => opt.classList.remove('active'));
+                const parentCard = this.closest('.staff-card-option');
+                if (parentCard) parentCard.classList.add('active');
+
+                updateCartBookingPreview();
+
                 if (selectedDate) {
                     fetchInlineSlots();
                 }
@@ -1352,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const timeContainer = document.getElementById('time-selection-container');
             if (timeContainer) {
-                timeContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-2xl text-teal-500"></i></div>';
+                timeContainer.innerHTML = '<div class="text-center py-6 bg-gray-50 rounded-xl"><i class="fas fa-spinner fa-spin text-2xl text-teal-600 mb-2 block"></i><span class="text-xs text-gray-500 font-medium">Checking available slots...</span></div>';
             }
 
             const params = new URLSearchParams();
@@ -1375,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(err => {
                     if (timeContainer) {
-                        timeContainer.innerHTML = '<div class="text-center text-red-500 py-4">Error loading slots</div>';
+                        timeContainer.innerHTML = '<div class="text-center text-red-500 py-6 bg-red-50 rounded-xl border border-red-100"><i class="fas fa-exclamation-circle text-xl mb-1 block"></i><span class="text-xs font-semibold">Unable to load time slots. Please try another date.</span></div>';
                     }
                 });
         }
@@ -1386,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', function () {
             container.innerHTML = '';
 
             if (slots.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 py-4">No available slots for this date</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200"><i class="far fa-calendar-times text-2xl text-gray-400 mb-2 block"></i><span class="text-sm font-medium">No available slots for this date. Please pick another day.</span></div>';
                 return;
             }
 
@@ -1396,19 +1533,19 @@ document.addEventListener('DOMContentLoaded', function () {
             let html = '';
 
             if (earlySlots.length > 0) {
-                html += '<h5 class="time-section-label">Early Hours</h5><div class="time-grid">';
+                html += '<div class="time-subgroup-wrapper"><h5 class="time-section-label"><i class="fas fa-sun text-amber-500"></i> Morning Hours</h5><div class="time-grid">';
                 earlySlots.forEach(time => {
                     html += createTimeButton(time);
                 });
-                html += '</div>';
+                html += '</div></div>';
             }
 
             if (lateSlots.length > 0) {
-                html += '<h5 class="time-section-label">Late Hours</h5><div class="time-grid">';
+                html += '<div class="time-subgroup-wrapper"><h5 class="time-section-label"><i class="fas fa-moon text-indigo-500"></i> Afternoon &amp; Evening</h5><div class="time-grid">';
                 lateSlots.forEach(time => {
                     html += createTimeButton(time);
                 });
-                html += '</div>';
+                html += '</div></div>';
             }
 
             container.innerHTML = html;
@@ -1420,6 +1557,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     selectedTime = this.dataset.time;
                     const hiddenTimeEl = document.getElementById('hidden-time');
                     if (hiddenTimeEl) hiddenTimeEl.value = selectedTime;
+
+                    const slotDisplay = document.getElementById('selected-slot-display');
+                    if (slotDisplay) {
+                        try {
+                            const [hours, minutes] = selectedTime.split(':');
+                            const td = new Date();
+                            td.setHours(parseInt(hours, 10));
+                            td.setMinutes(parseInt(minutes, 10));
+                            slotDisplay.textContent = td.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        } catch (e) {
+                            slotDisplay.textContent = selectedTime;
+                        }
+                    }
+
+                    updateCartBookingPreview();
                 });
             });
         }
@@ -1430,8 +1582,11 @@ document.addEventListener('DOMContentLoaded', function () {
             date.setHours(parseInt(hours, 10));
             date.setMinutes(parseInt(minutes, 10));
             const formatted = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isSelected = (selectedTime === time) ? ' active' : '';
 
-            return `<button type="button" class="time-slot-btn" data-time="${time}">${formatted}</button>`;
+            return `<button type="button" class="time-slot-btn${isSelected}" data-time="${time}">
+                <i class="far fa-clock text-[11px] opacity-70"></i><span>${formatted}</span>
+            </button>`;
         }
 
         // --- Modal Dismiss & Utility Listeners ---

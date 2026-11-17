@@ -124,7 +124,7 @@
 
         <!-- Content -->
         <div class="content-container" id="main-content-container">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 booking-grid-layout">
                 <!-- Category Sidebar (3 cols) - Desktop only -->
                 <aside id="category-sidebar-container" class="lg:col-span-3 hidden lg:block">
                     <div class="category-sidebar sticky-sidebar">
@@ -147,57 +147,119 @@
                 </section>
 
                 <!-- Booking Options Section - Step 2 (Hidden by default) -->
-                <section class="lg:col-span-6" id="booking-options-section" style="display: none;">
-                    <!-- Staff Selection -->
-                    <div class="booking-option-section">
-                        <h4 class="booking-section-title">Select Staff</h4>
+                <section class="lg:col-span-8 booking-panel-section" id="booking-options-section" style="display: none;">
+                    <!-- Staff Selection Card -->
+                    <div class="booking-option-card">
+                        <div class="booking-card-header">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-base flex-shrink-0">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-base lg:text-lg leading-tight">Select Stylist / Staff</h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Choose your preferred specialist or select any available</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700">Required</span>
+                        </div>
                         <div class="staff-radio-group" id="staff-selection-container">
-                            <label class="staff-radio-label">
+                            <label class="staff-card-option staff-radio-label active">
                                 <input type="radio" name="staff_selection" value="" class="staff-radio-input" checked>
-                                Any Staff
+                                <div class="staff-avatar-circle">
+                                    <i class="fas fa-users text-teal-600"></i>
+                                </div>
+                                <div class="staff-meta">
+                                    <span class="staff-name">Any Staff</span>
+                                    <span class="staff-hint">Fastest availability</span>
+                                </div>
+                                <i class="fas fa-check-circle staff-check-icon"></i>
                             </label>
                             @foreach($staffMembers as $staff)
-                                <label class="staff-radio-label staff-option" data-staff-id="{{ $staff->id }}">
+                                <label class="staff-card-option staff-radio-label staff-option" data-staff-id="{{ $staff->id }}">
                                     <input type="radio" name="staff_selection" value="{{ $staff->id }}" class="staff-radio-input">
-                                    {{ $staff->name }}
+                                    <div class="staff-avatar-circle">
+                                        {{ strtoupper(substr($staff->name, 0, 2)) }}
+                                    </div>
+                                    <div class="staff-meta">
+                                        <span class="staff-name">{{ $staff->name }}</span>
+                                        <span class="staff-hint">Stylist</span>
+                                    </div>
+                                    <i class="fas fa-check-circle staff-check-icon"></i>
                                 </label>
                             @endforeach
                         </div>
                     </div>
 
-                    <!-- Date Selection -->
-                    <div class="booking-option-section">
-                        <h4 class="booking-section-title">Select Date</h4>
+                    <!-- Date Selection Card -->
+                    <div class="booking-option-card">
+                        <div class="booking-card-header">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-base flex-shrink-0">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-base lg:text-lg leading-tight">Select Date</h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Pick an appointment date</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" class="date-nav-btn" id="date-scroll-left" title="Scroll left" aria-label="Scroll earlier dates">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button type="button" class="date-nav-btn" id="date-scroll-right" title="Scroll right" aria-label="Scroll later dates">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                         <div class="date-scroll-container" id="date-selection-container">
                             <!-- Dates will be populated by JS -->
                         </div>
-                        <button class="text-sm text-gray-500 mt-2 hover:text-teal-500 flex items-center gap-1"
-                            id="show-more-dates">
-                            Show More Dates <i class="fas fa-chevron-down"></i>
-                        </button>
+                        <div class="mt-3 flex items-center justify-between">
+                            <button type="button" class="show-more-dates-btn" id="show-more-dates">
+                                <span>Show More Dates</span> <i class="fas fa-chevron-down text-xs ms-1"></i>
+                            </button>
+                            <span class="text-xs text-teal-600 font-semibold" id="date-selected-summary"></span>
+                        </div>
                     </div>
 
-                    <!-- Time Selection -->
-                    <div class="booking-option-section">
-                        <h4 class="booking-section-title">Select Time</h4>
+                    <!-- Time Selection Card -->
+                    <div class="booking-option-card">
+                        <div class="booking-card-header">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-base flex-shrink-0">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-base lg:text-lg leading-tight">Select Time Slot</h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Available slots for chosen stylist &amp; date</p>
+                                </div>
+                            </div>
+                            <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1.5" id="time-slot-status-pill">
+                                <span class="w-2 h-2 rounded-full bg-teal-500 inline-block"></span>
+                                <span id="selected-slot-display">Choose a slot</span>
+                            </div>
+                        </div>
                         <div id="time-selection-container">
-                            <div class="text-center text-gray-500 py-4">Please select a date to view available times</div>
+                            <div class="text-center text-gray-500 py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                <i class="far fa-calendar-alt text-2xl text-gray-400 mb-2 block"></i>
+                                <span class="text-sm font-medium">Please select a date above to view available time slots</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Step 2 Navigation Buttons -->
                     <div class="step-nav-btns" id="step2-nav-btns">
-                        <button class="step-back-btn" id="step2-back-btn">
-                            <i class="fas fa-arrow-left mr-1"></i> Back
+                        <button type="button" class="step-back-btn" id="step2-back-btn">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Services
                         </button>
-                        <button class="step-next-btn" id="step2-next-btn">
-                            Next: Your Details <i class="fas fa-arrow-right ml-1"></i>
+                        <button type="button" class="step-next-btn" id="step2-next-btn">
+                            <span>Next: Your Details</span> <i class="fas fa-arrow-right ml-1"></i>
                         </button>
                     </div>
                 </section>
 
                 <!-- Step 3: Guest Details inline section (Hidden by default) -->
-                <section class="lg:col-span-6" id="guest-details-section" style="display: none;">
+                <section class="lg:col-span-8 booking-panel-section" id="guest-details-section" style="display: none;">
                     <div class="guest-details-section">
                         <h3 class="text-lg font-bold mb-4 text-gray-800">
                             <i class="fas fa-user-circle mr-2 text-indigo-500"></i>Your Details
@@ -285,23 +347,53 @@
                     </div>
                 </section>
 
-                <!-- Cart Section (3 cols) - Sticky - Desktop only -->
-                <aside class="lg:col-span-3 cart-section sticky-sidebar">
-                    <h3 class="cart-header">
-                        <i class="fas fa-shopping-cart mr-2"></i>Your Cart
-                    </h3>
+                <!-- Cart Section (Sticky - Desktop only) -->
+                <aside class="lg:col-span-4 cart-section sticky-sidebar">
+                    <div class="cart-header-wrapper flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                        <h3 class="cart-header text-base lg:text-lg font-bold text-gray-900 m-0 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm flex-shrink-0">
+                                <i class="fas fa-shopping-cart"></i>
+                            </span>
+                            <span>Your Cart</span>
+                        </h3>
+                    </div>
+
                     <div id="cart-empty" class="cart-empty">
                         <div class="cart-empty-icon">🛒</div>
                         <p class="font-semibold text-gray-700 mb-2">Your Cart is Empty</p>
                         <p class="text-gray-500 text-sm">Select services to get started</p>
                     </div>
+
                     <div id="cart-items" style="display: none;"></div>
-                    <div id="cart-total" style="display: none;" class="cart-total">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="total-label">Total:</span>
-                            <span class="total-amount">{{ $currency_symbol ?? '$' }} <span id="total-amount">0.00</span></span>
+
+                    <!-- Live Appointment Info Preview (shown in Step 2 & 3) -->
+                    <div id="cart-booking-preview" class="cart-booking-preview-box" style="display: none;">
+                        <div class="cart-preview-title">
+                            <i class="fas fa-calendar-check text-teal-600"></i>
+                            <span>Appointment Info</span>
                         </div>
-                        <button id="proceed-booking" class="proceed-btn">
+                        <div class="cart-preview-rows">
+                            <div class="cart-preview-row">
+                                <span class="cart-preview-label"><i class="fas fa-user-tie text-teal-500"></i> Stylist:</span>
+                                <span class="cart-preview-val" id="cart-preview-staff">Any Staff</span>
+                            </div>
+                            <div class="cart-preview-row">
+                                <span class="cart-preview-label"><i class="fas fa-calendar text-teal-500"></i> Date:</span>
+                                <span class="cart-preview-val" id="cart-preview-date">Select date</span>
+                            </div>
+                            <div class="cart-preview-row">
+                                <span class="cart-preview-label"><i class="fas fa-clock text-teal-500"></i> Time:</span>
+                                <span class="cart-preview-val" id="cart-preview-time">Select time</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cart-total" style="display: none;" class="cart-total pt-3 border-t border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="total-label text-sm font-semibold text-gray-600">Total:</span>
+                            <span class="total-amount text-xl font-extrabold text-gray-900">{{ $currency_symbol ?? '$' }} <span id="total-amount">0.00</span></span>
+                        </div>
+                        <button id="proceed-booking" class="proceed-btn w-full">
                             <i class="fas fa-calendar-check mr-2"></i>Book Appointment
                         </button>
                     </div>
@@ -311,21 +403,21 @@
 
         <!-- Mobile Floating Cart Bar (Mobile only, hidden on lg screens) -->
         <div class="mobile-cart-bar lg:hidden" id="mobile-cart-bar">
-            <div class="mobile-cart-info flex items-center gap-2.5 flex-1 min-w-0" id="mobile-cart-trigger" role="button" tabindex="0" title="Tap to view and edit cart" style="cursor: pointer;">
-                <div class="relative w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-shopping-bag text-sm"></i>
-                    <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow" id="mobile-cart-badge">0</span>
+            <div class="mobile-cart-info" id="mobile-cart-trigger" role="button" tabindex="0" title="Tap to view and edit cart">
+                <div class="mobile-cart-icon-box">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="mobile-cart-badge" id="mobile-cart-badge">0</span>
                 </div>
-                <div class="flex flex-col min-w-0">
-                    <div class="text-[11px] text-teal-300 font-semibold tracking-wide flex items-center gap-1">
+                <div class="mobile-cart-text-col">
+                    <div class="mobile-cart-meta">
                         <span id="mobile-cart-count">0 items</span>
-                        <span>•</span>
-                        <span class="underline">View Cart <i class="fas fa-chevron-up text-[9px]"></i></span>
+                        <span class="mx-1 opacity-60">•</span>
+                        <span class="mobile-cart-view-link">View Cart <i class="fas fa-chevron-up text-[9px] ms-0.5"></i></span>
                     </div>
-                    <span class="mobile-cart-total text-base font-extrabold text-white leading-tight" id="mobile-cart-total">{{ $currency_symbol ?? '$' }} 0.00</span>
+                    <span class="mobile-cart-total" id="mobile-cart-total">{{ $currency_symbol ?? '$' }} 0.00</span>
                 </div>
             </div>
-            <button type="button" class="mobile-cart-btn shadow-md" id="mobile-cart-proceed">
+            <button type="button" class="mobile-cart-btn" id="mobile-cart-proceed">
                 <span>Book Now</span> <i class="fas fa-arrow-right text-xs ms-1"></i>
             </button>
         </div>
