@@ -1,193 +1,152 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>About Us - {{ $appName }}</title>
+    <title>About Us - {{ $cms['appName'] ?? $appName }}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ app(\App\Services\SettingsService::class)->getFaviconUrl() }}">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Outfit', sans-serif;
-        }
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        .gradient-text {
-            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    <!-- Dedicated Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}">
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-    </style>
+    <!-- Dedicated Scripts -->
+    <script src="{{ asset('js/public-pages.js') }}" defer></script>
 </head>
 
-<body class="bg-slate-50 text-slate-900 overflow-x-hidden selection:bg-purple-500 selection:text-white">
+<body>
 
     @include('partials.saas-header')
 
-    <!-- Compact Hero Section -->
-    <section class="relative pt-32 pb-16 lg:pt-40 lg:pb-24 bg-white overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center max-w-3xl mx-auto">
-                <h1 class="text-4xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6 tracking-tight">
-                    The Story Behind <span class="gradient-text">{{ $appName }}</span>
+    <!-- ==================== ABOUT HERO ==================== -->
+    <section class="pub-inner-hero">
+        <div class="pub-container">
+            <div class="pub-inner-hero-content">
+                <span class="pub-section-tag">Our Heritage &amp; Story</span>
+                <h1 class="pub-inner-hero-title">
+                    {{ $cms['aboutHeroTitle'] ?? 'Where Timeless Craftsmanship Meets Modern Luxury' }}
                 </h1>
-                <p class="text-lg text-slate-600 leading-relaxed">
-                    We're redefining salon management with technology that feels like magic. Our mission is to empower beauty professionals to focus on their art while we handle the rest.
+                <p class="pub-inner-hero-desc">
+                    {{ $cms['aboutHeroSubtitle'] ?? 'Dedicated to elevating the grooming and styling ritual for gentlemen and ladies who demand distinction, artistry, and VIP hospitality.' }}
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Mission & Vision -->
-    <section class="py-20 bg-slate-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div class="relative">
-                    <div class="rounded-3xl overflow-hidden shadow-2xl">
-                        <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Modern Salon" class="w-full h-auto">
-                    </div>
-                    <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-purple-600 rounded-3xl -z-10 opacity-20 blur-2xl"></div>
-                </div>
-                <div class="space-y-10">
-                    <div>
-                        <h2 class="text-3xl font-bold text-slate-900 mb-4">Our Mission</h2>
-                        <p class="text-slate-600 leading-relaxed">
-                            To provide the world's most intuitive and powerful platform for salon owners, enabling them to grow their business, delight their customers, and reclaim their time.
-                        </p>
-                    </div>
-                    <div>
-                        <h2 class="text-3xl font-bold text-slate-900 mb-4">Our Vision</h2>
-                        <p class="text-slate-600 leading-relaxed">
-                            To become the global standard for beauty industry management, fostering a community where creativity and business efficiency coexist seamlessly.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- ==================== STORY & IMAGE SECTION ==================== -->
+    <section style="padding: 5rem 0; background: #ffffff;">
+        <div class="pub-container">
+            <div style="display: flex; flex-direction: column; gap: 3.5rem; align-items: center;" class="about-flex-row">
+                <style>
+                    @media (min-width: 992px) {
+                        .about-flex-row { flex-direction: row !important; gap: 4rem !important; }
+                        .about-col-image { flex: 1 1 45%; max-width: 500px; }
+                        .about-col-text { flex: 1 1 55%; }
+                    }
+                </style>
 
-    <!-- Core Values -->
-    <section class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold text-slate-900">Our Core Values</h2>
-            </div>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-xl transition-all duration-300">
-                    <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <!-- Left Visual Image -->
+                <div class="about-col-image" style="width: 100%;">
+                    <div style="border-radius: 1.25rem; overflow: hidden; position: relative; box-shadow: 0 20px 45px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; aspect-ratio: 4/5;">
+                        <img src="{{ !empty($cms['aboutImage']) ? $cms['aboutImage'] : 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80' }}"
+                            alt="{{ $cms['appName'] ?? $appName }} Salon & Barber Studio" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div class="pub-img-gradient-overlay"></div>
+                        <div class="pub-hero-caption">
+                            <div class="pub-hero-caption-tag">Uncompromising Quality</div>
+                            <h3 class="pub-hero-caption-title">Master Barbers &amp; Visionary Stylists</h3>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Innovation</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">We push boundaries to bring the latest tech to your fingertips.</p>
                 </div>
-                <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-xl transition-all duration-300">
-                    <div class="w-12 h-12 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Empathy</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">We listen to our users and build solutions that truly matter.</p>
-                </div>
-                <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-xl transition-all duration-300">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Integrity</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Transparency and trust are the foundation of our company.</p>
-                </div>
-                <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-xl transition-all duration-300">
-                    <div class="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Simplicity</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">We believe that complex problems deserve simple solutions.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- SaaS Platform Features -->
-    <section class="py-20 bg-slate-900 text-white overflow-hidden relative">
-        <div class="absolute top-0 right-0 w-96 h-96 bg-purple-600/20 blur-3xl rounded-full -mr-48 -mt-48"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div>
-                    <h2 class="text-3xl lg:text-4xl font-bold mb-6">Built for the Modern Salon</h2>
-                    <p class="text-slate-400 text-lg mb-8">
-                        {{ $appName }} isn't just a booking tool. It's a complete operating system designed to scale with your business, whether you have one chair or a hundred locations.
+                <!-- Right Narrative Text -->
+                <div class="about-col-text" style="width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <span class="pub-section-tag" style="margin-bottom: 0;">The Philosophy</span>
+                    <h2 style="font-size: 2.25rem; font-weight: 800; margin: 0; color: #0b0f17; letter-spacing: -0.02em;">
+                        {{ $cms['aboutStoryTitle'] ?? 'Our Heritage & Philosophy' }}
+                    </h2>
+                    <p style="color: #475569; font-size: 1.05rem; line-height: 1.7; margin: 0;">
+                        {{ $cms['aboutStoryP1'] ?? 'Born out of a genuine passion for grooming and artistic flair, our sanctuary bridges classic barbering traditions with cutting-edge salon innovations. From handcrafted hot-towel straight razor shaves to bespoke color formulation and restorative hair treatments, every touchpoint is designed to renew and inspire confidence.' }}
                     </p>
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">✓</div>
-                            <span class="text-slate-300">AI-Powered Smart Scheduling</span>
+                    <p style="color: #475569; font-size: 1.05rem; line-height: 1.7; margin: 0;">
+                        {{ $cms['aboutStoryP2'] ?? 'We believe true grooming is an art form. Our masters and stylists undergo continuous training in modern techniques, hygiene standards, and client satisfaction to ensure that whether you are in for a quick beard trim or a total transformation, you leave looking and feeling your absolute best.' }}
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                        <div style="padding: 1.25rem; border-radius: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div style="font-size: 1.85rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading);">{{ $cms['heroStat1Val'] ?? '15k+' }}</div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 0.25rem;">Clients Welcomed</div>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">✓</div>
-                            <span class="text-slate-300">Integrated POS & Inventory Management</span>
+                        <div style="padding: 1.25rem; border-radius: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div style="font-size: 1.85rem; font-weight: 800; color: #926b38; font-family: var(--font-heading);">{{ $cms['heroStat2Val'] ?? '4.9 ★' }}</div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 0.25rem;">Verified Reviews</div>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">✓</div>
-                            <span class="text-slate-300">Automated Marketing & Loyalty Programs</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">✓</div>
-                            <span class="text-slate-300">Real-time Analytics & Financial Reporting</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="relative">
-                    <div class="rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
-                        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="SaaS Dashboard" class="w-full h-auto opacity-80">
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Our Journey (Timeline) -->
-    <section class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold text-slate-900">Our Journey</h2>
+    <!-- ==================== MISSION & VISION ==================== -->
+    <section style="padding: 5rem 0; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+        <div class="pub-container">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;" class="mission-grid">
+                <style>
+                    @media (min-width: 768px) {
+                        .mission-grid { grid-template-columns: 1fr 1fr !important; }
+                    }
+                </style>
+
+                <div style="background: #ffffff; padding: 2.75rem 2.25rem; border-radius: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.03);">
+                    <div class="pub-why-icon-box">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.75rem; color: #0b0f17;">Our Mission</h3>
+                    <p style="color: #64748b; line-height: 1.7; margin: 0; font-size: 0.95rem;">
+                        {{ $cms['aboutMission'] ?? 'To deliver unmatched styling and grooming experiences through master craftsmanship, premium products, and frictionless technology, empowering every client to look confident and feel renewed.' }}
+                    </p>
+                </div>
+
+                <div style="background: #ffffff; padding: 2.75rem 2.25rem; border-radius: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.03);">
+                    <div class="pub-why-icon-box">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.75rem; color: #0b0f17;">Our Vision</h3>
+                    <p style="color: #64748b; line-height: 1.7; margin: 0; font-size: 0.95rem;">
+                        {{ $cms['aboutVision'] ?? 'To stand as the gold standard in premier barber and salon care—a community-centric haven where heritage craftsmanship meets contemporary elegance.' }}
+                    </p>
+                </div>
             </div>
-            <div class="max-w-4xl mx-auto">
-                <div class="space-y-12">
-                    <div class="flex gap-8 items-start">
-                        <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-slate-900">2021</div>
-                        <div>
-                            <h4 class="text-xl font-bold text-slate-900 mb-2">The Spark</h4>
-                            <p class="text-slate-600 leading-relaxed">Founded with a vision to solve the scheduling chaos in local salons.</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-8 items-start">
-                        <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center font-bold text-purple-600">2022</div>
-                        <div>
-                            <h4 class="text-xl font-bold text-slate-900 mb-2">Going Global</h4>
-                            <p class="text-slate-600 leading-relaxed">Expanded our platform to support multi-location salon chains across Europe.</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-8 items-start">
-                        <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center font-bold text-indigo-600">2023</div>
-                        <div>
-                            <h4 class="text-xl font-bold text-slate-900 mb-2">AI Integration</h4>
-                            <p class="text-slate-600 leading-relaxed">Launched our revolutionary AI assistant to automate client communications.</p>
-                        </div>
-                    </div>
+        </div>
+    </section>
+
+    <!-- ==================== VIP CTA BANNER ==================== -->
+    <section class="pub-cta-banner">
+        <div class="pub-container">
+            <div class="pub-cta-banner-content">
+                <span class="pub-cta-banner-tag">Experience The Difference</span>
+                <h2 class="pub-cta-banner-title">
+                    Join Our Discerning Clientele
+                </h2>
+                <p class="pub-cta-banner-desc">
+                    Schedule your bespoke hair, beard, or spa appointment with our master artisans.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+                    <a href="{{ $cms['heroPrimaryBtnUrl'] ?? route('saas.register') }}" class="pub-btn-gold" style="padding: 1rem 2.5rem; font-size: 1rem;">
+                        <span>Book Your Appointment</span>
+                        <i class="fas fa-arrow-right" style="font-size: 0.85rem;"></i>
+                    </a>
+                    <a href="{{ route('contact') }}" class="pub-btn-outline" style="padding: 1rem 2.2rem; font-size: 1rem; color: #ffffff !important; border-color: rgba(255,255,255,0.25);">
+                        <span>Contact Concierge</span>
+                    </a>
                 </div>
             </div>
         </div>

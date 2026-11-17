@@ -117,6 +117,60 @@ class SettingsService
         'email_subscription_expiring_soon_enabled' => true,
         'email_subscription_expiring_soon_days_1' => 7,
         'email_subscription_expiring_soon_days_2' => 3,
+
+        // Website & CMS Defaults (Luxury Salon & Modern Barbershop)
+        'hero_badge' => '✨ Precision Grooming & Luxury Salon Care',
+        'hero_title' => 'Masterful Precision & Modern Luxury for Hair, Beard & Style',
+        'hero_subtitle' => 'Experience seamless online bookings, VIP master barbering, artisan hair color, and bespoke treatments in one premier grooming destination.',
+        'hero_primary_btn_text' => 'Book Appointment',
+        'hero_primary_btn_url' => '/register-salon',
+        'hero_secondary_btn_text' => 'Explore Services',
+        'hero_secondary_btn_url' => '#services-menu',
+        'hero_image' => '',
+        'hero_stat_1_val' => '15k+',
+        'hero_stat_1_lbl' => 'Satisfied Clients',
+        'hero_stat_2_val' => '4.9 ★',
+        'hero_stat_2_lbl' => 'Average Rating',
+        'hero_stat_3_val' => '100%',
+        'hero_stat_3_lbl' => 'Certified Hygiene',
+
+        'services_title' => 'Signature Grooming & Styling Menu',
+        'services_subtitle' => 'Indulge in precision haircutting, classic straight razor shaves, bespoke color formulations, and restorative therapies.',
+        'barber_heading' => "The Gentlemen's Barber Lounge",
+        'barber_description' => 'Classic hot-towel straight razor shaves, skin fades, precision beard sculpting, and revitalizing scalp rituals.',
+        'salon_heading' => 'The Haute Hair & Beauty Salon',
+        'salon_description' => 'Bespoke hair design, dimensional balayage, keratin smoothing, and restorative botanical hair therapies.',
+
+        'why_title' => 'The Standard of Excellence',
+        'why_subtitle' => 'Every ritual is crafted with obsessive attention to detail, uncompromising hygiene, and VIP hospitality.',
+
+        'cta_banner_title' => 'Ready for Your Signature Style?',
+        'cta_banner_subtitle' => 'Reserve your appointment with our master barbers and visionary stylists today.',
+        'cta_banner_btn_text' => 'Book Your Appointment',
+        'cta_banner_btn_url' => '/register-salon',
+
+        'contact_phone' => '+974 66266581',
+        'contact_email' => 'info@fsqatar.com',
+        'contact_address' => 'Salwa Road, Doha, State of Qatar',
+        'contact_working_hours' => 'Mon – Sun: 8:00 AM – 9:00 PM',
+        'contact_map_iframe' => '',
+        'social_facebook' => 'https://facebook.com',
+        'social_instagram' => 'https://instagram.com',
+        'social_twitter' => 'https://twitter.com',
+        'social_linkedin' => 'https://linkedin.com',
+        'social_youtube' => '',
+
+        'about_hero_title' => 'Where Timeless Craftsmanship Meets Modern Luxury',
+        'about_hero_subtitle' => 'Dedicated to elevating the grooming and styling ritual for gentlemen and ladies who demand distinction, artistry, and VIP hospitality.',
+        'about_story_title' => 'Our Heritage & Philosophy',
+        'about_story_p1' => 'Born out of a genuine passion for grooming and artistic flair, our sanctuary bridges classic barbering traditions with cutting-edge salon innovations. From handcrafted hot-towel straight razor shaves to bespoke color formulation and restorative hair treatments, every touchpoint is designed to renew and inspire confidence.',
+        'about_story_p2' => 'We believe true grooming is an art form. Our masters and stylists undergo continuous training in modern techniques, hygiene standards, and client satisfaction to ensure that whether you are in for a quick beard trim or a total transformation, you leave looking and feeling your absolute best.',
+        'about_mission' => 'To deliver unmatched styling and grooming experiences through master craftsmanship, premium products, and frictionless technology, empowering every client to look confident and feel renewed.',
+        'about_vision' => 'To stand as the gold standard in premier barber and salon care—a community-centric haven where heritage craftsmanship meets contemporary elegance.',
+        'about_image' => '',
+
+        'terms_content' => '',
+        'privacy_content' => '',
     ];
 
     private $dbErrorOccurred = false;
@@ -371,33 +425,17 @@ class SettingsService
 
     public function getFaviconUrl()
     {
-        // Only use global app favicon per user request
         $favicon = $this->get('app_favicon');
-
-        // 3. Return URL or default with robust fallback
         if ($favicon && \Illuminate\Support\Facades\Storage::disk('public')->exists($favicon)) {
-            $url = \Illuminate\Support\Facades\Storage::disk('public')->url($favicon);
             $cacheBuster = \Illuminate\Support\Facades\Storage::disk('public')->lastModified($favicon);
-        } else {
-            // Robust fallback to default favicon in public directory (bypassing storage link)
-            $url = asset('favicons/favicon.png');
-            $cacheBuster = time();
-
-            // Try to get actual file time if possible
-            if (file_exists(public_path('favicons/favicon.png'))) {
-                $cacheBuster = filemtime(public_path('favicons/favicon.png'));
-            }
+            return '/storage/' . ltrim($favicon, '/') . '?v=' . $cacheBuster;
         }
 
-        // Force HTTPS if request is secure
-        if (request()->isSecure() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
-            $url = str_replace('http://', 'https://', $url);
-        }
+        $cacheBuster = file_exists(public_path('favicons/favicon.png'))
+            ? filemtime(public_path('favicons/favicon.png'))
+            : time();
 
-        // Fix double slashes (except after protocol)
-        $url = preg_replace('/([^:])(\/{2,})/', '$1/', $url);
-
-        return $url . '?v=' . $cacheBuster;
+        return '/favicons/favicon.png?v=' . $cacheBuster;
     }
 
     public function getLogoUrl($salonId = null)
@@ -410,29 +448,39 @@ class SettingsService
             $logo = $this->get('app_logo');
         }
 
-        // 3. Return URL or default with robust fallback
+        // 3. Return URL or default with robust root-relative fallback
         if ($logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($logo)) {
-            $url = \Illuminate\Support\Facades\Storage::disk('public')->url($logo);
             $cacheBuster = \Illuminate\Support\Facades\Storage::disk('public')->lastModified($logo);
-        } else {
-            // Robust fallback to default logo in public directory (bypassing storage link)
-            $url = asset('logos/fst-logo.png');
-            $cacheBuster = time();
-
-            // Try to get actual file time if possible
-            if (file_exists(public_path('logos/fst-logo.png'))) {
-                $cacheBuster = filemtime(public_path('logos/fst-logo.png'));
-            }
+            return '/storage/' . ltrim($logo, '/') . '?v=' . $cacheBuster;
         }
 
-        // Force HTTPS if request is secure
-        if (request()->isSecure() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
-            $url = str_replace('http://', 'https://', $url);
+        // Robust fallback to default logo in public directory
+        $cacheBuster = file_exists(public_path('logos/fst-logo.png'))
+            ? filemtime(public_path('logos/fst-logo.png'))
+            : time();
+
+        return '/logos/fst-logo.png?v=' . $cacheBuster;
+    }
+
+    public function getHeroImageUrl()
+    {
+        $image = $this->get('hero_image');
+        if ($image && \Illuminate\Support\Facades\Storage::disk('public')->exists($image)) {
+            $cacheBuster = \Illuminate\Support\Facades\Storage::disk('public')->lastModified($image);
+            return '/storage/' . ltrim($image, '/') . '?v=' . $cacheBuster;
         }
+        // Premium default hero image for luxury salon and barber
+        return 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80';
+    }
 
-        // Fix double slashes (except after protocol)
-        $url = preg_replace('/([^:])(\/{2,})/', '$1/', $url);
-
-        return $url . '?v=' . $cacheBuster;
+    public function getAboutImageUrl()
+    {
+        $image = $this->get('about_image');
+        if ($image && \Illuminate\Support\Facades\Storage::disk('public')->exists($image)) {
+            $cacheBuster = \Illuminate\Support\Facades\Storage::disk('public')->lastModified($image);
+            return '/storage/' . ltrim($image, '/') . '?v=' . $cacheBuster;
+        }
+        // Master barber craftsmanship & styling salon image
+        return 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80';
     }
 }

@@ -117,7 +117,7 @@
                             <i class="fas fa-brain text-warning"></i> AI & Automation
                         </button>
                         @endif
-                        @if(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
+                        @if(auth()->user()->hasAnyRole(['salon_admin', 'manager', 'super_admin']))
                         <button class="nav-link" id="mail-tab" data-bs-toggle="pill" data-bs-target="#mail" type="button" role="tab">
                             <i class="fas fa-envelope-open-text"></i> Email Integration
                         </button>
@@ -175,7 +175,7 @@
                             @endif
 
                             <!-- Mail Tab -->
-                            @if(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
+                            @if(auth()->user()->hasAnyRole(['salon_admin', 'manager', 'super_admin']))
                             <div class="tab-pane fade" id="mail" role="tabpanel">
                                 @include('admin.settings.partials.mail', ['settings' => $settings])
                             </div>

@@ -1,203 +1,261 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Contact Us - {{ $appName }}</title>
+    <title>Contact Us - {{ $cms['appName'] ?? $appName }}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ app(\App\Services\SettingsService::class)->getFaviconUrl() }}">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-family: 'Outfit', sans-serif;
-        }
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        .gradient-text {
-            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    <!-- Dedicated Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}">
 
-        .contact-card {
-            background: white;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.1);
-        }
-    </style>
+    <!-- Dedicated Scripts -->
+    <script src="{{ asset('js/public-pages.js') }}" defer></script>
 </head>
 
-<body class="bg-slate-50 text-slate-900 overflow-x-hidden selection:bg-purple-500 selection:text-white">
+<body>
 
     @include('partials.saas-header')
 
-    <!-- Compact Hero -->
-    <section class="pt-32 pb-12 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Let's <span
-                    class="gradient-text">Connect</span></h1>
-            <p class="text-slate-600 max-w-2xl mx-auto">Have a question or need a demo? We're here to help you transform
-                your salon business.</p>
+    <!-- ==================== HERO ==================== -->
+    <section class="pub-inner-hero">
+        <div class="pub-container">
+            <div class="pub-inner-hero-content">
+                <span class="pub-section-tag">Direct Concierge</span>
+                <h1 class="pub-inner-hero-title">
+                    Let's Connect
+                </h1>
+                <p class="pub-inner-hero-desc">
+                    Have an inquiry about appointments, group reservations, or bespoke treatments? Our concierge team is here to assist you.
+                </p>
+            </div>
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section class="py-16 bg-slate-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100">
-                <div class="grid lg:grid-cols-2">
-                    <!-- Contact Info & Image -->
-                    <div
-                        class="relative p-12 lg:p-16 flex flex-col justify-between text-white overflow-hidden bg-slate-900">
-                        <div class="absolute inset-0 z-0">
-                            <img src="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                                alt="Salon Interior" class="w-full h-full object-cover opacity-30">
-                            <div class="absolute inset-0 bg-gradient-to-br from-purple-900/80 to-slate-900/90"></div>
-                        </div>
-
-                        <div class="relative z-10">
-                            <h2 class="text-3xl font-bold mb-8">Contact Information</h2>
-                            <div class="space-y-8">
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-slate-400 text-sm mb-1">Call us</p>
-                                        <p class="text-xl font-bold">+974 66266581</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-slate-400 text-sm mb-1">Email us</p>
-                                        <p class="text-xl font-bold">info@fsqatar.com</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-                                            </path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-slate-400 text-sm mb-1">Visit us</p>
-                                        <p class="text-xl font-bold">Doha, Qatar</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="relative z-10 mt-12 pt-12 border-t border-white/10">
-                            <p class="text-slate-400 mb-4">Follow us</p>
-                            <div class="flex gap-4">
-                                <a href="#"
-                                    class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-purple-600 transition-colors"><svg
-                                        class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                    </svg></a>
-                                <a href="#"
-                                    class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-purple-600 transition-colors"><svg
-                                        class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                                    </svg></a>
-                                <a href="#"
-                                    class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-purple-600 transition-colors"><svg
-                                        class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                    </svg></a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Contact Form -->
-                    <div class="p-12 lg:p-16 bg-white">
-                        <h3 class="text-2xl font-bold text-slate-900 mb-8">Send us a message</h3>
-                        <form action="#" method="POST" class="space-y-6">
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="first_name" class="block text-sm font-bold text-slate-700 mb-2">First
-                                        Name</label>
-                                    <input type="text" name="first_name" id="first_name"
-                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                                        placeholder="Jane">
-                                </div>
-                                <div>
-                                    <label for="last_name" class="block text-sm font-bold text-slate-700 mb-2">Last
-                                        Name</label>
-                                    <input type="text" name="last_name" id="last_name"
-                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                                        placeholder="Doe">
-                                </div>
-                            </div>
-                            <div>
-                                <label for="email" class="block text-sm font-bold text-slate-700 mb-2">Email
-                                    Address</label>
-                                <input type="email" name="email" id="email"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                                    placeholder="jane@example.com">
-                            </div>
-                            <div>
-                                <label for="subject" class="block text-sm font-bold text-slate-700 mb-2">Subject</label>
-                                <select name="subject" id="subject"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
-                                    <option value="general">General Inquiry</option>
-                                    <option value="support">Technical Support</option>
-                                    <option value="billing">Billing Question</option>
-                                    <option value="sales">Sales Inquiry</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="message" class="block text-sm font-bold text-slate-700 mb-2">Message</label>
-                                <textarea name="message" id="message" rows="4"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                                    placeholder="How can we help you?"></textarea>
-                            </div>
-                            <button type="submit"
-                                class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 transform hover:-translate-y-1 transition-all">
-                                Send Message
-                            </button>
-                        </form>
+    <!-- ==================== CONTACT DETAILS & FORM ==================== -->
+    <section style="padding: 4rem 0 6rem; background: #f8fafc;">
+        <div class="pub-container">
+            <!-- Flash Message Banner -->
+            @if(session('success'))
+                <div style="margin-bottom: 2rem; padding: 1.25rem 1.5rem; border-radius: 0.75rem; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #059669; flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem; color: #065f46;">Message Received!</h4>
+                        <p style="font-size: 0.85rem; margin: 0;">{{ session('success') }}</p>
                     </div>
                 </div>
+            @endif
+
+            @if(isset($errors) && $errors->any())
+                <div style="margin-bottom: 2rem; padding: 1.25rem 1.5rem; border-radius: 0.75rem; background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; display: flex; align-items: flex-start; gap: 1rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #e11d48; margin-top: 0.15rem; flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem; color: #9f1239;">Please check the form for errors:</h4>
+                        <ul style="font-size: 0.85rem; margin: 0; padding-left: 1.25rem;">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
+
+            <div class="pub-contact-card">
+                <!-- Left: Contact Details Column -->
+                <div class="pub-contact-sidebar">
+                    <div>
+                        <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 800; display: block; margin-bottom: 0.5rem;">
+                            Reception &amp; Location
+                        </span>
+                        <h2 style="font-size: 1.85rem; font-weight: 800; color: #ffffff; margin: 0 0 0.5rem;">Direct Information</h2>
+                        <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6; margin-bottom: 2.5rem;">
+                            Walk-ins are welcomed subject to artisan availability; reservations are recommended for an unhurried, VIP experience.
+                        </p>
+
+                        <div class="pub-contact-item">
+                            <div class="pub-contact-icon">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div>
+                                <div class="pub-contact-item-title">Telephone</div>
+                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $cms['contactPhone'] ?? '') }}" class="pub-contact-item-val" style="text-decoration: underline;">
+                                    {{ $cms['contactPhone'] ?? '+974 66266581' }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="pub-contact-item">
+                            <div class="pub-contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <div class="pub-contact-item-title">Email Inquiries</div>
+                                <a href="mailto:{{ $cms['contactEmail'] ?? 'info@fsqatar.com' }}" class="pub-contact-item-val">
+                                    {{ $cms['contactEmail'] ?? 'info@fsqatar.com' }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="pub-contact-item">
+                            <div class="pub-contact-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <div class="pub-contact-item-title">Studio Location</div>
+                                <p class="pub-contact-item-val" style="line-height: 1.5; font-size: 0.95rem;">
+                                    {{ $cms['contactAddress'] ?? 'Salwa Road, Doha, State of Qatar' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="pub-contact-item">
+                            <div class="pub-contact-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <div class="pub-contact-item-title">Operating Hours</div>
+                                <p class="pub-contact-item-val" style="line-height: 1.5; font-size: 0.95rem;">
+                                    {{ $cms['contactHours'] ?? 'Mon – Sun: 8:00 AM – 9:00 PM' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Media Links -->
+                    <div style="padding-top: 2rem; border-top: 1px solid #1f293d;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; font-weight: 700; display: block; margin-bottom: 0.85rem;">
+                            Follow Our Craft
+                        </span>
+                        <div class="pub-social-row" style="margin-top: 0;">
+                            @if(!empty($cms['socialFacebook']))
+                                <a href="{{ $cms['socialFacebook'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Facebook">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                            @endif
+                            @if(!empty($cms['socialInstagram']))
+                                <a href="{{ $cms['socialInstagram'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Instagram">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                            @endif
+                            @if(!empty($cms['socialTwitter']))
+                                <a href="{{ $cms['socialTwitter'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Twitter">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                            @endif
+                            @if(!empty($cms['socialLinkedin']))
+                                <a href="{{ $cms['socialLinkedin'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="LinkedIn">
+                                    <i class="fab fa-linkedin-in"></i>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Inquiry Form -->
+                <div class="pub-contact-main">
+                    <div style="margin-bottom: 2rem;">
+                        <span class="pub-section-tag" style="margin-bottom: 0.25rem;">Online Inquiries</span>
+                        <h3 style="font-size: 1.75rem; font-weight: 800; color: #0b0f17; margin: 0 0 0.5rem;">Send Us a Message</h3>
+                        <p style="color: #64748b; font-size: 0.95rem; margin: 0;">
+                            Fill in your details below and our concierge desk will reply within 24 hours.
+                        </p>
+                    </div>
+
+                    <form action="{{ route('contact.submit') }}" method="POST">
+                        @csrf
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;" class="contact-form-grid">
+                            <style>
+                                @media (min-width: 640px) {
+                                    .contact-form-grid { grid-template-columns: 1fr 1fr !important; }
+                                    .contact-span-2 { grid-column: span 2 !important; }
+                                }
+                            </style>
+
+                            <!-- Name -->
+                            <div class="pub-form-group">
+                                <label class="pub-form-label">Full Name *</label>
+                                <input type="text" name="name" class="pub-form-input" required
+                                    value="{{ old('name') }}" placeholder="e.g. John Doe">
+                            </div>
+
+                            <!-- Email -->
+                            <div class="pub-form-group">
+                                <label class="pub-form-label">Email Address *</label>
+                                <input type="email" name="email" class="pub-form-input" required
+                                    value="{{ old('email') }}" placeholder="name@example.com">
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="pub-form-group">
+                                <label class="pub-form-label">Phone Number</label>
+                                <input type="tel" name="phone" class="pub-form-input"
+                                    value="{{ old('phone') }}" placeholder="+974 ...">
+                            </div>
+
+                            <!-- Service Interest -->
+                            <div class="pub-form-group">
+                                <label class="pub-form-label">Service Interest</label>
+                                <select name="service_interest" class="pub-form-select">
+                                    <option value="General Inquiry" {{ old('service_interest') == 'General Inquiry' ? 'selected' : '' }}>General Inquiry</option>
+                                    <option value="Master Barbershop & Fade" {{ old('service_interest') == 'Master Barbershop & Fade' ? 'selected' : '' }}>Master Barbershop &amp; Fade</option>
+                                    <option value="Hot Towel Straight Razor Shave" {{ old('service_interest') == 'Hot Towel Straight Razor Shave' ? 'selected' : '' }}>Hot Towel Straight Razor Shave</option>
+                                    <option value="Haute Haircut & Blowout" {{ old('service_interest') == 'Haute Haircut & Blowout' ? 'selected' : '' }}>Haute Haircut &amp; Blowout</option>
+                                    <option value="French Balayage & Color Artistry" {{ old('service_interest') == 'French Balayage & Color Artistry' ? 'selected' : '' }}>French Balayage &amp; Color Artistry</option>
+                                    <option value="Keratin & Scalp Spa Therapy" {{ old('service_interest') == 'Keratin & Scalp Spa Therapy' ? 'selected' : '' }}>Keratin &amp; Scalp Spa Therapy</option>
+                                    <option value="VIP Bridal / Group Reservation" {{ old('service_interest') == 'VIP Bridal / Group Reservation' ? 'selected' : '' }}>VIP Bridal / Group Reservation</option>
+                                </select>
+                            </div>
+
+                            <!-- Subject -->
+                            <div class="pub-form-group contact-span-2">
+                                <label class="pub-form-label">Subject</label>
+                                <input type="text" name="subject" class="pub-form-input"
+                                    value="{{ old('subject') }}" placeholder="How can we assist you?">
+                            </div>
+
+                            <!-- Message -->
+                            <div class="pub-form-group contact-span-2">
+                                <label class="pub-form-label">Message *</label>
+                                <textarea name="message" class="pub-form-textarea" rows="4" required
+                                    placeholder="Please share any preferred dates, questions, or specific treatment details...">{{ old('message') }}</textarea>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <button type="submit" class="pub-btn-primary" style="padding: 0.95rem 2.2rem; font-size: 0.95rem;">
+                                <span>Send Message</span>
+                                <i class="fas fa-paper-plane" style="font-size: 0.85rem; color: #c5a880;"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
+            <!-- Optional Google Map Embed Container -->
+            @if(!empty($cms['contactMap']))
+                @php
+                    $rawMap = trim($cms['contactMap']);
+                    $mapSrc = $rawMap;
+                    if (preg_match('/src=["\']([^"\']+)["\']/', $rawMap, $matches)) {
+                        $mapSrc = $matches[1];
+                    }
+                @endphp
+                @if(filter_var($mapSrc, FILTER_VALIDATE_URL))
+                    <div style="margin-top: 3.5rem; border-radius: 1.25rem; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); aspect-ratio: 21/9; min-height: 340px;">
+                        <iframe src="{{ $mapSrc }}" width="100%" height="100%" style="border:0; min-height: 340px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                @endif
+            @endif
         </div>
     </section>
 

@@ -80,6 +80,60 @@ class SuperAdminSettingsController extends Controller
             'email_subscription_expiring_soon_enabled' => 'nullable|boolean',
             'email_subscription_expiring_soon_days_1' => 'nullable|integer|min:1|max:30',
             'email_subscription_expiring_soon_days_2' => 'nullable|integer|min:1|max:30',
+
+            // Website & CMS Settings
+            'hero_badge' => 'nullable|string|max:255',
+            'hero_title' => 'nullable|string|max:255',
+            'hero_subtitle' => 'nullable|string',
+            'hero_primary_btn_text' => 'nullable|string|max:100',
+            'hero_primary_btn_url' => 'nullable|string|max:255',
+            'hero_secondary_btn_text' => 'nullable|string|max:100',
+            'hero_secondary_btn_url' => 'nullable|string|max:255',
+            'hero_image' => 'nullable|image|max:4096',
+            'hero_stat_1_val' => 'nullable|string|max:50',
+            'hero_stat_1_lbl' => 'nullable|string|max:100',
+            'hero_stat_2_val' => 'nullable|string|max:50',
+            'hero_stat_2_lbl' => 'nullable|string|max:100',
+            'hero_stat_3_val' => 'nullable|string|max:50',
+            'hero_stat_3_lbl' => 'nullable|string|max:100',
+
+            'services_title' => 'nullable|string|max:255',
+            'services_subtitle' => 'nullable|string',
+            'barber_heading' => 'nullable|string|max:255',
+            'barber_description' => 'nullable|string',
+            'salon_heading' => 'nullable|string|max:255',
+            'salon_description' => 'nullable|string',
+
+            'why_title' => 'nullable|string|max:255',
+            'why_subtitle' => 'nullable|string',
+
+            'cta_banner_title' => 'nullable|string|max:255',
+            'cta_banner_subtitle' => 'nullable|string',
+            'cta_banner_btn_text' => 'nullable|string|max:100',
+            'cta_banner_btn_url' => 'nullable|string|max:255',
+
+            'contact_phone' => 'nullable|string|max:50',
+            'contact_email' => 'nullable|email|max:150',
+            'contact_address' => 'nullable|string|max:255',
+            'contact_working_hours' => 'nullable|string|max:150',
+            'contact_map_iframe' => 'nullable|string',
+            'social_facebook' => 'nullable|string|max:255',
+            'social_instagram' => 'nullable|string|max:255',
+            'social_twitter' => 'nullable|string|max:255',
+            'social_linkedin' => 'nullable|string|max:255',
+            'social_youtube' => 'nullable|string|max:255',
+
+            'about_hero_title' => 'nullable|string|max:255',
+            'about_hero_subtitle' => 'nullable|string',
+            'about_story_title' => 'nullable|string|max:255',
+            'about_story_p1' => 'nullable|string',
+            'about_story_p2' => 'nullable|string',
+            'about_mission' => 'nullable|string',
+            'about_vision' => 'nullable|string',
+            'about_image' => 'nullable|image|max:4096',
+
+            'terms_content' => 'nullable|string',
+            'privacy_content' => 'nullable|string',
         ]);
 
         // Handle logo upload
@@ -98,6 +152,24 @@ class SuperAdminSettingsController extends Controller
                 Storage::disk('public')->delete($oldFavicon);
             }
             $validated['app_favicon'] = $request->file('app_favicon')->store('favicons', 'public');
+        }
+
+        // Handle hero image upload
+        if ($request->hasFile('hero_image')) {
+            $oldHero = $this->settingsService->get('hero_image');
+            if ($oldHero && Storage::disk('public')->exists($oldHero)) {
+                Storage::disk('public')->delete($oldHero);
+            }
+            $validated['hero_image'] = $request->file('hero_image')->store('cms', 'public');
+        }
+
+        // Handle about image upload
+        if ($request->hasFile('about_image')) {
+            $oldAbout = $this->settingsService->get('about_image');
+            if ($oldAbout && Storage::disk('public')->exists($oldAbout)) {
+                Storage::disk('public')->delete($oldAbout);
+            }
+            $validated['about_image'] = $request->file('about_image')->store('cms', 'public');
         }
 
         // Save all settings

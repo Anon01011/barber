@@ -1,69 +1,140 @@
-<!-- Footer -->
-<footer class="bg-slate-950 text-slate-300 pt-20 pb-10 border-t border-slate-900">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid md:grid-cols-4 gap-12 mb-16">
-            <div class="col-span-1 md:col-span-2">
-                <a href="{{ route('home') }}" class="flex items-center gap-3 mb-6">
-                    @if($appLogo)
-                        <img src="{{ $appLogo }}" alt="{{ $appName }}" class="h-8 w-auto brightness-0 invert">
+<!-- Footer Section -->
+<footer class="pub-footer">
+    <div class="pub-container">
+        <div class="pub-footer-grid">
+            <!-- Brand & Philosophy Column -->
+            @php
+                $footerLogo = !empty($appLogo) ? $appLogo : app(\App\Services\SettingsService::class)->getLogoUrl();
+            @endphp
+            <div>
+                <a href="{{ route('home') }}" style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; text-decoration: none;">
+                    @if(!empty($footerLogo))
+                        <div style="background: rgba(255, 255, 255, 0.08); padding: 0.35rem 0.75rem; border-radius: 0.5rem; display: inline-flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <img src="{{ $footerLogo }}" alt="{{ $appName }}" style="height: 2.25rem; width: auto; object-fit: contain;">
+                        </div>
                     @else
-                        <span class="font-bold text-2xl text-white tracking-tight">{{ $appName }}</span>
+                        <div class="pub-brand-badge">
+                            {{ substr($appName ?? 'FS', 0, 1) }}
+                        </div>
+                        <span class="pub-footer-brand-title" style="margin-bottom: 0;">{{ $appName }}</span>
                     @endif
                 </a>
-                <p class="text-slate-400 leading-relaxed max-w-sm mb-6">
-                    The ultimate management solution for forward-thinking salons. Beautifully designed, powerfully
-                    built, and easy to use.
+                <p class="pub-footer-brand-desc">
+                    The premier destination bridging traditional master barbering with contemporary luxury salon care. Precision fades, bespoke color, restorative treatments, and seamless digital booking.
                 </p>
-                <div class="space-y-3">
-                    <div class="flex items-center gap-3 text-slate-400">
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
-                            </path>
-                        </svg>
-                        <span>+974 66266581</span>
+
+                <!-- Working Hours Badge -->
+                @if(!empty($cms['contactHours']))
+                    <div style="display: inline-flex; align-items: center; gap: 0.65rem; padding: 0.45rem 1rem; border-radius: 9999px; background: #131926; border: 1px solid #1f293d; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 1.25rem;">
+                        <span style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #10b981;"></span>
+                        <span style="font-weight: 700; color: #94a3b8;">Hours:</span>
+                        <span style="color: #ffffff; font-weight: 600;">{{ $cms['contactHours'] }}</span>
                     </div>
-                    <div class="flex items-center gap-3 text-slate-400">
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                        <span>info@fsqatar.com</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-slate-400">
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-                            </path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        <span>Doha, Qatar</span>
-                    </div>
+                @endif
+
+                <!-- Social Links -->
+                <div class="pub-social-row">
+                    @if(!empty($cms['socialFacebook']))
+                        <a href="{{ $cms['socialFacebook'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                    @endif
+                    @if(!empty($cms['socialInstagram']))
+                        <a href="{{ $cms['socialInstagram'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    @endif
+                    @if(!empty($cms['socialTwitter']))
+                        <a href="{{ $cms['socialTwitter'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                    @endif
+                    @if(!empty($cms['socialLinkedin']))
+                        <a href="{{ $cms['socialLinkedin'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    @endif
+                    @if(!empty($cms['socialYoutube']))
+                        <a href="{{ $cms['socialYoutube'] }}" target="_blank" rel="noopener noreferrer" class="pub-social-btn" aria-label="YouTube">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    @endif
                 </div>
             </div>
+
+            <!-- Experience Links -->
             <div>
-                <h4 class="text-white font-bold mb-6">Product</h4>
-                <ul class="space-y-4">
-                    <li><a href="{{ route('home') }}#features" class="hover:text-white transition-colors">Features</a>
-                    </li>
-                    <li><a href="{{ route('home') }}#how-it-works" class="hover:text-white transition-colors">How it
-                            Works</a></li>
-                    <li><a href="{{ route('home') }}#pricing" class="hover:text-white transition-colors">Pricing</a>
-                    </li>
+                <h4 class="pub-footer-col-title">Experience</h4>
+                <ul class="pub-footer-links">
+                    <li><a href="{{ route('home') }}">Home</a></li>
+                    <li><a href="{{ route('home') }}#services-experience">Barbershop & Salon</a></li>
+                    <li><a href="{{ route('home') }}#services-menu">Services & Pricing</a></li>
+                    <li><a href="{{ route('home') }}#the-craft">The Craft & Standards</a></li>
+                    <li><a href="{{ $cms['heroPrimaryBtnUrl'] ?? route('saas.register') }}">Book Appointment</a></li>
                 </ul>
             </div>
+
+            <!-- Studio & Legal Links -->
             <div>
-                <h4 class="text-white font-bold mb-6">Company</h4>
-                <ul class="space-y-4">
-                    <li><a href="{{ route('about') }}" class="hover:text-white transition-colors">About Us</a></li>
-                    <li><a href="{{ route('contact') }}" class="hover:text-white transition-colors">Contact</a></li>
+                <h4 class="pub-footer-col-title">Studio</h4>
+                <ul class="pub-footer-links">
+                    <li><a href="{{ route('about') }}">Our Story & Heritage</a></li>
+                    <li><a href="{{ route('contact') }}">Concierge & Location</a></li>
+                    <li><a href="{{ route('terms') }}">Terms & Conditions</a></li>
+                    <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
+                    <li><a href="{{ route('login') }}">Staff & Client Sign In</a></li>
                 </ul>
+            </div>
+
+            <!-- Direct Concierge / Reach Us -->
+            <div>
+                <h4 class="pub-footer-col-title">Concierge</h4>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    @if(!empty($cms['contactPhone']))
+                        <a href="tel:{{ preg_replace('/[^0-9+]/', '', $cms['contactPhone']) }}" style="display: flex; align-items: flex-start; gap: 0.75rem; color: #cbd5e1; text-decoration: none;">
+                            <i class="fas fa-phone-alt" style="color: #c5a880; margin-top: 0.25rem;"></i>
+                            <div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700;">Direct Line</div>
+                                <div style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">{{ $cms['contactPhone'] }}</div>
+                            </div>
+                        </a>
+                    @endif
+
+                    @if(!empty($cms['contactEmail']))
+                        <a href="mailto:{{ $cms['contactEmail'] }}" style="display: flex; align-items: flex-start; gap: 0.75rem; color: #cbd5e1; text-decoration: none;">
+                            <i class="fas fa-envelope" style="color: #c5a880; margin-top: 0.25rem;"></i>
+                            <div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700;">Reservations</div>
+                                <div style="font-weight: 600; color: #ffffff; font-size: 0.9rem;">{{ $cms['contactEmail'] }}</div>
+                            </div>
+                        </a>
+                    @endif
+
+                    @if(!empty($cms['contactAddress']))
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem; color: #cbd5e1;">
+                            <i class="fas fa-map-marker-alt" style="color: #c5a880; margin-top: 0.25rem;"></i>
+                            <div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700;">Location</div>
+                                <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">{{ $cms['contactAddress'] }}</div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
-        <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-sm text-slate-500">© {{ date('Y') }} {{ $appName }}. All rights reserved.</p>
+
+        <!-- Bottom Copyright -->
+        <div class="pub-footer-bottom">
+            <div>
+                &copy; {{ date('Y') }} {{ $cms['appName'] ?? $appName }}. All rights reserved.
+            </div>
+            <div class="pub-legal-links">
+                <a href="{{ route('terms') }}">Terms</a>
+                <span>&bull;</span>
+                <a href="{{ route('privacy') }}">Privacy</a>
+                <span>&bull;</span>
+                <a href="{{ route('contact') }}">Support</a>
+            </div>
         </div>
     </div>
 </footer>

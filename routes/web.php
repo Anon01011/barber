@@ -24,43 +24,13 @@ use App\Http\Controllers\Booking\GuestBookingController;
 use App\Http\Controllers\Admin\SmsSetupController;
 use App\Http\Controllers\Admin\WhatsappSetupController;
 
-// Default root route
-// Default root route
-Route::get('/', function () {
-    if (env('SINGLE_SALON_MODE', false)) {
-        return redirect()->route('login');
-    }
-
-    if (auth()->check()) {
-        return redirect()->route('home.dashboard');
-    }
-
-    // Fetch SaaS app name and logo from super admin settings
-    $settingsService = app(\App\Services\SettingsService::class);
-    $appName = $settingsService->get('app_name', config('app.name'));
-    $appLogo = $settingsService->getLogoUrl();
-
-    // Fetch active plans for the pricing section
-    $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
-
-    return view('welcome', compact('appName', 'appLogo', 'plans'));
-})->name('home');
-
-// About Us Page
-Route::get('/about', function () {
-    $settingsService = app(\App\Services\SettingsService::class);
-    $appName = $settingsService->get('app_name', config('app.name'));
-    $appLogo = $settingsService->getLogoUrl();
-    return view('about', compact('appName', 'appLogo'));
-})->name('about');
-
-// Contact Us Page
-Route::get('/contact', function () {
-    $settingsService = app(\App\Services\SettingsService::class);
-    $appName = $settingsService->get('app_name', config('app.name'));
-    $appLogo = $settingsService->getLogoUrl();
-    return view('contact', compact('appName', 'appLogo'));
-})->name('contact');
+// Public Landing & Information Pages (Dynamic CMS)
+Route::get('/', [LandingPageController::class, 'welcome'])->name('home');
+Route::get('/about', [LandingPageController::class, 'about'])->name('about');
+Route::get('/contact', [LandingPageController::class, 'contact'])->name('contact');
+Route::post('/contact', [LandingPageController::class, 'submitContact'])->name('contact.submit')->middleware('throttle:10,1');
+Route::get('/terms', [LandingPageController::class, 'terms'])->name('terms');
+Route::get('/privacy', [LandingPageController::class, 'privacy'])->name('privacy');
 
 // SaaS Registration (Rate limited to prevent abuse)
 Route::middleware(['throttle:60,1'])->group(function () {

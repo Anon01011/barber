@@ -83,7 +83,7 @@
                                     </div>
                                 </button>
 
-                                <button class="nav-link d-flex align-items-center p-3" id="v-pills-integrations-tab"
+                                <button class="nav-link d-flex align-items-center mb-1 p-3" id="v-pills-integrations-tab"
                                     data-bs-toggle="pill" data-bs-target="#integrations" type="button" role="tab">
                                     <div class="icon-square bg-light text-dark rounded-3 me-3 p-2 d-flex align-items-center justify-content-center"
                                         style="width: 36px; height: 36px;">
@@ -92,6 +92,18 @@
                                     <div class="text-start">
                                         <div class="fw-bold">Integrations</div>
                                         <div class="small opacity-75">Analytics & SMS</div>
+                                    </div>
+                                </button>
+
+                                <button class="nav-link d-flex align-items-center p-3" id="v-pills-website-tab"
+                                    data-bs-toggle="pill" data-bs-target="#website" type="button" role="tab">
+                                    <div class="icon-square bg-light text-dark rounded-3 me-3 p-2 d-flex align-items-center justify-content-center"
+                                        style="width: 36px; height: 36px;">
+                                        <i class="fas fa-globe"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <div class="fw-bold">Website & CMS</div>
+                                        <div class="small opacity-75">Landing, About, Contact & Legal</div>
                                     </div>
                                 </button>
                             </div>
@@ -527,6 +539,326 @@
                                         <div class="col-md-4">
                                             <input type="text" class="form-control" name="twilio_from"
                                                 placeholder="From Number" value="{{ $settings['twilio_from'] ?? '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Website & CMS Section -->
+                                <div class="tab-pane fade" id="website" role="tabpanel">
+                                    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                                        <div>
+                                            <h5 class="fw-bold text-gray-800 mb-1">Website & CMS Settings</h5>
+                                            <p class="text-muted small mb-0">Control hero section, contact information, about us story, terms, and privacy policy.</p>
+                                        </div>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold">
+                                            <i class="fas fa-magic me-1"></i> Salon & Barber Design
+                                        </span>
+                                    </div>
+
+                                    <!-- Section 1: Hero Banner -->
+                                    <div class="card border mb-4 rounded-3 shadow-none">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-heading me-2 text-primary"></i>Landing Page Hero Section</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Announcement Badge</label>
+                                                    <input type="text" class="form-control" name="hero_badge"
+                                                        value="{{ old('hero_badge', $settings['hero_badge'] ?? '✨ Precision Grooming & Luxury Salon Care') }}"
+                                                        placeholder="e.g. ✨ Precision Grooming & Luxury Salon Care">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Hero Main Headline</label>
+                                                    <input type="text" class="form-control form-control-lg fw-semibold" name="hero_title"
+                                                        value="{{ old('hero_title', $settings['hero_title'] ?? 'Masterful Precision & Modern Luxury for Hair, Beard & Style') }}"
+                                                        placeholder="Main catchy headline">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Hero Subtitle / Description</label>
+                                                    <textarea class="form-control" name="hero_subtitle" rows="3"
+                                                        placeholder="Brief summary highlighting salon and barber services">{{ old('hero_subtitle', $settings['hero_subtitle'] ?? 'Experience seamless online bookings, VIP master barbering, artisan hair color, and bespoke treatments in one premier grooming destination.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Primary CTA Button Text</label>
+                                                    <input type="text" class="form-control" name="hero_primary_btn_text"
+                                                        value="{{ old('hero_primary_btn_text', $settings['hero_primary_btn_text'] ?? 'Book Appointment') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Primary CTA URL / Route</label>
+                                                    <input type="text" class="form-control" name="hero_primary_btn_url"
+                                                        value="{{ old('hero_primary_btn_url', $settings['hero_primary_btn_url'] ?? '/register-salon') }}"
+                                                        placeholder="e.g. /register-salon or #booking">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Secondary CTA Button Text</label>
+                                                    <input type="text" class="form-control" name="hero_secondary_btn_text"
+                                                        value="{{ old('hero_secondary_btn_text', $settings['hero_secondary_btn_text'] ?? 'Explore Services') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Secondary CTA URL</label>
+                                                    <input type="text" class="form-control" name="hero_secondary_btn_url"
+                                                        value="{{ old('hero_secondary_btn_url', $settings['hero_secondary_btn_url'] ?? '#services-experience') }}">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Custom Hero Image (Optional)</label>
+                                                    <input type="file" class="form-control" name="hero_image" accept="image/*" onchange="previewImage(this, 'hero')">
+                                                    <div class="form-text">Recommended size: 1600x1000px JPG/PNG/WebP. Leave empty to keep existing or default.</div>
+                                                    @if(isset($settings['hero_image']) && !empty($settings['hero_image']))
+                                                        <div class="mt-2">
+                                                            <span class="small text-muted me-2">Current Image:</span>
+                                                            <img src="{{ asset('storage/' . $settings['hero_image']) }}" class="img-thumbnail rounded" style="max-height: 80px;" id="hero-preview">
+                                                        </div>
+                                                    @endif
+                                                    <img src="" class="img-thumbnail rounded mt-2 d-none" style="max-height: 80px;" id="hero-preview-new">
+                                                </div>
+
+                                                <!-- Highlight Stats -->
+                                                <div class="col-12 mt-3 pt-3 border-top">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase d-block mb-2">Live Floating Counter Cards</label>
+                                                    <div class="row g-2">
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <input type="text" class="form-control fw-bold" name="hero_stat_1_val" placeholder="Value" value="{{ old('hero_stat_1_val', $settings['hero_stat_1_val'] ?? '15k+') }}">
+                                                                <input type="text" class="form-control" name="hero_stat_1_lbl" placeholder="Label" value="{{ old('hero_stat_1_lbl', $settings['hero_stat_1_lbl'] ?? 'Satisfied Clients') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <input type="text" class="form-control fw-bold" name="hero_stat_2_val" placeholder="Value" value="{{ old('hero_stat_2_val', $settings['hero_stat_2_val'] ?? '4.9 ★') }}">
+                                                                <input type="text" class="form-control" name="hero_stat_2_lbl" placeholder="Label" value="{{ old('hero_stat_2_lbl', $settings['hero_stat_2_lbl'] ?? 'Average Rating') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <input type="text" class="form-control fw-bold" name="hero_stat_3_val" placeholder="Value" value="{{ old('hero_stat_3_val', $settings['hero_stat_3_val'] ?? '100%') }}">
+                                                                <input type="text" class="form-control" name="hero_stat_3_lbl" placeholder="Label" value="{{ old('hero_stat_3_lbl', $settings['hero_stat_3_lbl'] ?? 'Certified Hygiene') }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section 1.5: Services & Dual Experience -->
+                                    <div class="card border mb-4 rounded-3 shadow-none">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-cut me-2 text-warning"></i>Services Menu & Dual Experience</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Services Menu Section Title</label>
+                                                    <input type="text" class="form-control" name="services_title"
+                                                        value="{{ old('services_title', $settings['services_title'] ?? 'Signature Grooming & Styling Menu') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Services Menu Subtitle</label>
+                                                    <input type="text" class="form-control" name="services_subtitle"
+                                                        value="{{ old('services_subtitle', $settings['services_subtitle'] ?? 'Indulge in precision haircutting, classic straight razor shaves, bespoke color formulations, and restorative therapies.') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="p-3 rounded border bg-light">
+                                                        <label class="form-label fw-bold text-dark"><i class="fas fa-cut text-warning me-1"></i> Barbershop Title</label>
+                                                        <input type="text" class="form-control mb-2" name="barber_heading"
+                                                            value="{{ old('barber_heading', $settings['barber_heading'] ?? "The Gentlemen's Barber Lounge") }}">
+                                                        <label class="form-label small text-muted">Barbershop Description</label>
+                                                        <textarea class="form-control" name="barber_description" rows="3">{{ old('barber_description', $settings['barber_description'] ?? 'Classic hot-towel straight razor shaves, skin fades, precision beard sculpting, and revitalizing scalp rituals.') }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="p-3 rounded border bg-light">
+                                                        <label class="form-label fw-bold text-dark"><i class="fas fa-spa text-primary me-1"></i> Salon Title</label>
+                                                        <input type="text" class="form-control mb-2" name="salon_heading"
+                                                            value="{{ old('salon_heading', $settings['salon_heading'] ?? 'The Haute Hair & Beauty Salon') }}">
+                                                        <label class="form-label small text-muted">Salon Description</label>
+                                                        <textarea class="form-control" name="salon_description" rows="3">{{ old('salon_description', $settings['salon_description'] ?? 'Bespoke hair design, dimensional balayage, keratin smoothing, and restorative botanical hair therapies.') }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Why Choose Us Headline</label>
+                                                    <input type="text" class="form-control" name="why_title"
+                                                        value="{{ old('why_title', $settings['why_title'] ?? 'The Standard of Excellence') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Why Choose Us Subtitle</label>
+                                                    <input type="text" class="form-control" name="why_subtitle"
+                                                        value="{{ old('why_subtitle', $settings['why_subtitle'] ?? 'Every ritual is crafted with obsessive attention to detail, uncompromising hygiene, and VIP hospitality.') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Bottom Banner Title</label>
+                                                    <input type="text" class="form-control" name="cta_banner_title"
+                                                        value="{{ old('cta_banner_title', $settings['cta_banner_title'] ?? 'Ready for Your Signature Style?') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Bottom Banner Subtitle</label>
+                                                    <input type="text" class="form-control" name="cta_banner_subtitle"
+                                                        value="{{ old('cta_banner_subtitle', $settings['cta_banner_subtitle'] ?? 'Reserve your appointment with our master barbers and visionary stylists today.') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Bottom Banner Button Text</label>
+                                                    <input type="text" class="form-control" name="cta_banner_btn_text"
+                                                        value="{{ old('cta_banner_btn_text', $settings['cta_banner_btn_text'] ?? 'Book Your Appointment') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Bottom Banner Button URL</label>
+                                                    <input type="text" class="form-control" name="cta_banner_btn_url"
+                                                        value="{{ old('cta_banner_btn_url', $settings['cta_banner_btn_url'] ?? '/register-salon') }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section 2: Contact Information & Socials -->
+                                    <div class="card border mb-4 rounded-3 shadow-none">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-map-marked-alt me-2 text-success"></i>Contact Details & Social Media</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Contact Phone</label>
+                                                    <input type="text" class="form-control" name="contact_phone"
+                                                        value="{{ old('contact_phone', $settings['contact_phone'] ?? '+974 66266581') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Contact Email</label>
+                                                    <input type="email" class="form-control" name="contact_email"
+                                                        value="{{ old('contact_email', $settings['contact_email'] ?? 'info@fsqatar.com') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Physical Address</label>
+                                                    <input type="text" class="form-control" name="contact_address"
+                                                        value="{{ old('contact_address', $settings['contact_address'] ?? 'Salwa Road, Doha, State of Qatar') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Working Hours</label>
+                                                    <input type="text" class="form-control" name="contact_working_hours"
+                                                        value="{{ old('contact_working_hours', $settings['contact_working_hours'] ?? 'Mon – Sun: 8:00 AM – 9:00 PM') }}">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Google Maps Embed URL / Iframe Code (Optional)</label>
+                                                    <input type="text" class="form-control" name="contact_map_iframe"
+                                                        value="{{ old('contact_map_iframe', $settings['contact_map_iframe'] ?? '') }}"
+                                                        placeholder="https://maps.google.com/maps?q=... or full iframe snippet">
+                                                </div>
+
+                                                <!-- Social Channels -->
+                                                <div class="col-12 pt-3 border-top">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase d-block mb-2">Social Media Channels</label>
+                                                    <div class="row g-2">
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text"><i class="fab fa-facebook-f text-primary"></i></span>
+                                                                <input type="url" class="form-control" name="social_facebook" placeholder="Facebook URL" value="{{ old('social_facebook', $settings['social_facebook'] ?? 'https://facebook.com') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text"><i class="fab fa-instagram text-danger"></i></span>
+                                                                <input type="url" class="form-control" name="social_instagram" placeholder="Instagram URL" value="{{ old('social_instagram', $settings['social_instagram'] ?? 'https://instagram.com') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text"><i class="fab fa-twitter text-info"></i></span>
+                                                                <input type="url" class="form-control" name="social_twitter" placeholder="Twitter/X URL" value="{{ old('social_twitter', $settings['social_twitter'] ?? 'https://twitter.com') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text"><i class="fab fa-linkedin-in text-primary"></i></span>
+                                                                <input type="url" class="form-control" name="social_linkedin" placeholder="LinkedIn URL" value="{{ old('social_linkedin', $settings['social_linkedin'] ?? 'https://linkedin.com') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text"><i class="fab fa-youtube text-danger"></i></span>
+                                                                <input type="url" class="form-control" name="social_youtube" placeholder="YouTube URL" value="{{ old('social_youtube', $settings['social_youtube'] ?? '') }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section 3: About Us Page Content -->
+                                    <div class="card border mb-4 rounded-3 shadow-none">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-info-circle me-2 text-warning"></i>About Us Page Story & Mission</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">About Page Hero Title</label>
+                                                    <input type="text" class="form-control" name="about_hero_title"
+                                                        value="{{ old('about_hero_title', $settings['about_hero_title'] ?? 'Where Timeless Craftsmanship Meets Modern Luxury') }}">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">About Page Hero Subtitle</label>
+                                                    <textarea class="form-control" name="about_hero_subtitle" rows="2">{{ old('about_hero_subtitle', $settings['about_hero_subtitle'] ?? 'Dedicated to elevating the grooming and styling ritual for gentlemen and ladies who demand distinction, artistry, and VIP hospitality.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Heritage / Story Headline</label>
+                                                    <input type="text" class="form-control" name="about_story_title"
+                                                        value="{{ old('about_story_title', $settings['about_story_title'] ?? 'Our Heritage & Philosophy') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Story Paragraph 1</label>
+                                                    <textarea class="form-control" name="about_story_p1" rows="4">{{ old('about_story_p1', $settings['about_story_p1'] ?? 'Born out of a genuine passion for grooming and artistic flair, our sanctuary bridges classic barbering traditions with cutting-edge salon innovations. From handcrafted hot-towel straight razor shaves to bespoke color formulation and restorative hair treatments, every touchpoint is designed to renew and inspire confidence.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Story Paragraph 2</label>
+                                                    <textarea class="form-control" name="about_story_p2" rows="4">{{ old('about_story_p2', $settings['about_story_p2'] ?? 'We believe true grooming is an art form. Our masters and stylists undergo continuous training in modern techniques, hygiene standards, and client satisfaction to ensure that whether you are in for a quick beard trim or a total transformation, you leave looking and feeling your absolute best.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Our Mission Statement</label>
+                                                    <textarea class="form-control" name="about_mission" rows="3">{{ old('about_mission', $settings['about_mission'] ?? 'To deliver unmatched styling and grooming experiences through master craftsmanship, premium products, and frictionless technology, empowering every client to look confident and feel renewed.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">Our Vision Statement</label>
+                                                    <textarea class="form-control" name="about_vision" rows="3">{{ old('about_vision', $settings['about_vision'] ?? 'To stand as the gold standard in premier barber and salon care—a community-centric haven where heritage craftsmanship meets contemporary elegance.') }}</textarea>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase">About Page Image (Optional)</label>
+                                                    <input type="file" class="form-control" name="about_image" accept="image/*" onchange="previewImage(this, 'about')">
+                                                    <div class="form-text">Recommended size: 1200x800px JPG/PNG/WebP. Leave empty to use default master barber & salon photo.</div>
+                                                    @if(isset($settings['about_image']) && !empty($settings['about_image']))
+                                                        <div class="mt-2">
+                                                            <span class="small text-muted me-2">Current Image:</span>
+                                                            <img src="{{ asset('storage/' . $settings['about_image']) }}" class="img-thumbnail rounded" style="max-height: 80px;" id="about-preview">
+                                                        </div>
+                                                    @endif
+                                                    <img src="" class="img-thumbnail rounded mt-2 d-none" style="max-height: 80px;" id="about-preview-new">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section 4: Legal Pages -->
+                                    <div class="card border rounded-3 shadow-none">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-file-contract me-2 text-danger"></i>Terms & Conditions & Privacy Policy</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-12">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <label class="form-label small fw-bold text-muted text-uppercase mb-0">Terms & Conditions Content</label>
+                                                        <small class="text-muted">HTML/Text supported. Leave blank to use full standard policy.</small>
+                                                    </div>
+                                                    <textarea class="form-control font-monospace small" name="terms_content" rows="6" placeholder="Enter custom Terms and Conditions here or leave empty to use default comprehensive salon/barber terms">{{ old('terms_content', $settings['terms_content'] ?? '') }}</textarea>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <label class="form-label small fw-bold text-muted text-uppercase mb-0">Privacy Policy Content</label>
+                                                        <small class="text-muted">HTML/Text supported. Leave blank to use full GDPR-ready standard policy.</small>
+                                                    </div>
+                                                    <textarea class="form-control font-monospace small" name="privacy_content" rows="6" placeholder="Enter custom Privacy Policy here or leave empty to use default comprehensive privacy policy">{{ old('privacy_content', $settings['privacy_content'] ?? '') }}</textarea>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
