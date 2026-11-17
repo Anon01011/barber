@@ -26,7 +26,7 @@
     <!-- Header Button Styles -->
     <style>
         html, body {
-            overflow-x: hidden !important;
+            overflow-x: clip;
             max-width: 100vw;
             width: 100%;
         }
@@ -201,7 +201,7 @@
     @endif
 </head>
 
-<body class="antialiased overflow-x-hidden">
+<body class="antialiased">
     <!-- Header -->
     <header class="bg-white shadow-sm fixed w-full z-50 top-0">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -260,7 +260,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="pt-14 sm:pt-16 min-h-screen bg-gray-50 overflow-x-hidden">
+    <main class="pt-14 sm:pt-16 min-h-screen bg-gray-50">
         @yield('content')
         {{ $slot ?? '' }}
     </main>

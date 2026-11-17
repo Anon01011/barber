@@ -348,7 +348,7 @@
                 </section>
 
                 <!-- Cart Section (Sticky - Desktop only) -->
-                <aside class="lg:col-span-4 cart-section sticky-sidebar">
+                <aside class="lg:col-span-3 cart-section sticky-sidebar">
                     <div class="cart-header-wrapper flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
                         <h3 class="cart-header text-base lg:text-lg font-bold text-gray-900 m-0 flex items-center gap-2">
                             <span class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm flex-shrink-0">
