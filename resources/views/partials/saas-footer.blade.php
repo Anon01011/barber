@@ -62,27 +62,28 @@
                 </div>
             </div>
 
-            <!-- Experience Links -->
+            <!-- Platform Links -->
             <div>
-                <h4 class="pub-footer-col-title">Experience</h4>
+                <h4 class="pub-footer-col-title">Platform</h4>
                 <ul class="pub-footer-links">
                     <li><a href="{{ route('home') }}">Home</a></li>
-                    <li><a href="{{ route('home') }}#services-experience">Barbershop & Salon</a></li>
-                    <li><a href="{{ route('home') }}#services-menu">Services & Pricing</a></li>
-                    <li><a href="{{ route('home') }}#the-craft">The Craft & Standards</a></li>
-                    <li><a href="{{ $cms['heroPrimaryBtnUrl'] ?? route('saas.register') }}">Book Appointment</a></li>
+                    <li><a href="{{ route('home') }}#features">Platform Capabilities</a></li>
+                    <li><a href="{{ route('home') }}#salon-barber">Barbershop &amp; Salon Editions</a></li>
+                    <li><a href="{{ route('home') }}#plans-section">SaaS Pricing Plans</a></li>
+                    <li><a href="{{ route('home') }}#faq-section">Frequently Asked Questions</a></li>
+                    <li><a href="{{ route('saas.register') }}">Start 14-Day Free Trial</a></li>
                 </ul>
             </div>
 
-            <!-- Studio & Legal Links -->
+            <!-- Company & Legal Links -->
             <div>
-                <h4 class="pub-footer-col-title">Studio</h4>
+                <h4 class="pub-footer-col-title">Company &amp; Legal</h4>
                 <ul class="pub-footer-links">
-                    <li><a href="{{ route('about') }}">Our Story & Heritage</a></li>
-                    <li><a href="{{ route('contact') }}">Concierge & Location</a></li>
-                    <li><a href="{{ route('terms') }}">Terms & Conditions</a></li>
-                    <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
-                    <li><a href="{{ route('login') }}">Staff & Client Sign In</a></li>
+                    <li><a href="{{ route('about') }}">About Our Platform</a></li>
+                    <li><a href="{{ route('contact') }}">Contact Sales &amp; Support</a></li>
+                    <li><a href="{{ route('terms') }}">SaaS Terms &amp; Conditions</a></li>
+                    <li><a href="{{ route('privacy') }}">Privacy &amp; Data Security</a></li>
+                    <li><a href="{{ route('login') }}">Salon &amp; Staff Login</a></li>
                 </ul>
             </div>
 

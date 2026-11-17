@@ -34,6 +34,9 @@
                 <a href="{{ route('home') }}#plans-section" class="pub-nav-link">
                     Pricing Plans
                 </a>
+                <a href="{{ route('home') }}#faq-section" class="pub-nav-link">
+                    FAQ
+                </a>
                 <a href="{{ route('about') }}" class="pub-nav-link {{ request()->routeIs('about') ? 'active' : '' }}">
                     About Us
                 </a>
@@ -82,6 +85,9 @@
                     </a>
                     <a href="{{ route('home') }}#plans-section" style="padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a;">
                         <i class="fas fa-tags" style="color: #c5a880;"></i> Pricing Plans
+                    </a>
+                    <a href="{{ route('home') }}#faq-section" style="padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a;">
+                        <i class="fas fa-question-circle" style="color: #c5a880;"></i> FAQs
                     </a>
                     <a href="{{ route('about') }}" style="padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: {{ request()->routeIs('about') ? '#f1f5f9' : '#ffffff' }}; border: 1px solid #e2e8f0; color: #0f172a;">
                         <i class="fas fa-info-circle" style="color: #c5a880;"></i> About Us

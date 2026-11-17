@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Privacy Policy - {{ $cms['appName'] ?? $appName }}</title>
+    <title>{{ $cms['privacyPageTitle'] ?? 'Privacy Policy' }} - {{ $cms['appName'] ?? $appName }}</title>
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ app(\App\Services\SettingsService::class)->getFaviconUrl() }}">
 
@@ -29,98 +29,93 @@
 
     <!-- ==================== HEADER BANNER ==================== -->
     <section class="pub-inner-hero">
-        <div class="pub-container">
+        <div class="pub-container pub-legal-container">
             <div class="pub-inner-hero-content">
-                <span class="pub-section-tag">Data Protection</span>
-                <h1 class="pub-inner-hero-title">Privacy Policy</h1>
+                <span class="pub-section-tag">Data Protection &amp; Security</span>
+                <h1 class="pub-inner-hero-title">{{ $cms['privacyPageTitle'] ?? 'Privacy Policy' }}</h1>
                 <p class="pub-inner-hero-desc">
-                    Your trust is our paramount commitment. Learn how {{ $cms['appName'] ?? $appName }} safeguards your personal information and appointment records.
+                    {{ $cms['privacyPageSubtitle'] ?? 'Your privacy and salon client data security are our highest priority. Learn how our cloud platform protects your data.' }}
                 </p>
-                <p style="font-size: 0.8125rem; color: #94a3b8; margin-top: 1rem; font-weight: 600;">Last Updated: {{ date('F Y') }}</p>
+                <p style="font-size: 0.8125rem; color: #94a3b8; margin-top: 1rem; font-weight: 600;">
+                    <i class="fas fa-calendar-alt me-1"></i> Last Updated: {{ $cms['privacyLastUpdated'] ?? date('F Y') }}
+                </p>
             </div>
         </div>
     </section>
 
     <!-- ==================== DOCUMENT BODY ==================== -->
     <section style="padding: 4rem 0 6rem; background: #f8fafc;">
-        <div class="pub-container" style="max-width: 54rem;">
-            <div class="pub-legal-card">
-                @if(!empty($cms['privacyContent']))
-                    <div style="color: #334155; line-height: 1.85; font-size: 1rem;">
-                        {!! nl2br(e($cms['privacyContent'])) !!}
-                    </div>
-                @else
-                    <!-- Default Comprehensive Policy -->
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">1</span>
-                            Information We Collect
-                        </h2>
-                        <p class="pub-legal-text">
-                            When you schedule an appointment or register with <strong>{{ $cms['appName'] ?? $appName }}</strong>, we collect personal details necessary to deliver our services, including: your name, email address, mobile telephone number, booking history, preferred stylist/barber, and any relevant service preferences or chemical allergies you voluntarily disclose.
-                        </p>
+        <div class="pub-container pub-legal-container">
+            <div class="pub-legal-grid">
+
+                <!-- Left Sidebar: Sticky Table of Contents & Compliance Summary -->
+                <aside class="pub-legal-sidebar">
+                    <div class="pub-toc-box">
+                        <div class="pub-toc-title">
+                            <i class="fas fa-shield-alt" style="color: #c5a880;"></i>
+                            <span>Privacy Sections</span>
+                        </div>
+                        <nav>
+                            <ul class="pub-toc-list">
+                                @forelse($cms['privacySections'] ?? [] as $index => $section)
+                                    <li>
+                                        <a href="#section-{{ $index + 1 }}" class="pub-toc-link">
+                                            {{ $index + 1 }}. {{ $section['title'] ?? ('Section ' . ($index + 1)) }}
+                                        </a>
+                                    </li>
+                                @empty
+                                    <li><a href="#section-1" class="pub-toc-link">Privacy Policy</a></li>
+                                @endforelse
+                            </ul>
+                        </nav>
                     </div>
 
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">2</span>
-                            How We Use Your Information
-                        </h2>
-                        <p class="pub-legal-text">
-                            We utilize your data strictly to manage appointment bookings, send automated confirmations and reminder alerts via SMS or email, process billing, address customer inquiries, and maintain your salon treatment formulation history for optimal ongoing results.
+                    <div class="pub-legal-info-card">
+                        <div class="pub-legal-info-tag">Privacy Officer</div>
+                        <h4 class="pub-legal-info-title">Data Protection &amp; DPO</h4>
+                        <p class="pub-legal-info-desc">
+                            Request full data exports, submit GDPR deletion requests, or inspect compliance audits anytime.
                         </p>
+                        <a href="{{ route('contact') }}" class="pub-btn-gold" style="width: 100%; text-align: center; justify-content: center; padding: 0.75rem 1rem; font-size: 0.8125rem;">
+                            <span>Contact Privacy Officer</span>
+                            <i class="fas fa-user-shield" style="font-size: 0.75rem;"></i>
+                        </a>
+                        <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem;">
+                            <a href="{{ route('terms') }}" style="color: #c5a880; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Read Platform Terms</span>
+                                <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                            </a>
+                        </div>
                     </div>
+                </aside>
 
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">3</span>
-                            Payment Information Security
-                        </h2>
-                        <p class="pub-legal-text">
-                            All electronic transactions are processed through encrypted, PCI-DSS compliant payment gateways. We do not store full credit card numbers, CVV codes, or sensitive banking credentials on our local servers.
-                        </p>
-                    </div>
+                <!-- Right Reading Pane: Formatted Document -->
+                <main class="pub-legal-reading-pane">
+                    @forelse($cms['privacySections'] ?? [] as $index => $section)
+                        <div class="pub-legal-section" id="section-{{ $index + 1 }}">
+                            <h2 class="pub-legal-section-title">
+                                <span class="pub-legal-num">{{ $index + 1 }}</span>
+                                {{ $section['title'] ?? ('Section ' . ($index + 1)) }}
+                            </h2>
+                            <div class="pub-legal-body">
+                                {!! \App\Http\Controllers\LandingPageController::formatLegalContent($section['content'] ?? '') !!}
+                            </div>
+                        </div>
+                    @empty
+                        @if(!empty($cms['privacyFormatted']))
+                            {!! $cms['privacyFormatted'] !!}
+                        @elseif(!empty($cms['privacyContent']))
+                            <div style="color: #334155; line-height: 1.85; font-size: 1rem;">
+                                {!! nl2br(e($cms['privacyContent'])) !!}
+                            </div>
+                        @else
+                            <div class="alert alert-info">
+                                Privacy Policy is currently being updated.
+                            </div>
+                        @endif
+                    @endforelse
+                </main>
 
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">4</span>
-                            SMS &amp; Email Communications
-                        </h2>
-                        <p class="pub-legal-text">
-                            By booking an appointment, you consent to receive transactional notifications regarding your visit (such as booking confirmations, 24-hour reminders, or reschedule alerts). You may opt out of non-essential promotional communications at any time by contacting our concierge desk or clicking the unsubscribe link.
-                        </p>
-                    </div>
-
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">5</span>
-                            Data Sharing &amp; Third-Party Services
-                        </h2>
-                        <p class="pub-legal-text">
-                            We never sell, rent, or trade your personal data to external advertisers. Data is shared solely with trusted technological infrastructure partners (such as cloud hosting providers, transactional SMS gateways, and secure payment processors) who are contractually bound to confidentiality and rigorous data protection standards.
-                        </p>
-                    </div>
-
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">6</span>
-                            Data Retention &amp; Security Controls
-                        </h2>
-                        <p class="pub-legal-text">
-                            We implement industry-standard encryption protocols (TLS/SSL) and restrictive administrative access controls to prevent unauthorized data loss, alteration, or exposure. Your records are retained only as long as necessary to provide services and comply with applicable tax and legal obligations.
-                        </p>
-                    </div>
-
-                    <div class="pub-legal-section">
-                        <h2 class="pub-legal-section-title">
-                            <span class="pub-legal-num">7</span>
-                            Your Privacy Rights &amp; Contact
-                        </h2>
-                        <p class="pub-legal-text">
-                            You have the right to request access to the personal data we hold about you, request corrections to inaccuracies, or ask for the deletion of your account history where permitted by law. For any inquiries concerning this policy, please reach out to our privacy officer via our <a href="{{ route('contact') }}" style="color: #926b38; text-decoration: underline; font-weight: 700;">Contact Concierge</a>.
-                        </p>
-                    </div>
-                @endif
             </div>
         </div>
     </section>

@@ -96,6 +96,8 @@ class SuperAdminSettingsController extends Controller
             'hero_stat_2_lbl' => 'nullable|string|max:100',
             'hero_stat_3_val' => 'nullable|string|max:50',
             'hero_stat_3_lbl' => 'nullable|string|max:100',
+            'hero_stat_4_val' => 'nullable|string|max:50',
+            'hero_stat_4_lbl' => 'nullable|string|max:100',
 
             'services_title' => 'nullable|string|max:255',
             'services_subtitle' => 'nullable|string',
@@ -107,6 +109,7 @@ class SuperAdminSettingsController extends Controller
             'why_title' => 'nullable|string|max:255',
             'why_subtitle' => 'nullable|string',
 
+            'cta_banner_tag' => 'nullable|string|max:100',
             'cta_banner_title' => 'nullable|string|max:255',
             'cta_banner_subtitle' => 'nullable|string',
             'cta_banner_btn_text' => 'nullable|string|max:100',
@@ -132,8 +135,45 @@ class SuperAdminSettingsController extends Controller
             'about_vision' => 'nullable|string',
             'about_image' => 'nullable|image|max:4096',
 
+            'terms_page_title' => 'nullable|string|max:255',
+            'terms_page_subtitle' => 'nullable|string',
+            'terms_last_updated' => 'nullable|string|max:100',
             'terms_content' => 'nullable|string',
+            'terms_section_titles' => 'nullable|array',
+            'terms_section_titles.*' => 'nullable|string|max:255',
+            'terms_section_contents' => 'nullable|array',
+            'terms_section_contents.*' => 'nullable|string|max:15000',
+
+            'privacy_page_title' => 'nullable|string|max:255',
+            'privacy_page_subtitle' => 'nullable|string',
+            'privacy_last_updated' => 'nullable|string|max:100',
             'privacy_content' => 'nullable|string',
+            'privacy_section_titles' => 'nullable|array',
+            'privacy_section_titles.*' => 'nullable|string|max:255',
+            'privacy_section_contents' => 'nullable|array',
+            'privacy_section_contents.*' => 'nullable|string|max:15000',
+
+            // Dynamic Reviews & Testimonials
+            'reviews_title' => 'nullable|string|max:255',
+            'reviews_subtitle' => 'nullable|string',
+            'review_names' => 'nullable|array',
+            'review_names.*' => 'nullable|string|max:150',
+            'review_roles' => 'nullable|array',
+            'review_roles.*' => 'nullable|string|max:150',
+            'review_ratings' => 'nullable|array',
+            'review_ratings.*' => 'nullable|integer|min:1|max:5',
+            'review_texts' => 'nullable|array',
+            'review_texts.*' => 'nullable|string|max:3000',
+            'review_avatars' => 'nullable|array',
+            'review_avatars.*' => 'nullable|string|max:255',
+
+            // Dynamic FAQ
+            'faq_title' => 'nullable|string|max:255',
+            'faq_subtitle' => 'nullable|string',
+            'faq_questions' => 'nullable|array',
+            'faq_questions.*' => 'nullable|string|max:500',
+            'faq_answers' => 'nullable|array',
+            'faq_answers.*' => 'nullable|string|max:3000',
         ]);
 
         // Handle logo upload
@@ -171,6 +211,92 @@ class SuperAdminSettingsController extends Controller
             }
             $validated['about_image'] = $request->file('about_image')->store('cms', 'public');
         }
+
+        // Handle dynamic Terms & Conditions sections
+        if ($request->has('terms_section_titles') && is_array($request->terms_section_titles)) {
+            $termsList = [];
+            foreach ($request->terms_section_titles as $idx => $title) {
+                $t = trim($title ?? '');
+                $c = trim($request->terms_section_contents[$idx] ?? '');
+                if ($t !== '' || $c !== '') {
+                    $termsList[] = [
+                        'title' => $t,
+                        'content' => $c,
+                    ];
+                }
+            }
+            $this->settingsService->set('terms_sections', json_encode($termsList));
+            $this->settingsService->clearCache('terms_sections');
+        }
+
+        // Handle dynamic Privacy Policy sections
+        if ($request->has('privacy_section_titles') && is_array($request->privacy_section_titles)) {
+            $privacyList = [];
+            foreach ($request->privacy_section_titles as $idx => $title) {
+                $t = trim($title ?? '');
+                $c = trim($request->privacy_section_contents[$idx] ?? '');
+                if ($t !== '' || $c !== '') {
+                    $privacyList[] = [
+                        'title' => $t,
+                        'content' => $c,
+                    ];
+                }
+            }
+            $this->settingsService->set('privacy_sections', json_encode($privacyList));
+            $this->settingsService->clearCache('privacy_sections');
+        }
+
+        // Handle dynamic Reviews & Testimonials
+        if ($request->has('review_names') && is_array($request->review_names)) {
+            $reviewList = [];
+            foreach ($request->review_names as $idx => $name) {
+                $n = trim($name ?? '');
+                $txt = trim($request->review_texts[$idx] ?? '');
+                if ($n !== '' && $txt !== '') {
+                    $reviewList[] = [
+                        'name' => $n,
+                        'role' => trim($request->review_roles[$idx] ?? 'Salon Owner'),
+                        'rating' => max(1, min(5, (int) ($request->review_ratings[$idx] ?? 5))),
+                        'text' => $txt,
+                        'avatar' => trim($request->review_avatars[$idx] ?? ''),
+                    ];
+                }
+            }
+            $this->settingsService->set('reviews_items', json_encode($reviewList));
+            $this->settingsService->clearCache('reviews_items');
+        }
+
+        // Handle dynamic FAQ questions and answers
+        if ($request->has('faq_questions') && is_array($request->faq_questions)) {
+            $faqList = [];
+            foreach ($request->faq_questions as $idx => $q) {
+                $q = trim($q ?? '');
+                $a = trim($request->faq_answers[$idx] ?? '');
+                if ($q !== '' && $a !== '') {
+                    $faqList[] = [
+                        'question' => $q,
+                        'answer' => $a,
+                    ];
+                }
+            }
+            $this->settingsService->set('faq_items', json_encode($faqList));
+            $this->settingsService->clearCache('faq_items');
+        }
+
+        // Unset raw arrays before saving scalar settings
+        unset(
+            $validated['terms_section_titles'],
+            $validated['terms_section_contents'],
+            $validated['privacy_section_titles'],
+            $validated['privacy_section_contents'],
+            $validated['review_names'],
+            $validated['review_roles'],
+            $validated['review_ratings'],
+            $validated['review_texts'],
+            $validated['review_avatars'],
+            $validated['faq_questions'],
+            $validated['faq_answers']
+        );
 
         // Save all settings
         foreach ($validated as $key => $value) {

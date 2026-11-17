@@ -109,4 +109,89 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // 5. Plans Carousel Dot Synchronization
+    const plansTrack = document.getElementById('plans-track');
+    const dots = document.querySelectorAll('.pub-carousel-dot');
+    if (plansTrack && dots.length > 0) {
+        plansTrack.addEventListener('scroll', function () {
+            const scrollLeft = plansTrack.scrollLeft;
+            const cardWidth = (plansTrack.querySelector('.pub-plan-card')?.offsetWidth || 340) + 32;
+            const activeIndex = Math.min(Math.round(scrollLeft / cardWidth), dots.length - 1);
+            dots.forEach(function (dot, idx) {
+                if (idx === activeIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }, { passive: true });
+    }
 });
+
+// Global FAQ Accordion Toggle
+window.toggleFaq = function (index) {
+    const item = document.getElementById('faq-item-' + index);
+    if (!item) return;
+
+    const answer = item.querySelector('.pub-faq-answer');
+    const trigger = item.querySelector('.pub-faq-trigger');
+    const isActive = item.classList.contains('active');
+
+    // Close other open items for clean accordion UX
+    document.querySelectorAll('.pub-faq-item').forEach(function (other) {
+        if (other !== item && other.classList.contains('active')) {
+            other.classList.remove('active');
+            const otherAns = other.querySelector('.pub-faq-answer');
+            const otherTrig = other.querySelector('.pub-faq-trigger');
+            if (otherAns) {
+                otherAns.style.maxHeight = '0px';
+                otherAns.style.opacity = '0';
+                otherAns.style.paddingTop = '0';
+            }
+            if (otherTrig) otherTrig.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    if (isActive) {
+        item.classList.remove('active');
+        answer.style.maxHeight = '0px';
+        answer.style.opacity = '0';
+        answer.style.paddingTop = '0';
+        trigger.setAttribute('aria-expanded', 'false');
+    } else {
+        item.classList.add('active');
+        answer.style.maxHeight = (answer.scrollHeight + 40) + 'px';
+        answer.style.opacity = '1';
+        answer.style.paddingTop = '1rem';
+        trigger.setAttribute('aria-expanded', 'true');
+    }
+};
+
+// Global Plans Carousel Slider Control
+window.slidePlans = function (direction) {
+    const track = document.getElementById('plans-track');
+    if (!track) return;
+
+    const cards = track.querySelectorAll('.pub-plan-card');
+    if (cards.length === 0) return;
+
+    const cardWidth = cards[0].offsetWidth + 32;
+    track.scrollBy({
+        left: direction * cardWidth,
+        behavior: 'smooth'
+    });
+};
+
+window.jumpToPlan = function (index) {
+    const track = document.getElementById('plans-track');
+    if (!track) return;
+    const cards = track.querySelectorAll('.pub-plan-card');
+    if (cards[index]) {
+        cards[index].scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+        });
+    }
+};

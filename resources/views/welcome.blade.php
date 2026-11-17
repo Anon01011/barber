@@ -41,9 +41,7 @@
 
                     <!-- Main Headline -->
                     <h1 class="pub-hero-title">
-                        Supercharge Your
-                        <span class="pub-hero-title-accent">Salon &amp; Barbershop</span>
-                        Operations &amp; Growth
+                        {{ $cms['heroTitle'] ?? 'Supercharge Your Salon & Barbershop Operations & Growth' }}
                     </h1>
 
                     <!-- Subtitle -->
@@ -53,13 +51,13 @@
 
                     <!-- CTA Actions -->
                     <div class="pub-hero-actions">
-                        <a href="{{ route('saas.register') }}" class="pub-btn-primary" style="padding: 1rem 2.25rem; font-size: 1rem;">
-                            <span>Start 14-Day Free Trial</span>
+                        <a href="{{ $cms['heroPrimaryBtnUrl'] ?? route('saas.register') }}" class="pub-btn-primary" style="padding: 1rem 2.25rem; font-size: 1rem;">
+                            <span>{{ $cms['heroPrimaryBtnText'] ?? 'Start 14-Day Free Trial' }}</span>
                             <i class="fas fa-arrow-right" style="font-size: 0.85rem; color: #c5a880;"></i>
                         </a>
-                        <a href="#plans-section" class="pub-btn-outline" style="padding: 1rem 2rem; font-size: 1rem;">
+                        <a href="{{ $cms['heroSecondaryBtnUrl'] ?? '#plans-section' }}" class="pub-btn-outline" style="padding: 1rem 2rem; font-size: 1rem;">
                             <i class="fas fa-tags" style="color: #c5a880; font-size: 0.95rem;"></i>
-                            <span>View Pricing Plans</span>
+                            <span>{{ $cms['heroSecondaryBtnText'] ?? 'View Pricing Plans' }}</span>
                         </a>
                     </div>
 
@@ -322,229 +320,252 @@
                 </p>
             </div>
 
-            <!-- Beautiful Luxury Pricing Grid -->
-            <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto;" class="plans-grid-wrap">
-                <style>
-                    @media (min-width: 768px) {
-                        .plans-grid-wrap {
-                            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-                            align-items: stretch !important;
-                        }
-                    }
-                </style>
-
-                @if(isset($plans) && $plans->isNotEmpty())
-                    @foreach($plans as $plan)
-                        @php
-                            $featuresList = [];
-                            if (is_array($plan->features)) {
-                                $featuresList = $plan->features;
-                            } elseif (is_string($plan->features)) {
-                                $decoded = json_decode($plan->features, true);
-                                $featuresList = is_array($decoded) ? $decoded : explode(',', $plan->features);
-                            }
-                            $isFeatured = $plan->is_popular || $loop->first;
-                        @endphp
-                        <div class="pub-plan-card {{ $isFeatured ? 'featured' : '' }}" style="position: relative; border-radius: 1.5rem; border: 2px solid {{ $isFeatured ? '#0b0f17' : '#e2e8f0' }}; padding: 3rem 2.25rem; display: flex; flex-direction: column; justify-content: space-between; background: #ffffff; box-shadow: {{ $isFeatured ? '0 20px 45px rgba(11, 15, 23, 0.12)' : '0 10px 30px rgba(0, 0, 0, 0.04)' }};">
-                            @if($isFeatured)
-                                <span class="pub-plan-badge" style="position: absolute; top: -0.9rem; right: 2rem; background: #c5a880; color: #ffffff; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.4rem 1.15rem; border-radius: 9999px;">
-                                    Recommended
-                                </span>
-                            @endif
-
-                            <div>
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                                    <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">
-                                        {{ ucfirst($plan->business_type ?? 'Salon & Barber') }}
+            <!-- Luxury Plans Carousel & Slider -->
+            <div class="pub-plans-carousel-wrap">
+                <div class="pub-plans-track" id="plans-track">
+                    @if(isset($plans) && $plans->isNotEmpty())
+                        @foreach($plans as $planIndex => $plan)
+                            @php
+                                $featuresList = [];
+                                if (is_array($plan->features)) {
+                                    $featuresList = $plan->features;
+                                } elseif (is_string($plan->features)) {
+                                    $decoded = json_decode($plan->features, true);
+                                    $featuresList = is_array($decoded) ? $decoded : explode(',', $plan->features);
+                                }
+                                $isFeatured = $plan->is_popular || $loop->first;
+                            @endphp
+                            <div class="pub-plan-card {{ $isFeatured ? 'featured' : '' }}" data-plan-index="{{ $planIndex }}">
+                                @if($isFeatured)
+                                    <span class="pub-plan-badge" style="position: absolute; top: -0.9rem; right: 2rem; background: #c5a880; color: #ffffff; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.4rem 1.15rem; border-radius: 9999px;">
+                                        Recommended
                                     </span>
-                                    @if($plan->trial_days > 0)
-                                        <span style="font-size: 0.725rem; font-weight: 700; color: #059669; background: #ecfdf5; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid #a7f3d0;">
-                                            {{ $plan->trial_days }}-Day Free Trial
+                                @endif
+
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                        <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">
+                                            {{ ucfirst($plan->business_type ?? 'Salon & Barber') }}
                                         </span>
-                                    @endif
+                                        @if($plan->trial_days > 0)
+                                            <span style="font-size: 0.725rem; font-weight: 700; color: #059669; background: #ecfdf5; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid #a7f3d0;">
+                                                {{ $plan->trial_days }}-Day Free Trial
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; color: #0b0f17; margin: 0 0 0.5rem;">
+                                        {{ $plan->name }}
+                                    </h3>
+
+                                    <div class="pub-plan-price-wrap" style="display: flex; align-items: baseline; gap: 0.35rem; margin: 1.25rem 0 0.5rem;">
+                                        <span class="pub-plan-price" style="font-size: 3.25rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading); line-height: 1;">
+                                            {{ $currencySymbol }}{{ number_format($plan->price, 0) }}
+                                        </span>
+                                        <span class="pub-plan-period" style="font-size: 0.9rem; color: #64748b; font-weight: 600;">
+                                            / {{ $plan->duration_in_days ? ($plan->duration_in_days >= 365 ? 'year' : 'month') : 'month' }}
+                                        </span>
+                                    </div>
+
+                                    <p style="font-size: 0.9rem; color: #64748b; line-height: 1.6; margin-bottom: 2rem;">
+                                        {{ !empty($plan->description) ? $plan->description : 'Complete professional access to all platform features, point-of-sale, and booking systems.' }}
+                                    </p>
+
+                                    <!-- Features Checklist -->
+                                    <ul class="pub-plan-features" style="list-style: none; padding: 0; margin: 0 0 2.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                                        @if(!empty($featuresList))
+                                            @foreach($featuresList as $feat)
+                                                <li class="pub-plan-feature-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.925rem; color: #334155;">
+                                                    <i class="fas fa-check-circle" style="color: #059669; font-size: 0.95rem; flex-shrink: 0;"></i>
+                                                    <span>{{ is_string($feat) ? $feat : json_encode($feat) }}</span>
+                                                </li>
+                                            @endforeach
+                                        @else
+                                            <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Online Bookings</li>
+                                            <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> High-Speed POS &amp; Split Payments</li>
+                                            <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Staff Commissions &amp; Payroll</li>
+                                            <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Automated SMS &amp; Email Reminders</li>
+                                            <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Inventory &amp; Stock Barcode Scanning</li>
+                                        @endif
+                                    </ul>
                                 </div>
 
-                                <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; color: #0b0f17; margin: 0 0 0.5rem;">
-                                    {{ $plan->name }}
-                                </h3>
-
+                                <a href="{{ route('saas.register', ['plan_id' => $plan->id]) }}" class="{{ $isFeatured ? 'pub-btn-primary' : 'pub-btn-gold' }}" style="width: 100%; text-align: center; justify-content: center; padding: 1rem; font-size: 0.95rem; border-radius: 0.5rem;">
+                                    <span>{{ $plan->trial_days > 0 ? 'Start ' . $plan->trial_days . '-Day Free Trial' : 'Register Salon' }}</span>
+                                    <i class="fas fa-arrow-right" style="font-size: 0.8rem; margin-left: 0.5rem;"></i>
+                                </a>
+                            </div>
+                        @endforeach
+                    @else
+                        <!-- Fallback Luxury SaaS Tier Cards -->
+                        <div class="pub-plan-card" data-plan-index="0">
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Boutique &amp; Solo</span>
+                                <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Starter Studio</h3>
                                 <div class="pub-plan-price-wrap" style="display: flex; align-items: baseline; gap: 0.35rem; margin: 1.25rem 0 0.5rem;">
-                                    <span class="pub-plan-price" style="font-size: 3.25rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading); line-height: 1;">
-                                        {{ $currencySymbol }}{{ number_format($plan->price, 0) }}
-                                    </span>
-                                    <span class="pub-plan-period" style="font-size: 0.9rem; color: #64748b; font-weight: 600;">
-                                        / {{ $plan->duration_in_days ? ($plan->duration_in_days >= 365 ? 'year' : 'month') : 'month' }}
-                                    </span>
+                                    <span class="pub-plan-price" style="font-size: 3.25rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading); line-height: 1;">{{ $currencySymbol }}29</span>
+                                    <span class="pub-plan-period" style="font-size: 0.9rem; color: #64748b; font-weight: 600;">/ month</span>
                                 </div>
-
-                                <p style="font-size: 0.9rem; color: #64748b; line-height: 1.6; margin-bottom: 2rem;">
-                                    {{ !empty($plan->description) ? $plan->description : 'Complete professional access to all platform features, point-of-sale, and booking systems.' }}
-                                </p>
-
-                                <!-- Features Checklist -->
+                                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Perfect for independent stylists and boutique 1-3 chair studios.</p>
                                 <ul class="pub-plan-features" style="list-style: none; padding: 0; margin: 0 0 2.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
-                                    @if(!empty($featuresList))
-                                        @foreach($featuresList as $feat)
-                                            <li class="pub-plan-feature-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.925rem; color: #334155;">
-                                                <i class="fas fa-check-circle" style="color: #059669; font-size: 0.95rem; flex-shrink: 0;"></i>
-                                                <span>{{ is_string($feat) ? $feat : json_encode($feat) }}</span>
-                                            </li>
-                                        @endforeach
-                                    @else
-                                        <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Online Bookings</li>
-                                        <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> High-Speed POS &amp; Split Payments</li>
-                                        <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Staff Commissions &amp; Payroll</li>
-                                        <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Automated SMS &amp; Email Reminders</li>
-                                        <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Inventory &amp; Stock Barcode Scanning</li>
-                                    @endif
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Up to 3 Staff Members</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Online Bookings</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Cloud POS &amp; Card Processing</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Automated SMS Reminders</li>
                                 </ul>
                             </div>
-
-                            <a href="{{ route('saas.register', ['plan_id' => $plan->id]) }}" class="{{ $isFeatured ? 'pub-btn-primary' : 'pub-btn-gold' }}" style="width: 100%; text-align: center; justify-content: center; padding: 1rem; font-size: 0.95rem; border-radius: 0.5rem;">
-                                <span>{{ $plan->trial_days > 0 ? 'Start ' . $plan->trial_days . '-Day Free Trial' : 'Register Salon' }}</span>
-                                <i class="fas fa-arrow-right" style="font-size: 0.8rem; margin-left: 0.5rem;"></i>
+                            <a href="{{ route('saas.register') }}" class="pub-btn-gold" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
+                                <span>Start 14-Day Free Trial</span>
+                                <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
                             </a>
                         </div>
-                    @endforeach
-                @else
-                    <!-- Fallback Luxury SaaS Tier Cards -->
-                    <!-- Starter Plan -->
-                    <div class="pub-plan-card">
-                        <div>
-                            <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Boutique &amp; Solo</span>
-                            <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Starter Studio</h3>
-                            <div class="pub-plan-price-wrap" style="margin: 1.25rem 0 0.5rem;">
-                                <span class="pub-plan-price">{{ $currencySymbol }}29</span>
-                                <span class="pub-plan-period">/ month</span>
-                            </div>
-                            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Perfect for independent stylists and boutique 1-3 chair studios.</p>
-                            <ul class="pub-plan-features">
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Up to 3 Staff Members</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Online Bookings</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Cloud POS &amp; Card Processing</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Automated SMS Appointment Reminders</li>
-                            </ul>
-                        </div>
-                        <a href="{{ route('saas.register') }}" class="pub-btn-gold" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
-                            <span>Start 14-Day Free Trial</span>
-                            <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
-                        </a>
-                    </div>
 
-                    <!-- Pro Plan (Featured) -->
-                    <div class="pub-plan-card featured">
-                        <span class="pub-plan-badge">Most Popular</span>
-                        <div>
-                            <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Growing Salon</span>
-                            <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Professional Salon</h3>
-                            <div class="pub-plan-price-wrap" style="margin: 1.25rem 0 0.5rem;">
-                                <span class="pub-plan-price">{{ $currencySymbol }}59</span>
-                                <span class="pub-plan-period">/ month</span>
+                        <div class="pub-plan-card featured" data-plan-index="1">
+                            <span class="pub-plan-badge" style="position: absolute; top: -0.9rem; right: 2rem; background: #c5a880; color: #ffffff; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.4rem 1.15rem; border-radius: 9999px;">Most Popular</span>
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Growing Salon</span>
+                                <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Professional Salon</h3>
+                                <div class="pub-plan-price-wrap" style="display: flex; align-items: baseline; gap: 0.35rem; margin: 1.25rem 0 0.5rem;">
+                                    <span class="pub-plan-price" style="font-size: 3.25rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading); line-height: 1;">{{ $currencySymbol }}59</span>
+                                    <span class="pub-plan-period" style="font-size: 0.9rem; color: #64748b; font-weight: 600;">/ month</span>
+                                </div>
+                                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Comprehensive platform for growing salons and busy barbershops.</p>
+                                <ul class="pub-plan-features" style="list-style: none; padding: 0; margin: 0 0 2.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Up to 15 Staff Members</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Bookings &amp; Walk-Ins</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Staff Commissions &amp; Tips</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> WhatsApp &amp; SMS Automation</li>
+                                </ul>
                             </div>
-                            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Comprehensive platform for growing salons and busy barbershops.</p>
-                            <ul class="pub-plan-features">
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Up to 15 Staff Members</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Bookings &amp; Walk-Ins</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Advanced Staff Commissions &amp; Tips</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Inventory &amp; Barcode Management</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> WhatsApp &amp; SMS Automation</li>
-                            </ul>
+                            <a href="{{ route('saas.register') }}" class="pub-btn-primary" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
+                                <span>Start 14-Day Free Trial</span>
+                                <i class="fas fa-arrow-right" style="font-size: 0.8rem; color: #c5a880;"></i>
+                            </a>
                         </div>
-                        <a href="{{ route('saas.register') }}" class="pub-btn-primary" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
-                            <span>Start 14-Day Free Trial</span>
-                            <i class="fas fa-arrow-right" style="font-size: 0.8rem; color: #c5a880;"></i>
-                        </a>
-                    </div>
 
-                    <!-- Enterprise Plan -->
-                    <div class="pub-plan-card">
-                        <div>
-                            <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Chains &amp; Luxury</span>
-                            <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Enterprise Chain</h3>
-                            <div class="pub-plan-price-wrap" style="margin: 1.25rem 0 0.5rem;">
-                                <span class="pub-plan-price">{{ $currencySymbol }}119</span>
-                                <span class="pub-plan-period">/ month</span>
+                        <div class="pub-plan-card" data-plan-index="2">
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #926b38;">Chains &amp; Luxury</span>
+                                <h3 class="pub-plan-name" style="font-size: 1.85rem; font-weight: 800; margin: 0.25rem 0 0.5rem;">Enterprise Chain</h3>
+                                <div class="pub-plan-price-wrap" style="display: flex; align-items: baseline; gap: 0.35rem; margin: 1.25rem 0 0.5rem;">
+                                    <span class="pub-plan-price" style="font-size: 3.25rem; font-weight: 800; color: #0b0f17; font-family: var(--font-heading); line-height: 1;">{{ $currencySymbol }}119</span>
+                                    <span class="pub-plan-period" style="font-size: 0.9rem; color: #64748b; font-weight: 600;">/ month</span>
+                                </div>
+                                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Multi-branch management with dedicated account manager.</p>
+                                <ul class="pub-plan-features" style="list-style: none; padding: 0; margin: 0 0 2.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Staff &amp; Chairs</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Multi-Branch Centralized HQ</li>
+                                    <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Custom API &amp; Webhooks</li>
+                                </ul>
                             </div>
-                            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Multi-branch management with dedicated account manager.</p>
-                            <ul class="pub-plan-features">
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Unlimited Staff &amp; Chairs</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Multi-Branch &amp; Centralized HQ</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Custom API &amp; Webhook Access</li>
-                                <li class="pub-plan-feature-item"><i class="fas fa-check-circle" style="color: #059669;"></i> Dedicated 24/7 Account Concierge</li>
-                            </ul>
+                            <a href="{{ route('saas.register') }}" class="pub-btn-gold" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
+                                <span>Contact Enterprise</span>
+                                <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
+                            </a>
                         </div>
-                        <a href="{{ route('saas.register') }}" class="pub-btn-gold" style="width: 100%; text-align: center; justify-content: center; padding: 1rem;">
-                            <span>Contact Enterprise</span>
-                            <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
-                        </a>
+                    @endif
+                </div>
+
+                <!-- Carousel Slider Navigation Controls -->
+                <div class="pub-carousel-controls">
+                    <button type="button" class="pub-carousel-btn" aria-label="Previous Plan" onclick="slidePlans(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="pub-carousel-dots">
+                        @php
+                            $totalPlanCards = isset($plans) && $plans->isNotEmpty() ? $plans->count() : 3;
+                        @endphp
+                        @for($i = 0; $i < $totalPlanCards; $i++)
+                            <span class="pub-carousel-dot {{ $i === 0 ? 'active' : '' }}" onclick="jumpToPlan({{ $i }})"></span>
+                        @endfor
                     </div>
-                @endif
+                    <button type="button" class="pub-carousel-btn" aria-label="Next Plan" onclick="slidePlans(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- ==================== SALON OWNER TESTIMONIALS ==================== -->
+    <!-- ==================== SALON OWNER TESTIMONIALS (DYNAMIC REVIEWS) ==================== -->
     <section class="pub-reviews-section">
         <div class="pub-container">
             <div class="pub-section-header">
                 <span class="pub-section-tag">Owner Success</span>
-                <h2 class="pub-section-title">Trusted by Salon Owners &amp; Master Barbers</h2>
-                <p class="pub-section-desc">See how top salons and barbershops transformed their revenue and client retention with our cloud platform.</p>
+                <h2 class="pub-section-title">{{ $cms['reviewsTitle'] ?? 'Trusted by Salon Owners & Master Barbers' }}</h2>
+                <p class="pub-section-desc">{{ $cms['reviewsSubtitle'] ?? 'See how top salons and barbershops transformed their revenue and client retention with our cloud platform.' }}</p>
             </div>
 
             <div class="pub-reviews-grid">
-                <div class="pub-review-card">
-                    <div>
-                        <div class="pub-stars-row">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p class="pub-review-quote">
-                            "Switching to this platform cut our no-shows from 20% down to under 2%. The automated SMS reminders and quick POS checkout saved my reception team 15 hours every week."
-                        </p>
-                    </div>
-                    <div class="pub-client-row">
-                        <div class="pub-client-avatar">DK</div>
+                @forelse($cms['reviewsItems'] ?? [] as $rev)
+                    <div class="pub-review-card">
                         <div>
-                            <h4 class="pub-client-name">David Kingston</h4>
-                            <p class="pub-client-service">Owner, Kingston Barbershop Lounge</p>
+                            <div class="pub-stars-row">
+                                @php $rating = (int)($rev['rating'] ?? 5); @endphp
+                                @for($s = 1; $s <= 5; $s++)
+                                    <i class="fas fa-star" style="color: {{ $s <= $rating ? '#f59e0b' : '#cbd5e1' }};"></i>
+                                @endfor
+                            </div>
+                            <p class="pub-review-quote">
+                                "{{ $rev['text'] ?? '' }}"
+                            </p>
+                        </div>
+                        <div class="pub-client-row">
+                            <div class="pub-client-avatar">
+                                {{ !empty($rev['avatar']) ? $rev['avatar'] : strtoupper(substr($rev['name'] ?? 'SP', 0, 2)) }}
+                            </div>
+                            <div>
+                                <h4 class="pub-client-name">{{ $rev['name'] ?? 'Salon Partner' }}</h4>
+                                <p class="pub-client-service">{{ $rev['role'] ?? 'Salon Owner' }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @empty
+                    <div class="col-12 text-center text-muted py-4">
+                        <p>No testimonials configured yet.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
 
-                <div class="pub-review-card">
-                    <div>
-                        <div class="pub-stars-row">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p class="pub-review-quote">
-                            "The color formula notes and staff commission calculations are extraordinary. Our stylists love seeing their daily tips and commissions in real time on their own phones."
-                        </p>
-                    </div>
-                    <div class="pub-client-row">
-                        <div class="pub-client-avatar">EM</div>
-                        <div>
-                            <h4 class="pub-client-name">Elena Moretti</h4>
-                            <p class="pub-client-service">Founder, Haute Beauty &amp; Hair Spa</p>
-                        </div>
-                    </div>
-                </div>
+    <!-- ==================== FREQUENTLY ASKED QUESTIONS (DYNAMIC FAQ) ==================== -->
+    <section id="faq-section" class="pub-faq-section">
+        <div class="pub-container">
+            <div class="pub-section-header">
+                <span class="pub-section-tag">Got Questions?</span>
+                <h2 class="pub-section-title">{{ $cms['faqTitle'] ?? 'Frequently Asked Questions' }}</h2>
+                <p class="pub-section-desc">
+                    {{ $cms['faqSubtitle'] ?? 'Everything you need to know about our salon platform, 14-day trial, POS hardware, and data migration.' }}
+                </p>
+            </div>
 
-                <div class="pub-review-card">
-                    <div>
-                        <div class="pub-stars-row">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p class="pub-review-quote">
-                            "We expanded from 2 branches to 5 branches within 18 months because this software made inventory transfers and centralized reporting completely effortless."
-                        </p>
+            <div class="pub-faq-container">
+                @if(isset($cms['faqItems']) && is_array($cms['faqItems']) && count($cms['faqItems']) > 0)
+                    <div class="pub-faq-grid">
+                        @foreach($cms['faqItems'] as $faqIdx => $faq)
+                            <div class="pub-faq-item {{ $faqIdx === 0 ? 'active' : '' }}" id="faq-item-{{ $faqIdx }}">
+                                <button type="button" class="pub-faq-trigger" onclick="toggleFaq({{ $faqIdx }})" aria-expanded="{{ $faqIdx === 0 ? 'true' : 'false' }}">
+                                    <span class="pub-faq-q-text">{{ $faq['question'] ?? '' }}</span>
+                                    <span class="pub-faq-icon">
+                                        <i class="fas fa-plus"></i>
+                                    </span>
+                                </button>
+                                <div class="pub-faq-answer" style="{{ $faqIdx === 0 ? 'max-height: 500px; opacity: 1; padding-top: 1rem;' : 'max-height: 0; opacity: 0; padding-top: 0;' }}">
+                                    <p>{{ $faq['answer'] ?? '' }}</p>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="pub-client-row">
-                        <div class="pub-client-avatar">RH</div>
-                        <div>
-                            <h4 class="pub-client-name">Rashid Al-Hassan</h4>
-                            <p class="pub-client-service">Managing Partner, The Gentlemen Club Chain</p>
-                        </div>
-                    </div>
+                @endif
+
+                <!-- FAQ Support Callout -->
+                <div class="pub-faq-footer-help">
+                    <span>Still have questions about your specific salon setup?</span>
+                    <a href="{{ route('contact') }}" class="pub-faq-help-link">
+                        <span>Talk to our Concierge Team</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -554,16 +575,16 @@
     <section class="pub-cta-banner">
         <div class="pub-container">
             <div class="pub-cta-banner-content">
-                <span class="pub-cta-banner-tag">Transform Your Business</span>
+                <span class="pub-cta-banner-tag">{{ $cms['ctaBannerTag'] ?? 'Transform Your Business' }}</span>
                 <h2 class="pub-cta-banner-title">
-                    Ready to Modernize Your Salon Operations?
+                    {{ $cms['ctaBannerTitle'] ?? 'Ready to Modernize Your Salon Operations?' }}
                 </h2>
                 <p class="pub-cta-banner-desc">
-                    Join over 15,000 salon and barbershop owners who trust us with their bookings, payments, and client relationships.
+                    {{ $cms['ctaBannerSubtitle'] ?? 'Join over 15,000 salon and barbershop owners who trust us with their bookings, payments, and client relationships.' }}
                 </p>
                 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
-                    <a href="{{ route('saas.register') }}" class="pub-btn-gold" style="padding: 1rem 2.5rem; font-size: 1rem;">
-                        <span>Register Salon Now</span>
+                    <a href="{{ $cms['ctaBannerBtnUrl'] ?? route('saas.register') }}" class="pub-btn-gold" style="padding: 1rem 2.5rem; font-size: 1rem;">
+                        <span>{{ $cms['ctaBannerBtnText'] ?? 'Register Salon Now' }}</span>
                         <i class="fas fa-arrow-right" style="font-size: 0.85rem;"></i>
                     </a>
                     <a href="{{ route('contact') }}" class="pub-btn-outline" style="padding: 1rem 2.2rem; font-size: 1rem; color: #ffffff !important; border-color: rgba(255,255,255,0.25);">
