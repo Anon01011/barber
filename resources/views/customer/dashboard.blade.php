@@ -98,7 +98,7 @@
                                     @else
                                         <span class="badge bg-secondary text-white-50" style="font-size: 0.7rem;">Min {{ $minPointsToRedeem ?? 50 }} pts to redeem</span>
                                     @endif
-                                    <span class="badge bg-white bg-opacity-15 text-white" style="font-size: 0.7rem;">
+                                    <span class="badge shadow-none" style="background: rgba(15, 23, 42, 0.5) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; font-size: 0.72rem; font-weight: 500;">
                                         <i class="fas fa-hourglass-half me-1 text-warning"></i>
                                         @if(($loyaltyExpiryMonths ?? 12) > 0)
                                             Points valid for {{ $loyaltyExpiryMonths ?? 12 }} months
