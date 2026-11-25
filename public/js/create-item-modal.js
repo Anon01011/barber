@@ -91,11 +91,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (currentTabIndex === tabs.length - 1) {
             if (nextBtn) nextBtn.style.display = 'none';
-            if (saveBtn) saveBtn.style.display = 'inline-block';
         } else {
             if (nextBtn) nextBtn.style.display = 'inline-block';
-            if (saveBtn) saveBtn.style.display = 'none';
         }
+        // Save button is always visible so user can save at any step
+        if (saveBtn) saveBtn.style.display = 'inline-block';
     }
 
     function validateTab(index) {
@@ -150,8 +150,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 alertEl.classList.add('d-none');
                 alertEl.classList.remove('show');
             }, 5000);
+        } else if (typeof window.showModalAlert === 'function') {
+            window.showModalAlert(message.replace(/<[^>]*>?/gm, ''), type === 'danger' ? 'error' : type);
+        } else if (window.notifications && typeof window.notifications.show === 'function') {
+            window.notifications.show(message.replace(/<[^>]*>?/gm, ''), type === 'danger' ? 'error' : type);
         } else {
-            alert(message.replace(/<[^>]*>?/gm, ''));
+            console.warn('[ModalAlert fallback]:', message);
         }
     }
 
@@ -290,12 +294,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function calculateMargin() {
         const cost = parseFloat(costInput.value) || 0;
         const price = parseFloat(priceInput.value) || 0;
+        const sym = window.appCurrencySymbol || window.currencySymbol || '$';
 
         if (price > 0) {
             const profit = price - cost;
             const margin = (profit / price) * 100;
 
-            profitDisplay.textContent = `$${profit.toFixed(2)} (${margin.toFixed(1)}%)`;
+            profitDisplay.textContent = `${sym}${profit.toFixed(2)} (${margin.toFixed(1)}%)`;
 
             if (profit < 0) {
                 profitDisplay.classList.remove('text-white');
@@ -305,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 profitDisplay.classList.add('text-white');
             }
         } else {
-            profitDisplay.textContent = '$0.00 (0%)';
+            profitDisplay.textContent = `${sym}0.00 (0%)`;
         }
     }
 

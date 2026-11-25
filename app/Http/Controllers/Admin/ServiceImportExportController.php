@@ -57,7 +57,7 @@ class ServiceImportExportController extends Controller
                 $records[] = $record;
             }
 
-            $salonId = auth()->user()->salon_id;
+            $salonId = $this->getSalonId();
             $results = $this->importService->import($records, $salonId);
 
             if ($results['failed'] > 0) {
@@ -83,14 +83,14 @@ class ServiceImportExportController extends Controller
     }
 
     /**
-     * Export all services to CSV
+     * Export all services to CSV including assigned backbar recipes/consumable products.
      */
     public function export()
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = $this->getSalonId();
         
         $services = \App\Models\Service::where('salon_id', $salonId)
-            ->with('category')
+            ->with(['category', 'recipeItems.inventoryItem'])
             ->get();
 
         $csv = Writer::createFromFileObject(new SplTempFileObject());
@@ -104,7 +104,8 @@ class ServiceImportExportController extends Controller
             'Price', 
             'Duration (mins)', 
             'Status', 
-            'Online Booking'
+            'Online Booking',
+            'Assigned Products (Recipe: SKU:Qty:Unit:Chargeable:ExtraPrice)'
         ]);
 
         $sanitizeRow = function (array $row) {
@@ -117,6 +118,19 @@ class ServiceImportExportController extends Controller
         };
 
         foreach ($services as $service) {
+            $recipeParts = [];
+            if ($service->recipeItems) {
+                foreach ($service->recipeItems as $recipe) {
+                    $sku = $recipe->inventoryItem?->sku ?? $recipe->inventoryItem?->name;
+                    if ($sku) {
+                        $isCharge = $recipe->is_billable_extra ? 'yes' : 'no';
+                        $extraPrice = number_format((float)($recipe->extra_price_per_unit ?? 0), 2, '.', '');
+                        $recipeParts[] = "{$sku}:{$recipe->quantity}:{$recipe->unit}:{$isCharge}:{$extraPrice}";
+                    }
+                }
+            }
+            $recipeString = implode(' | ', $recipeParts);
+
             $csv->insertOne($sanitizeRow([
                 $service->category->name ?? '',
                 $service->category->description ?? '',
@@ -125,7 +139,8 @@ class ServiceImportExportController extends Controller
                 number_format($service->price, 2, '.', ''),
                 $service->duration,
                 $service->status,
-                $service->available_for_online_booking ? 'yes' : 'no'
+                $service->available_for_online_booking ? 'yes' : 'no',
+                $recipeString
             ]));
         }
 
@@ -133,5 +148,26 @@ class ServiceImportExportController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="services_export.csv"',
         ]);
+    }
+
+    /**
+     * Resolve current salon ID safely across all authentication and tenant contexts.
+     */
+    protected function getSalonId(): int
+    {
+        $salonId = app()->bound('current_salon') && app('current_salon')
+            ? app('current_salon')->id
+            : (auth()->user()?->salon_id ?? session('current_salon_id'));
+
+        if (!$salonId && request()->route('salon_slug')) {
+            $salon = \App\Models\Salon::where('slug', request()->route('salon_slug'))->first();
+            $salonId = $salon?->id;
+        }
+
+        if (!$salonId) {
+            abort(404, 'Salon context not found.');
+        }
+
+        return (int) $salonId;
     }
 }

@@ -18,8 +18,16 @@ class AnalyticsController extends Controller
      */
     public function index(Request $request)
     {
-        // Get current salon ID from authenticated user
-        $salonId = auth()->user()->salon_id;
+        // Resolve salon ID safely (supports super admin impersonation & current_salon binding)
+        if (app()->bound('current_salon') && app('current_salon')) {
+            $salonId = app('current_salon')->id;
+        } else {
+            $salonId = auth()->user()?->salon_id ?? session('current_salon_id');
+            if (!$salonId && request()->route('salon_slug')) {
+                $salon = \App\Models\Salon::where('slug', request()->route('salon_slug'))->first();
+                $salonId = $salon?->id;
+            }
+        }
 
         // Get date range from request or default to last 30 days
         $endDate = $request->filled('end_date')
@@ -177,37 +185,50 @@ class AnalyticsController extends Controller
      */
     private function getTopProducts($startDate, $endDate, $salonId, $limit = 5)
     {
-        return PosSaleItem::select(
-            'item_name as name',
-            DB::raw('COALESCE(SUM(quantity), 0) as total_quantity'),
-            DB::raw('COALESCE(SUM(total), 0) as total_revenue')
-        )
-            ->whereHas('sale', function ($query) use ($salonId) {
-                $query->where('salon_id', $salonId);
-            })
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('item_name')
+        return DB::table('pos_sale_items')
+            ->join('pos_sales', 'pos_sales.id', '=', 'pos_sale_items.sale_id')
+            ->where('pos_sales.salon_id', $salonId)
+            ->where('pos_sales.status', '!=', 'voided')
+            ->whereBetween('pos_sales.sale_date', [$startDate, $endDate])
+            ->select(
+                'pos_sale_items.item_name as name',
+                DB::raw('COALESCE(SUM(pos_sale_items.quantity), 0) as total_quantity'),
+                DB::raw('ROUND(COALESCE(SUM(
+                    pos_sale_items.total - (
+                        CASE WHEN pos_sales.subtotal > 0 AND pos_sales.discount > 0 
+                        THEN (pos_sale_items.total / pos_sales.subtotal) * pos_sales.discount 
+                        ELSE 0 END
+                    )
+                ), 0), 2) as total_revenue')
+            )
+            ->groupBy('pos_sale_items.item_name')
             ->orderBy('total_quantity', 'desc')
             ->limit($limit)
             ->get();
     }
 
     /**
-     * Get sales by category (Service vs Product)
+     * Get sales by category (Service vs Product vs Package)
      */
     private function getSalesByCategory($startDate, $endDate, $salonId)
     {
-        // Group by item_type (App\Models\Service vs App\Models\InventoryItem)
-        return PosSaleItem::select(
-            'item_type',
-            DB::raw('COALESCE(SUM(quantity), 0) as total_quantity'),
-            DB::raw('COALESCE(SUM(total), 0) as total_revenue')
-        )
-            ->whereHas('sale', function ($query) use ($salonId) {
-                $query->where('salon_id', $salonId);
-            })
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('item_type')
+        return DB::table('pos_sale_items')
+            ->join('pos_sales', 'pos_sales.id', '=', 'pos_sale_items.sale_id')
+            ->where('pos_sales.salon_id', $salonId)
+            ->where('pos_sales.status', '!=', 'voided')
+            ->whereBetween('pos_sales.sale_date', [$startDate, $endDate])
+            ->select(
+                'pos_sale_items.item_type',
+                DB::raw('COALESCE(SUM(pos_sale_items.quantity), 0) as total_quantity'),
+                DB::raw('ROUND(COALESCE(SUM(
+                    pos_sale_items.total - (
+                        CASE WHEN pos_sales.subtotal > 0 AND pos_sales.discount > 0 
+                        THEN (pos_sale_items.total / pos_sales.subtotal) * pos_sales.discount 
+                        ELSE 0 END
+                    )
+                ), 0), 2) as total_revenue')
+            )
+            ->groupBy('pos_sale_items.item_type')
             ->orderBy('total_revenue', 'desc')
             ->get()
             ->map(function ($item) {

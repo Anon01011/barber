@@ -29,7 +29,8 @@ class CheckModuleEnabled
                 ], 403);
             }
 
-            return redirect()->route('admin.dashboard')
+            $salonSlug = $request->route('salon_slug') ?? (auth()->user()?->salon?->slug);
+            return redirect()->route('admin.dashboard', ['salon_slug' => $salonSlug])
                 ->with('error', 'This module is currently disabled by the system administrator.');
         }
 

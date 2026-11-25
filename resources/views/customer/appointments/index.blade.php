@@ -44,9 +44,9 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 class="text-muted small mb-1">Upcoming</h6>
-                                                <h5 class="mb-0 text-white">{{ $stats['upcoming'] }}</h5>
+                                                <h5 class="mb-0 text-success">{{ $stats['upcoming'] }}</h5>
                                             </div>
-                                            <i class="fas fa-clock text-white"></i>
+                                            <i class="fas fa-clock text-success"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -121,7 +121,7 @@
                                     <tbody class="border-top-0">
                                         @php
                                             $statusIcons = [
-                                                'completed' => 'check-circle text-white',
+                                                'completed' => 'check-circle text-success',
                                                 'cancelled' => 'times-circle text-danger',
                                                 'confirmed' => 'check-circle text-info',
                                                 'pending' => 'clock text-warning'

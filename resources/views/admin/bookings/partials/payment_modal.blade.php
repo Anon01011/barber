@@ -3,10 +3,10 @@
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header border-0 p-4 text-white"
-                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-bottom: 1.5px solid rgba(197, 168, 128, 0.35) !important;">
                 <div>
-                    <h5 class="modal-title fw-bold mb-0" id="paymentModalLabel">
-                        <i class="fas fa-wallet me-2"></i>Complete Payment
+                    <h5 class="modal-title fw-bold mb-0 text-white" id="paymentModalLabel">
+                        <i class="fas fa-wallet me-2" style="color: var(--theme-accent, #c5a880);"></i>Complete Payment
                     </h5>
                 </div>
                 <button type="button" class="btn-close btn-close-white opacity-100" data-bs-dismiss="modal"
@@ -92,7 +92,7 @@
                             <div class="border-top border-dashed my-2"></div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold">Total</span>
-                                <span class="fw-bold fs-5 text-primary"
+                                <span class="fw-bold fs-5" style="color: var(--theme-accent, #c5a880);"
                                     id="total_amount">{{ currency_symbol() }}0.00</span>
                             </div>
                         </div>
@@ -100,11 +100,10 @@
                 </form>
             </div>
             <div class="modal-footer border-0 bg-light p-4 pt-0">
-                <button type="button" class="btn btn-light flex-grow-1 rounded-3 fw-medium py-2"
+                <button type="button" class="btn btn-outline-secondary flex-grow-1 rounded-3 fw-medium py-2"
                     data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary flex-grow-1 rounded-3 fw-bold shadow-sm py-2"
-                    id="confirmPaymentBtn"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                <button type="button" class="btn btn-luxury flex-grow-1 rounded-3 fw-bold shadow-sm py-2"
+                    id="confirmPaymentBtn">
                     Complete <i class="fas fa-arrow-right ms-1"></i>
                 </button>
             </div>

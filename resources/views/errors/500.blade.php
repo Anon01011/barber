@@ -35,16 +35,18 @@
         }
         .btn {
             display: inline-block;
-            padding: 0.5rem 1rem;
-            background-color: #4f46e5;
-            color: white;
+            padding: 0.65rem 1.4rem;
+            background: linear-gradient(135deg, #c5a880 0%, #b38e5d 100%);
+            color: #0b0f17;
             text-decoration: none;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(197, 168, 128, 0.25);
+            transition: all 0.2s ease;
         }
         .btn:hover {
-            background-color: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(197, 168, 128, 0.35);
         }
     </style>
 </head>

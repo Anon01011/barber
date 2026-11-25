@@ -26,7 +26,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
-                                <div class="avatar avatar-lg bg-success-subtle text-white rounded">
+                                <div class="avatar avatar-lg bg-success-subtle text-success rounded">
                                     <i class="fas fa-check-circle"></i>
                                 </div>
                             </div>
@@ -79,10 +79,10 @@
                     <div class="card-body text-center py-5">
                         <h4 class="mb-3">Need to book an appointment?</h4>
                         <p class="text-muted mb-4">Quick and easy booking process - just a few clicks away!</p>
-                        <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal"
+                        <x-btn type="button" variant="primary" size="lg" icon="fas fa-calendar-plus" data-bs-toggle="modal"
                             data-bs-target="#quickBookModal">
-                            <i class="fas fa-calendar-plus me-2"></i>Book Appointment Now
-                        </button>
+                            Book Appointment Now
+                        </x-btn>
                     </div>
                 </div>
             </div>
@@ -267,10 +267,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-calendar-check me-2"></i>Book Appointment
-                        </button>
+                        <x-btn type="button" variant="light" data-bs-dismiss="modal">Cancel</x-btn>
+                        <x-btn type="submit" variant="primary" icon="fas fa-calendar-check">
+                            Book Appointment
+                        </x-btn>
                     </div>
                 </form>
             </div>
@@ -295,7 +295,9 @@
                             url: '/customer/api/appointments',
                             method: 'GET',
                             failure: function () {
-                                alert('There was an error fetching events!');
+                                if (window.notifications) {
+                                    window.notifications.show('Failed to fetch calendar events', 'error');
+                                }
                             }
                         },
                         eventClick: function (info) {
@@ -388,7 +390,11 @@
                                 if (modal) modal.hide();
 
                                 // Show success message
-                                alert('Appointment booked successfully!');
+                                if (window.notifications) {
+                                    window.notifications.show('Appointment booked successfully!', 'success');
+                                } else {
+                                    window.showModalAlert('Appointment booked successfully!', 'success');
+                                }
 
                                 // Refresh the calendar if it exists
                                 if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
@@ -408,7 +414,12 @@
                         })
                         .catch(error => {
 
-                            alert(error.message || 'Failed to book appointment. Please try again.');
+                            const errMsg = error.message || 'Failed to book appointment. Please try again.';
+                            if (window.notifications) {
+                                window.notifications.show(errMsg, 'error');
+                            } else {
+                                window.showModalAlert(errMsg, 'error');
+                            }
                         })
                         .finally(() => {
                             // Reset button state

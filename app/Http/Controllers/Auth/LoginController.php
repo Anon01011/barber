@@ -30,7 +30,13 @@ class LoginController extends Controller
             }
         }
 
-        return view('auth.login');
+        $settings = app(\App\Services\SettingsService::class);
+        $appName = $settings->get('app_name', config('app.name', 'SalonPro'));
+        $appLogo = $settings->getLogoUrl();
+        $faviconUrl = $settings->getFaviconUrl();
+        $activeRole = $request->query('role', 'salon');
+
+        return view('auth.login', compact('settings', 'appName', 'appLogo', 'faviconUrl', 'activeRole'));
     }
 
     public function showAdminLoginForm(Request $request)
@@ -47,7 +53,13 @@ class LoginController extends Controller
             }
         }
 
-        return view('auth.admin-login');
+        $settings = app(\App\Services\SettingsService::class);
+        $appName = $settings->get('app_name', config('app.name', 'SalonPro'));
+        $appLogo = $settings->getLogoUrl();
+        $faviconUrl = $settings->getFaviconUrl();
+        $activeRole = 'admin';
+
+        return view('auth.admin-login', compact('settings', 'appName', 'appLogo', 'faviconUrl', 'activeRole'));
     }
 
     public function adminLogin(Request $request)
@@ -83,6 +95,11 @@ class LoginController extends Controller
                 // Route Super Admin to Super Admin dashboard
                 if ($user->hasRole('super_admin')) {
                     return redirect()->intended('/admin/dashboard');
+                }
+
+                // Route customer portal users to their dashboard
+                if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'manager', 'employee', 'super_admin'])) {
+                    return redirect()->route('customer.dashboard');
                 }
 
                 // SaaS Check for salon users
@@ -196,6 +213,11 @@ class LoginController extends Controller
             if ($user->hasRole('super_admin')) {
                 // Super Admin - no salon context needed
                 return redirect()->intended('/admin/dashboard');
+            }
+
+            // Route customer portal users to their dashboard
+            if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'manager', 'employee', 'super_admin'])) {
+                return redirect()->route('customer.dashboard');
             }
 
             // SaaS Check for salon users

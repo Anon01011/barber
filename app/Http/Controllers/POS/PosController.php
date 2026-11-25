@@ -49,15 +49,54 @@ class PosController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // 2. Optimize Services: Select needed columns, eager load category and staff
-        $services = Service::active()
+        $salon = (app()->bound('current_salon') && app('current_salon') && app('current_salon')->id == $salonId)
+            ? app('current_salon')
+            : Salon::find($salonId);
+
+        $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+            && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+        // 2. Optimize Services: Select needed columns, eager load category, staff, and recipe if inventory enabled
+        $servicesQuery = Service::active()
             ->where('salon_id', $salonId)
             ->with([
                 'category:id,name',
                 'staff:users.id,users.name'
-            ])
+            ]);
+
+        if ($inventoryEnabled) {
+            $servicesQuery->with(['recipeItems.inventoryItem']);
+        }
+
+        $services = $servicesQuery
             ->select('id', 'name', 'duration', 'price', 'category_id', 'salon_id')
-            ->get();
+            ->get()
+            ->map(function ($service) use ($inventoryEnabled) {
+                if ($inventoryEnabled && $service->recipeItems && $service->recipeItems->isNotEmpty()) {
+                    $service->estimated_cogs = $service->calculateEstimatedCogs();
+                    $service->consumables_summary = $service->recipeItems->map(function ($r) {
+                        $isBillable = (bool) $r->is_billable_extra;
+                        $extraPrice = (float) ($r->extra_price_per_unit ?? 0);
+                        $qty = (float) $r->quantity;
+                        $billableTotal = $isBillable ? round($extraPrice * $qty, 2) : 0.00;
+                        return [
+                            'name' => $r->inventoryItem->name ?? 'Consumable',
+                            'quantity' => $qty,
+                            'unit' => $r->unit,
+                            'cost' => (float) $r->estimated_cost,
+                            'is_billable_extra' => $isBillable,
+                            'extra_price_per_unit' => $extraPrice,
+                            'billable_total' => $billableTotal,
+                        ];
+                    });
+                    $service->billable_materials = (float) $service->consumables_summary->where('is_billable_extra', true)->sum('billable_total');
+                } else {
+                    $service->estimated_cogs = 0;
+                    $service->consumables_summary = [];
+                    $service->billable_materials = 0;
+                }
+                return $service;
+            });
 
         $categories = \App\Models\ServiceCategory::where('salon_id', $salonId)
             ->where('status', 'active')
@@ -78,13 +117,16 @@ class PosController extends Controller
             ->limit(100)
             ->get();
 
-        // 3. Optimize Products: Select only needed columns and eager load category with limit
-        $products = InventoryItem::with(['category:id,name'])
-            ->where('salon_id', $salonId)
-            ->where('is_active', true)
-            ->where('quantity_in_stock', '>', 0)
-            ->select('id', 'name', 'selling_price', 'quantity_in_stock', 'sku', 'category_id', 'salon_id')
-            ->get();
+        // 3. Optimize Products: Only load if inventory is enabled for the salon (retail and dual-use only)
+        $products = $inventoryEnabled
+            ? InventoryItem::with(['category:id,name'])
+                ->where('salon_id', $salonId)
+                ->where('is_active', true)
+                ->where('quantity_in_stock', '>', 0)
+                ->whereIn('product_type', ['retail', 'dual'])
+                ->select('id', 'name', 'selling_price', 'quantity_in_stock', 'sku', 'category_id', 'salon_id')
+                ->get()
+            : collect();
 
         // 4. Optimize Packages: Select columns and AVOID N+1 in calculation
         $packages = Package::active()
@@ -239,7 +281,7 @@ class PosController extends Controller
             $viewName = 'pos.index';
         }
 
-        return view($viewName, compact('services', 'categories', 'todayBookings', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton', 'bookingDate'));
+        return view($viewName, compact('services', 'categories', 'todayBookings', 'products', 'packages', 'memberships', 'customers', 'customersJson', 'staff', 'salonId', 'taxEnabled', 'taxEnabledPos', 'taxEnabledServices', 'taxRate', 'taxName', 'salonData', 'currencySymbol', 'acceptCash', 'acceptCard', 'acceptOnline', 'tipEnabled', 'posReceiptArabic', 'posReceiptArabicButton', 'bookingDate', 'inventoryEnabled'));
     }
 
     /**
@@ -573,7 +615,7 @@ class PosController extends Controller
                             'id' => $b->service_id,
                             'type' => 'service',
                             'quantity' => 1
-                        ], $membership);
+                        ], $membership, $customerMembership);
 
                         if ($discount >= $servicePrice && $servicePrice > 0) {
                             $isCoveredByMembership = true;
@@ -662,14 +704,49 @@ class PosController extends Controller
             'online_amount' => 'nullable|numeric|min:0',
             'other_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
-            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->input('discount_type') === 'percent' && (float)$value > 100) {
+                        $fail('Percentage discount cannot exceed 100%.');
+                    }
+                }
+            ],
             'discount_type' => 'nullable|in:fixed,percent',
             'payment_method' => 'nullable|string|in:cash,card,online,other,mixed,none,package',
             'tendered_amount' => 'nullable|numeric|min:0',
             'change_amount' => 'nullable|numeric|min:0',
         ]);
 
-        // Initialize array to track low stock products for notification
+        // Enforce customer selection for package and membership purchases (ISSUE-01)
+        $hasPackageOrMembership = collect($validated['items'])->contains(function ($item) {
+            return in_array($item['type'] ?? '', ['package', 'membership']);
+        });
+        if ($hasPackageOrMembership && empty($validated['customer_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A customer must be selected to purchase a package or membership.'
+            ], 422);
+        }
+
+        // Enforce plan check for retail products in POS checkout (ISSUE-08)
+        $hasProduct = collect($validated['items'])->contains(fn($item) => ($item['type'] ?? '') === 'product');
+        if ($hasProduct) {
+            $salonModel = (app()->bound('current_salon') && app('current_salon') && app('current_salon')->id == $salonId)
+                ? app('current_salon')
+                : \App\Models\Salon::find($salonId);
+            $canUseInventory = \App\Helpers\ModuleHelper::inventoryEnabled()
+                && (!$salonModel || $salonModel->canUseFeature('Inventory Management'));
+            if (!$canUseInventory) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The Inventory Management module is not included in your current subscription plan. Cannot sell retail products.'
+                ], 422);
+            }
+        }
+
         // Initialize array to track low stock products for notification
         $lowStockProducts = [];
 
@@ -785,12 +862,22 @@ class PosController extends Controller
                                 ->unique()
                                 ->toArray();
 
+                            // Track retained consumables for unchanged service lines to avoid churn/double-deduction
+                            $retainedServiceConsumables = [];
+
                             // Reverse inventory for existing items before clearing them
                             foreach ($sale->items as $existingItem) {
-                                if ($existingItem->item_type === 'App\Models\InventoryItem') {
-                                    $inventoryItem = \App\Models\InventoryItem::find($existingItem->item_id);
+                                if ($existingItem->item_type === 'App\Models\InventoryItem' || $existingItem->saleable_type === 'App\Models\InventoryItem') {
+                                    $inventoryItem = \App\Models\InventoryItem::find($existingItem->item_id ?? $existingItem->saleable_id);
                                     if ($inventoryItem) {
                                         $inventoryItem->increment('quantity_in_stock', $existingItem->quantity);
+
+                                        if ($sale->branch_id) {
+                                            \DB::table('branch_inventory_item')
+                                                ->where('inventory_item_id', $inventoryItem->id)
+                                                ->where('branch_id', $sale->branch_id)
+                                                ->increment('quantity', $existingItem->quantity);
+                                        }
 
                                         // Record reversal transaction
                                         $this->recordInventoryTransaction(
@@ -802,6 +889,52 @@ class PosController extends Controller
                                             'Stock returned from updated sale #' . $sale->invoice_number,
                                             $existingItem->unit_price
                                         );
+                                    }
+                                } elseif ($existingItem->item_type === 'App\Models\Service' || $existingItem->saleable_type === 'App\Models\Service') {
+                                    $existingServiceId = $existingItem->item_id ?? $existingItem->saleable_id;
+                                    // Check if this exact service line is still present with the same quantity in incoming items
+                                    $matchingIncoming = collect($validated['items'])->first(function ($inc) use ($existingServiceId, $existingItem) {
+                                        return ($inc['type'] ?? '') === 'service'
+                                            && (string)($inc['id'] ?? '') === (string)$existingServiceId
+                                            && (float)($inc['quantity'] ?? 0) === (float)$existingItem->quantity;
+                                    });
+
+                                    if ($matchingIncoming && $existingItem->consumables->isNotEmpty()) {
+                                        // Retain consumables without reversing or deleting for unchanged service lines
+                                        $retainedServiceConsumables[$existingServiceId][] = $existingItem->consumables;
+                                    } else {
+                                        foreach ($existingItem->consumables as $cons) {
+                                            $consItem = \App\Models\InventoryItem::find($cons->inventory_item_id);
+                                            if ($consItem) {
+                                                $stockRestockQty = ($consItem->unit_type !== 'base_unit' && (float)$consItem->pack_capacity > 0)
+                                                    ? ($cons->quantity_used / (float)$consItem->pack_capacity)
+                                                    : $cons->quantity_used;
+
+                                                $consItem->increment('quantity_in_stock', $stockRestockQty);
+
+                                                if ($sale->branch_id) {
+                                                    \DB::table('branch_inventory_item')
+                                                        ->where('inventory_item_id', $consItem->id)
+                                                        ->where('branch_id', $sale->branch_id)
+                                                        ->increment('quantity', $stockRestockQty);
+                                                }
+
+                                                $costPerStockUnit = ($stockRestockQty > 0)
+                                                    ? ((float) $cons->total_cost / $stockRestockQty)
+                                                    : (float) $cons->unit_cost;
+
+                                                $this->recordInventoryTransaction(
+                                                    $consItem->id,
+                                                    $stockRestockQty,
+                                                    'service_consumption',
+                                                    $sale->id,
+                                                    \App\Models\PosSale::class,
+                                                    'Recipe stock restored from updated sale #' . $sale->invoice_number,
+                                                    $costPerStockUnit
+                                                );
+                                            }
+                                            $cons->delete();
+                                        }
                                     }
                                 }
                             }
@@ -875,7 +1008,7 @@ class PosController extends Controller
 
                             // Apply membership discount if applicable
                             if ($customerMembership && $customerMembership->membership) {
-                                $membershipDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership);
+                                $membershipDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership, $customerMembership);
                                 if ($lineDiscount < $membershipDiscount) {
                                     $lineDiscount = $membershipDiscount;
                                 }
@@ -948,7 +1081,7 @@ class PosController extends Controller
                                     $sale->id,
                                     \App\Models\PosSale::class,
                                     'Sold via POS',
-                                    (float) $unitPrice
+                                    (float) ($product->purchase_price ?? $unitPrice)
                                 );
 
                                 $grossSubtotal += $lineGross;
@@ -1066,13 +1199,14 @@ class PosController extends Controller
                                         $endDate->addYears($membership->validity_value);
                                     }
 
-                                    // Create new membership assignment
+                                    // Create new membership assignment (ISSUE-04: Activated only when payment is confirmed)
                                     CustomerMembership::create([
+                                        'salon_id' => $salonId,
                                         'customer_id' => $customer->id,
                                         'membership_id' => $membership->id,
                                         'start_date' => $startDate,
                                         'end_date' => $endDate,
-                                        'is_active' => true,
+                                        'is_active' => false,
                                         'assigned_by' => auth()->id(),
                                     ]);
                                 }
@@ -1108,12 +1242,42 @@ class PosController extends Controller
                                     }
                                 }
 
+                                // Validate remaining package balance against line quantity (ISSUE-05)
+                                if ($packageId && !empty($validated['customer_id'])) {
+                                    $availablePkgQty = (float) \App\Models\CustomerPackageBalance::where('customer_id', $validated['customer_id'])
+                                        ->where('package_id', $packageId)
+                                        ->where('service_id', $service->id)
+                                        ->where('quantity_remaining', '>', 0)
+                                        ->where('payment_status', 'paid')
+                                        ->where(function ($query) {
+                                            $query->whereNull('expiry_date')
+                                                ->orWhere('expiry_date', '>=', now()->toDateString());
+                                        })
+                                        ->sum('quantity_remaining');
+
+                                    if ($availablePkgQty > 0 && (float)$item['quantity'] > $availablePkgQty) {
+                                        throw new \Exception("Cannot redeem {$item['quantity']} sessions for {$service->name}. Only {$availablePkgQty} remaining in package balance. Please add remaining units as a separate service.");
+                                    }
+                                }
+
                                 // Check if service is 100% covered by membership
                                 $isCoveredByMembership = false;
                                 if ($customerMembership && $customerMembership->membership) {
-                                    $memDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership);
+                                    $memDiscount = $this->calculateMembershipDiscount($item, $customerMembership->membership, $customerMembership);
                                     if ($memDiscount >= $service->price && $service->price > 0) {
                                         $isCoveredByMembership = true;
+                                    }
+                                }
+
+                                // Check if service has billable extra consumables
+                                $serviceBillableExtraPerUnit = 0.0;
+                                $salonModel = app()->bound('current_salon') && app('current_salon') ? app('current_salon') : \App\Models\Salon::find($salonId);
+                                $canUseInventory = \App\Helpers\ModuleHelper::inventoryEnabled() 
+                                    && (!$salonModel || $salonModel->canUseFeature('Inventory Management'));
+
+                                if ($canUseInventory && $service->recipeItems()->exists()) {
+                                    foreach ($service->recipeItems()->where('is_billable_extra', true)->get() as $br) {
+                                        $serviceBillableExtraPerUnit += round((float)($br->extra_price_per_unit ?? 0) * (float)$br->quantity, 2);
                                     }
                                 }
 
@@ -1122,7 +1286,7 @@ class PosController extends Controller
                                     $unitPrice = 0;
                                     $lineDiscount = 0;
                                 } else {
-                                    $unitPrice = $service->price;
+                                    $unitPrice = round((float)$service->price + $serviceBillableExtraPerUnit, 2);
                                 }
                                 $lineGross = round($unitPrice * $item['quantity'], 2);
                                 $lineNet = round($lineGross - $lineDiscount, 2);
@@ -1158,6 +1322,102 @@ class PosController extends Controller
 
                                     $saleItem->save();
                                     $items[] = $saleItem;
+
+                                    // Deduct stock for Service Recipe Consumables (Bill of Materials)
+                                    // Only deduct if salon has Inventory Management feature in their plan and module is enabled
+                                    $salonModel = app()->bound('current_salon') && app('current_salon') ? app('current_salon') : \App\Models\Salon::find($salonId);
+                                    $canUseInventory = \App\Helpers\ModuleHelper::inventoryEnabled() 
+                                        && (!$salonModel || $salonModel->canUseFeature('Inventory Management'));
+
+                                    // Check if consumables were retained from an unchanged service line during sale update
+                                    if (!empty($retainedServiceConsumables[$service->id])) {
+                                        $consumablesToRetain = is_array($retainedServiceConsumables[$service->id]) && isset($retainedServiceConsumables[$service->id][0])
+                                            ? array_shift($retainedServiceConsumables[$service->id])
+                                            : $retainedServiceConsumables[$service->id];
+
+                                        foreach ($consumablesToRetain as $retainedCons) {
+                                            $retainedCons->update([
+                                                'pos_sale_item_id' => $saleItem->id,
+                                                'staff_id' => $staffId,
+                                            ]);
+                                        }
+                                        if (empty($retainedServiceConsumables[$service->id])) {
+                                            unset($retainedServiceConsumables[$service->id]);
+                                        }
+                                    } else {
+                                        // Defer consumption if booking is paid in advance until completion
+                                        $isAdvanceBooking = false;
+                                        if (!empty($bId)) {
+                                            $booking = \App\Models\Booking::find($bId);
+                                            if ($booking && $booking->status !== 'completed' && $booking->start_time && $booking->start_time->isFuture()) {
+                                                $isAdvanceBooking = true;
+                                            }
+                                        }
+
+                                        if ($canUseInventory && !$isAdvanceBooking && $service->recipeItems()->exists()) {
+                                            $recipeItems = $service->recipeItems()->with('inventoryItem')->get();
+                                            foreach ($recipeItems as $recipeItem) {
+                                                $requiredQty = (float) $recipeItem->quantity * (float) $itemQty;
+                                                if ($requiredQty <= 0) continue;
+
+                                                $consumableItem = InventoryItem::lockForUpdate()->find($recipeItem->inventory_item_id);
+                                                if ($consumableItem) {
+                                                    $stockDeductQty = ($consumableItem->unit_type !== 'base_unit' && (float)$consumableItem->pack_capacity > 0)
+                                                        ? ($requiredQty / (float)$consumableItem->pack_capacity)
+                                                        : $requiredQty;
+
+                                                    $consumableItem->decrement('quantity_in_stock', $stockDeductQty);
+                                                    $consumableItem->refresh();
+
+                                                    if ($sale->branch_id) {
+                                                        \DB::table('branch_inventory_item')
+                                                            ->where('inventory_item_id', $consumableItem->id)
+                                                            ->where('branch_id', $sale->branch_id)
+                                                            ->decrement('quantity', $stockDeductQty);
+                                                    }
+
+                                                    if ($consumableItem->isLowStock()) {
+                                                        $notifyLowStock = $settings->get('notify_low_stock', true, $salonId);
+                                                        if ($notifyLowStock) {
+                                                            $lowStockProducts[] = $consumableItem;
+                                                        }
+                                                    }
+
+                                                    $costPerUnit = (float) ($consumableItem->cost_per_unit ?? $consumableItem->purchase_price ?? 0);
+                                                    $totalCost = round($requiredQty * $costPerUnit, 2);
+
+                                                    $billedAmount = ($unitPrice > 0 && $recipeItem->is_billable_extra) 
+                                                        ? round((float)($recipeItem->extra_price_per_unit ?? 0) * (float)$requiredQty, 2)
+                                                        : 0.00;
+
+                                                    \App\Models\PosSaleItemConsumable::create([
+                                                        'salon_id' => $salonId,
+                                                        'pos_sale_id' => $sale->id,
+                                                        'pos_sale_item_id' => $saleItem->id,
+                                                        'inventory_item_id' => $consumableItem->id,
+                                                        'staff_id' => $staffId,
+                                                        'quantity_used' => $requiredQty,
+                                                        'unit' => $recipeItem->unit ?? $consumableItem->base_unit ?? 'pcs',
+                                                        'unit_cost' => $costPerUnit,
+                                                        'total_cost' => $totalCost,
+                                                        'billed_amount' => $billedAmount,
+                                                    ]);
+
+                                                    $costPerStockUnit = ($stockDeductQty > 0) ? ($totalCost / $stockDeductQty) : $costPerUnit;
+
+                                                    $this->recordInventoryTransaction(
+                                                        $consumableItem->id,
+                                                        -$stockDeductQty,
+                                                        'service_consumption',
+                                                        $sale->id,
+                                                        \App\Models\PosSale::class,
+                                                        "Consumed for Service: {$service->name} (Sale #{$sale->invoice_number})",
+                                                        $costPerStockUnit
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
 
                                 $grossSubtotal += $lineGross;
@@ -1172,10 +1432,12 @@ class PosController extends Controller
 
                         if (!empty($validated['discount_amount'])) {
                             if (($validated['discount_type'] ?? 'fixed') === 'percent') {
-                                $overallDiscount = ($netBeforeGlobal * $validated['discount_amount']) / 100;
+                                $percent = min(100, (float)$validated['discount_amount']);
+                                $overallDiscount = ($netBeforeGlobal * $percent) / 100;
                             } else {
-                                $overallDiscount = min($validated['discount_amount'], $netBeforeGlobal);
+                                $overallDiscount = min((float)$validated['discount_amount'], $netBeforeGlobal);
                             }
+                            $overallDiscount = min($netBeforeGlobal, $overallDiscount);
                         }
 
                         // Adjust tax if global discount exists
@@ -1328,18 +1590,7 @@ class PosController extends Controller
                         */
 
                         // Payment method and status determination
-
-                        // If payment method is online/other and no amount was sent, assume full payment
-                        if ($paid <= 0 && $payable > 0) {
-                            if ($paymentMethod === 'online') {
-                                $online = $payable;
-                                $paid = $payable;
-                            } elseif ($paymentMethod === 'other') {
-                                $other = $payable;
-                                $paid = $payable;
-                            }
-                            $outstanding = round($payable - $paid, 2);
-                        }
+                        // (Implicit full-payment assumption on zero tender removed to prevent false 'paid' records)
 
                         if ($paid > 0) {
                             // Payment entered
@@ -1443,6 +1694,15 @@ class PosController extends Controller
                                     ->where('status', 'staff_completed')
                                     ->pluck('id')
                                     ->toArray();
+                            }
+
+                            // Activate pending memberships purchased in this sale upon confirmed payment (ISSUE-04)
+                            if (!empty($validated['customer_id'])) {
+                                CustomerMembership::where('customer_id', $validated['customer_id'])
+                                    ->where('salon_id', $salonId)
+                                    ->where('is_active', false)
+                                    ->where('created_at', '>=', now()->subMinutes(5))
+                                    ->update(['is_active' => true]);
                             }
 
                             // Unified Package Balance Logic: Handle both new purchases and consumption
@@ -1842,18 +2102,7 @@ class PosController extends Controller
 
                                             // Mark as paid
                                             $booking->markAsPaid($paymentMethod, $currentBookingTip);
-
-                                            // Manually increment customer total spent since completeWithPayment is not used
-                                            if ($booking->customer && !$booking->package_id) {
-                                                // If it's a package booking, amount is covered by package. Only increment if NOT package booking.
-                                                // But wait, markAsPaid doesn't handle this logic.
-                                                // We need to mirror completeWithPayment's logic for total_spent
-                                                $amountToIncrement = ($booking->amount ?? 0) + ($currentBookingTip ?? 0);
-                                                $booking->customer->increment('total_spent', $amountToIncrement);
-                                                $booking->customer->update(['last_visit_at' => now()]);
-                                            } elseif ($booking->customer && $currentBookingTip > 0) {
-                                                $booking->customer->increment('total_spent', $currentBookingTip);
-                                            }
+                                            // Note: Customer total_spent is updated globally at POS checkout (REV-09)
 
                                             $updatedCount++;
                                             \Log::info("Future booking {$booking->id} marked as PAID but not completed via POS");
@@ -2184,7 +2433,7 @@ class PosController extends Controller
      * @param Membership $membership
      * @return float
      */
-    protected function calculateMembershipDiscount($item, Membership $membership)
+    protected function calculateMembershipDiscount($item, Membership $membership, $customerMembership = null)
     {
         $discount = 0;
 
@@ -2198,23 +2447,50 @@ class PosController extends Controller
                 $service = Service::find($item['id']);
                 if ($service) {
                     $unitPrice = $service->price;
-                    $lineTotal = $unitPrice * $item['quantity'];
+                    $itemQty = (float)($item['quantity'] ?? 1);
 
-                    if (in_array($membershipService->pivot->discount_type, ['percentage', 'percent'])) {
-                        $discount = $lineTotal * ($membershipService->pivot->discount_value / 100);
-                    } elseif (in_array($membershipService->pivot->discount_type, ['fixed', 'amount'])) {
-                        $discount = min($membershipService->pivot->discount_value * $item['quantity'], $lineTotal);
-                    } elseif ($membershipService->pivot->discount_type === 'membership_price') {
-                        $membershipPrice = $membershipService->pivot->membership_price ?? 0;
-                        $discount = max(0, $lineTotal - ($membershipPrice * $item['quantity']));
+                    // Enforce session quantity limit if set on membership pivot
+                    $applicableQty = $itemQty;
+                    if (!empty($membershipService->pivot->quantity) && $customerMembership) {
+                        $usedCount = (float) PosSaleItem::join('pos_sales', 'pos_sale_items.sale_id', '=', 'pos_sales.id')
+                            ->where('pos_sales.customer_id', $customerMembership->customer_id)
+                            ->where('pos_sales.status', '!=', 'voided')
+                            ->whereBetween('pos_sales.created_at', [
+                                $customerMembership->start_date . ' 00:00:00',
+                                $customerMembership->end_date . ' 23:59:59'
+                            ])
+                            ->where('pos_sale_items.item_type', 'like', '%Service%')
+                            ->where('pos_sale_items.item_id', $item['id'])
+                            ->sum('pos_sale_items.quantity');
+
+                        $maxAllowed = (float) $membershipService->pivot->quantity;
+                        $remainingAllowed = max(0, $maxAllowed - $usedCount);
+                        $applicableQty = min($itemQty, $remainingAllowed);
+                    }
+
+                    if ($applicableQty > 0) {
+                        $lineTotal = $unitPrice * $applicableQty;
+
+                        if (in_array($membershipService->pivot->discount_type, ['percentage', 'percent'])) {
+                            $discount = $lineTotal * ($membershipService->pivot->discount_value / 100);
+                        } elseif (in_array($membershipService->pivot->discount_type, ['fixed', 'amount'])) {
+                            $discount = min($membershipService->pivot->discount_value * $applicableQty, $lineTotal);
+                        } elseif ($membershipService->pivot->discount_type === 'membership_price') {
+                            $membershipPrice = $membershipService->pivot->membership_price ?? 0;
+                            $discount = max(0, $lineTotal - ($membershipPrice * $applicableQty));
+                        }
+                    } elseif ($membership->discount_value > 0) {
+                        // Specified quota exhausted; fallback to general membership discount if configured
+                        $lineTotal = $unitPrice * $itemQty;
+                        $discount = $lineTotal * ($membership->discount_value / 100);
                     }
                 }
             } else {
                 // Apply general membership discount if no specific discount
                 $service = Service::find($item['id']);
-                if ($service) {
+                if ($service && $membership->discount_value > 0) {
                     $unitPrice = $service->price;
-                    $lineTotal = $unitPrice * $item['quantity'];
+                    $lineTotal = $unitPrice * ($item['quantity'] ?? 1);
                     $discount = $lineTotal * ($membership->discount_value / 100);
                 }
             }
@@ -2228,32 +2504,59 @@ class PosController extends Controller
                 $product = InventoryItem::find($item['id']);
                 if ($product) {
                     $unitPrice = $product->selling_price;
-                    $lineTotal = $unitPrice * $item['quantity'];
+                    $itemQty = (float)($item['quantity'] ?? 1);
 
-                    if (in_array($membershipProduct->pivot->discount_type, ['percentage', 'percent'])) {
-                        $discount = $lineTotal * ($membershipProduct->pivot->discount_value / 100);
-                    } elseif (in_array($membershipProduct->pivot->discount_type, ['fixed', 'amount'])) {
-                        $discount = min($membershipProduct->pivot->discount_value * $item['quantity'], $lineTotal);
-                    } elseif ($membershipProduct->pivot->discount_type === 'membership_price') {
-                        $membershipPrice = $membershipProduct->pivot->membership_price ?? 0;
-                        $discount = max(0, $lineTotal - ($membershipPrice * $item['quantity']));
+                    // Enforce session quantity limit if set on membership product pivot
+                    $applicableQty = $itemQty;
+                    if (!empty($membershipProduct->pivot->quantity) && $customerMembership) {
+                        $usedCount = (float) PosSaleItem::join('pos_sales', 'pos_sale_items.sale_id', '=', 'pos_sales.id')
+                            ->where('pos_sales.customer_id', $customerMembership->customer_id)
+                            ->where('pos_sales.status', '!=', 'voided')
+                            ->whereBetween('pos_sales.created_at', [
+                                $customerMembership->start_date . ' 00:00:00',
+                                $customerMembership->end_date . ' 23:59:59'
+                            ])
+                            ->where('pos_sale_items.item_type', 'like', '%InventoryItem%')
+                            ->where('pos_sale_items.item_id', $item['id'])
+                            ->sum('pos_sale_items.quantity');
+
+                        $maxAllowed = (float) $membershipProduct->pivot->quantity;
+                        $remainingAllowed = max(0, $maxAllowed - $usedCount);
+                        $applicableQty = min($itemQty, $remainingAllowed);
+                    }
+
+                    if ($applicableQty > 0) {
+                        $lineTotal = $unitPrice * $applicableQty;
+
+                        if (in_array($membershipProduct->pivot->discount_type, ['percentage', 'percent'])) {
+                            $discount = $lineTotal * ($membershipProduct->pivot->discount_value / 100);
+                        } elseif (in_array($membershipProduct->pivot->discount_type, ['fixed', 'amount'])) {
+                            $discount = min($membershipProduct->pivot->discount_value * $applicableQty, $lineTotal);
+                        } elseif ($membershipProduct->pivot->discount_type === 'membership_price') {
+                            $membershipPrice = $membershipProduct->pivot->membership_price ?? 0;
+                            $discount = max(0, $lineTotal - ($membershipPrice * $applicableQty));
+                        }
+                    } elseif ($membership->discount_value > 0) {
+                        // Product quota exhausted; fallback to general membership discount if configured
+                        $lineTotal = $unitPrice * $itemQty;
+                        $discount = $lineTotal * ($membership->discount_value / 100);
                     }
                 }
             } else {
                 // Apply general membership discount if no specific discount
                 $product = InventoryItem::find($item['id']);
-                if ($product) {
+                if ($product && $membership->discount_value > 0) {
                     $unitPrice = $product->selling_price;
-                    $lineTotal = $unitPrice * $item['quantity'];
+                    $lineTotal = $unitPrice * ($item['quantity'] ?? 1);
                     $discount = $lineTotal * ($membership->discount_value / 100);
                 }
             }
         } elseif ($item['type'] === 'package') {
             // For packages, apply general membership discount to the package price
             $package = Package::find($item['id']);
-            if ($package) {
+            if ($package && $membership->discount_value > 0) {
                 $unitPrice = $package->price;
-                $lineTotal = $unitPrice * $item['quantity'];
+                $lineTotal = $unitPrice * ($item['quantity'] ?? 1);
                 $discount = $lineTotal * ($membership->discount_value / 100);
             }
         } elseif ($item['type'] === 'membership') {
@@ -2261,7 +2564,7 @@ class PosController extends Controller
             $discount = 0;
         }
 
-        return $discount;
+        return round($discount, 2);
     }
 
     /**
@@ -2549,7 +2852,7 @@ class PosController extends Controller
     public function receipt($id)
     {
         $salonId = auth()->user()->salon_id;
-        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff'])->where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff', 'items.consumables.inventoryItem'])->where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
 
         $salon = auth()->user()->salon;
         $salonData = [
@@ -2579,7 +2882,7 @@ class PosController extends Controller
     public function arabicReceipt($id)
     {
         $salonId = auth()->user()->salon_id;
-        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff'])->where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff', 'items.consumables.inventoryItem'])->where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
 
         $salon = auth()->user()->salon;
         $salonData = [
@@ -2616,7 +2919,7 @@ class PosController extends Controller
         $user = auth()->user();
         $salonId = $user->salon_id;
         $query = PosSale::where('salon_id', $salonId)
-            ->with(['customer', 'employee'])
+            ->with(['customer', 'employee', 'items.consumables.inventoryItem'])
             ->withCount('items');
 
         // Restrict employees to only their own sales
@@ -2677,7 +2980,7 @@ class PosController extends Controller
     {
         $user = auth()->user();
         $salonId = $user->salon_id;
-        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff'])->where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::with(['customer', 'employee', 'items.item', 'items.staff', 'items.consumables.inventoryItem'])->where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
 
         if ($user->hasRole('employee') && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
             $isOwnSale = ($sale->employee_id == $user->id) || $sale->items->contains('staff_id', $user->id);
@@ -2706,7 +3009,7 @@ class PosController extends Controller
     /**
      * Show the form for editing the specified sale.
      *
-     * @param  int  $id
+     * @param  int|string  $id
      * @return \Illuminate\View\View
      */
     public function editSale($id)
@@ -2717,7 +3020,7 @@ class PosController extends Controller
         }
 
         $salonId = $user->salon_id;
-        $sale = PosSale::with(['customer', 'items.item', 'items.staff', 'items.booking'])->where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::with(['customer', 'items.item', 'items.staff', 'items.booking'])->where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
 
         $hasFutureBooking = $sale->items->whereNotNull('booking_id')->some(function ($item) {
             return $item->booking && \Carbon\Carbon::parse($item->booking->start_time)->isFuture();
@@ -2733,7 +3036,7 @@ class PosController extends Controller
      * Update the specified sale in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  int|string  $id
      * @return \Illuminate\Http\RedirectResponse
      */
     public function updateSale(Request $request, $id)
@@ -2744,7 +3047,7 @@ class PosController extends Controller
         }
 
         $salonId = $user->salon_id;
-        $sale = PosSale::where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
 
         // Capture old state for total_spent adjustment
         $oldCustomerId = $sale->customer_id;
@@ -2999,6 +3302,16 @@ class PosController extends Controller
                 ]);
             }
 
+            // Sync Package & Membership activations on payment transition to 'paid' (ISSUE-04)
+            if ($newPaymentStatus === 'paid' && $sale->customer_id) {
+                $membershipIds = $sale->items->where('item_type', \App\Models\Membership::class)->pluck('item_id');
+                if ($membershipIds->isNotEmpty()) {
+                    CustomerMembership::where('customer_id', $sale->customer_id)
+                        ->whereIn('membership_id', $membershipIds)
+                        ->update(['is_active' => true]);
+                }
+            }
+
             // UPDATE TIP COMMISSIONS
             // Remove existing tip commissions for this sale and redistribute based on new tip amount
             \App\Models\StaffCommission::where('pos_sale_id', $sale->id)
@@ -3063,7 +3376,18 @@ class PosController extends Controller
         ]);
 
         $salonId = auth()->user()->salon_id;
-        $sale = PosSale::with(['items', 'customer'])->where('salon_id', $salonId)->findOrFail($id);
+        $sale = PosSale::with(['items', 'customer'])->where('salon_id', $salonId)->byIdOrInvoice($id)->firstOrFail();
+
+        // Enforce maximum refundable amount based on actual net payment received
+        $netPaid = max(0, round((float)$sale->total - (float)$sale->outstanding_amount, 2));
+        $maxRefundable = max(0, round($netPaid - (float)$sale->total_refunded, 2));
+
+        if ((float)$request->amount > $maxRefundable + 0.001) {
+            return response()->json([
+                'success' => false,
+                'message' => "Refund amount cannot exceed the net amount received (" . format_currency($maxRefundable) . ")."
+            ], 400);
+        }
 
         DB::beginTransaction();
 
@@ -3128,23 +3452,30 @@ class PosController extends Controller
                 ]);
             }
 
-            // Update inventory for product items
-            if ($request->has('restock_items') && $request->restock_items) {
+            // Update inventory for product items (only on full refund to prevent duplicate restocks)
+            if ($isFullRefund && $request->has('restock_items') && $request->restock_items) {
                 foreach ($sale->items as $item) {
-                    if ($item->saleable_type === InventoryItem::class) {
-                        $inventoryItem = InventoryItem::find($item->saleable_id);
+                    if ($item->item_type === InventoryItem::class || (isset($item->saleable_type) && $item->saleable_type === InventoryItem::class)) {
+                        $inventoryItem = InventoryItem::find($item->item_id ?? $item->saleable_id);
                         if ($inventoryItem) {
                             $inventoryItem->increment('quantity_in_stock', $item->quantity);
+
+                            if ($sale->branch_id) {
+                                \DB::table('branch_inventory_item')
+                                    ->where('inventory_item_id', $inventoryItem->id)
+                                    ->where('branch_id', $sale->branch_id)
+                                    ->increment('quantity', $item->quantity);
+                            }
 
                             // Record inventory transaction for the return
                             $this->recordInventoryTransaction(
                                 $inventoryItem->id,
                                 $item->quantity, // Positive quantity adds to stock
-                                'return', // New type 'return' or use 'adjustment'
+                                'return',
                                 $sale->id,
                                 \App\Models\PosSale::class,
                                 'Restocked from Refund #' . $sale->id . ' Reason: ' . $request->reason,
-                                (float) $item->unit_price
+                                (float) ($inventoryItem->purchase_price ?? $item->unit_price ?? 0)
                             );
                         }
                     }
@@ -3181,6 +3512,20 @@ class PosController extends Controller
                 // Decrement total spent by the net refunded amount (actual money returned)
                 // Any refund fees kept by the salon are still considered 'spent' by the customer
                 $sale->customer->decrement('total_spent', $netRefundAmount);
+            }
+
+            // Revert packages and memberships if full refund (ISSUE-02)
+            if ($isFullRefund) {
+                // Cancel package balances generated by this sale
+                CustomerPackageBalance::where('pos_sale_id', $sale->id)->delete();
+
+                // Deactivate memberships purchased in this sale
+                $membershipIds = $sale->items->where('item_type', \App\Models\Membership::class)->pluck('item_id');
+                if ($membershipIds->isNotEmpty() && $sale->customer_id) {
+                    CustomerMembership::where('customer_id', $sale->customer_id)
+                        ->whereIn('membership_id', $membershipIds)
+                        ->update(['is_active' => false]);
+                }
             }
 
             DB::commit();
@@ -3225,32 +3570,39 @@ class PosController extends Controller
         }
 
         $salonId = $user->salon_id;
-        $sale = PosSale::where('salon_id', $salonId)->findOrFail($id);
-
-        // Check if sale can be voided
-        if ($sale->status === 'voided') {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Sale has already been voided.'
-                ], 400);
-            }
-            return redirect()->back()->with('error', 'Sale has already been voided.');
-        }
-
-        if ($sale->status === 'refunded' || $sale->status === 'partially_refunded') {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot void a sale that has been refunded.'
-                ], 400);
-            }
-            return redirect()->back()->with('error', 'Cannot void a sale that has been refunded.');
-        }
 
         DB::beginTransaction();
 
         try {
+            // Pessimistic lock prevents race conditions on concurrent void requests
+            $sale = PosSale::lockForUpdate()
+                ->where('salon_id', $salonId)
+                ->byIdOrInvoice($id)
+                ->firstOrFail();
+
+            // Check if sale can be voided
+            if ($sale->status === 'voided') {
+                DB::rollBack();
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Sale has already been voided.'
+                    ], 400);
+                }
+                return redirect()->back()->with('error', 'Sale has already been voided.');
+            }
+
+            if ($sale->status === 'refunded' || $sale->status === 'partially_refunded') {
+                DB::rollBack();
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot void a sale that has been refunded.'
+                    ], 400);
+                }
+                return redirect()->back()->with('error', 'Cannot void a sale that has been refunded.');
+            }
+
             // Update sale status
             $sale->update([
                 'status' => 'voided',
@@ -3261,10 +3613,85 @@ class PosController extends Controller
 
             // Restore inventory for product items
             foreach ($sale->items as $item) {
-                if ($item->saleable_type === InventoryItem::class) {
-                    $inventoryItem = InventoryItem::find($item->saleable_id);
+                if ($item->saleable_type === InventoryItem::class || $item->item_type === 'App\Models\InventoryItem') {
+                    $inventoryItem = InventoryItem::find($item->saleable_id ?? $item->item_id);
                     if ($inventoryItem) {
                         $inventoryItem->increment('quantity_in_stock', $item->quantity);
+
+                        if ($sale->branch_id) {
+                            \DB::table('branch_inventory_item')
+                                ->where('inventory_item_id', $inventoryItem->id)
+                                ->where('branch_id', $sale->branch_id)
+                                ->increment('quantity', $item->quantity);
+                        }
+
+                        $this->recordInventoryTransaction(
+                            $inventoryItem->id,
+                            $item->quantity,
+                            'return',
+                            $sale->id,
+                            \App\Models\PosSale::class,
+                            'Restocked from Voided Sale #' . $sale->invoice_number,
+                            (float) ($inventoryItem->purchase_price ?? $item->unit_price ?? 0)
+                        );
+                    }
+                }
+                foreach ($item->consumables as $cons) {
+                    $consItem = InventoryItem::find($cons->inventory_item_id);
+                    if ($consItem) {
+                        $stockRestockQty = ($consItem->unit_type !== 'base_unit' && (float)$consItem->pack_capacity > 0)
+                            ? ($cons->quantity_used / (float)$consItem->pack_capacity)
+                            : $cons->quantity_used;
+
+                        $consItem->increment('quantity_in_stock', $stockRestockQty);
+
+                        if ($sale->branch_id) {
+                            \DB::table('branch_inventory_item')
+                                ->where('inventory_item_id', $consItem->id)
+                                ->where('branch_id', $sale->branch_id)
+                                ->increment('quantity', $stockRestockQty);
+                        }
+
+                        $costPerStockUnit = ($stockRestockQty > 0)
+                            ? ((float) $cons->total_cost / $stockRestockQty)
+                            : (float) $cons->unit_cost;
+
+                        $this->recordInventoryTransaction(
+                            $consItem->id,
+                            $stockRestockQty,
+                            'service_consumption',
+                            $sale->id,
+                            \App\Models\PosSale::class,
+                            "Reversal of consumed stock for Voided Sale #{$sale->invoice_number}",
+                            $costPerStockUnit
+                        );
+                    }
+                }
+            }
+
+            // 1. Cancel package balances created in this voided sale (ISSUE-02)
+            CustomerPackageBalance::where('pos_sale_id', $sale->id)->delete();
+
+            // 2. Deactivate memberships purchased in this voided sale (ISSUE-02)
+            $membershipIds = $sale->items->where('item_type', \App\Models\Membership::class)->pluck('item_id');
+            if ($membershipIds->isNotEmpty() && $sale->customer_id) {
+                CustomerMembership::where('customer_id', $sale->customer_id)
+                    ->whereIn('membership_id', $membershipIds)
+                    ->update(['is_active' => false]);
+            }
+
+            // 3. Restore package sessions that were REDEEMED in this voided sale (ISSUE-03)
+            if ($sale->customer_id) {
+                foreach ($sale->items as $saleItem) {
+                    if (!empty($saleItem->package_id) && $saleItem->item_type === \App\Models\Service::class && (float)$saleItem->subtotal == 0) {
+                        $bal = CustomerPackageBalance::where('customer_id', $sale->customer_id)
+                            ->where('package_id', $saleItem->package_id)
+                            ->where('service_id', $saleItem->item_id)
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+                        if ($bal) {
+                            $bal->increment('quantity_remaining', (int)$saleItem->quantity);
+                        }
                     }
                 }
             }
@@ -3304,73 +3731,57 @@ class PosController extends Controller
      */
     public function dailySalesReport()
     {
+        $salonSlug = auth()->user()->salon->slug ?? auth()->user()->salon_id;
         $startDate = request('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = request('end_date', now()->format('Y-m-d'));
 
-        $sales = PosSale::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('COUNT(*) as total_sales'),
-            DB::raw('SUM(total) as total_amount')
-        )
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->groupBy('date')
-            ->orderBy('date', 'desc')
-            ->get();
-
-        return view('pos.reports.daily-sales', compact('sales', 'startDate', 'endDate'));
+        return redirect()->route('admin.reports.sales', [
+            'salon_slug' => $salonSlug,
+            'range' => 'custom',
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'source' => 'pos',
+        ]);
     }
 
     /**
      * Display product sales report.
      *
-     * @return \Illuminate\View\View
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function productSalesReport()
     {
+        $salonSlug = auth()->user()->salon->slug ?? auth()->user()->salon_id;
         $startDate = request('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = request('end_date', now()->format('Y-m-d'));
 
-        $products = PosSaleItem::join('pos_sales', 'pos_sale_items.sale_id', '=', 'pos_sales.id')
-            ->join('inventory_items', 'pos_sale_items.saleable_id', '=', 'inventory_items.id')
-            ->where('pos_sale_items.saleable_type', InventoryItem::class)
-            ->whereBetween('pos_sales.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select(
-                'inventory_items.name',
-                'inventory_items.sku',
-                DB::raw('SUM(pos_sale_items.quantity) as total_quantity'),
-                DB::raw('SUM(pos_sale_items.quantity * pos_sale_items.unit_price) as total_amount')
-            )
-            ->groupBy('inventory_items.id', 'inventory_items.name', 'inventory_items.sku')
-            ->orderBy('total_quantity', 'desc')
-            ->get();
-
-        return view('pos.reports.product-sales', compact('products', 'startDate', 'endDate'));
+        return redirect()->route('admin.reports.sales', [
+            'salon_slug' => $salonSlug,
+            'range' => 'custom',
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'source' => 'pos',
+        ]);
     }
 
     /**
      * Display service sales report.
      *
-     * @return \Illuminate\View\View
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function serviceSalesReport()
     {
+        $salonSlug = auth()->user()->salon->slug ?? auth()->user()->salon_id;
         $startDate = request('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = request('end_date', now()->format('Y-m-d'));
 
-        $services = PosSaleItem::join('pos_sales', 'pos_sale_items.sale_id', '=', 'pos_sales.id')
-            ->join('services', 'pos_sale_items.saleable_id', '=', 'services.id')
-            ->where('pos_sale_items.saleable_type', Service::class)
-            ->whereBetween('pos_sales.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select(
-                'services.name',
-                DB::raw('COUNT(*) as total_services'),
-                DB::raw('SUM(pos_sale_items.quantity * pos_sale_items.unit_price) as total_amount')
-            )
-            ->groupBy('services.id', 'services.name')
-            ->orderBy('total_services', 'desc')
-            ->get();
-
-        return view('pos.reports.service-sales', compact('services', 'startDate', 'endDate'));
+        return redirect()->route('admin.reports.sales', [
+            'salon_slug' => $salonSlug,
+            'range' => 'custom',
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'source' => 'pos',
+        ]);
     }
 
     /**
@@ -3453,7 +3864,7 @@ class PosController extends Controller
             $membership = $activeMembership->membership;
 
             foreach ($validated['items'] as $item) {
-                $discountAmount = $this->calculateMembershipDiscount($item, $membership);
+                $discountAmount = $this->calculateMembershipDiscount($item, $membership, $activeMembership);
                 $discounts[] = [
                     'item_id' => $item['id'],
                     'type' => $item['type'],
@@ -3572,7 +3983,9 @@ class PosController extends Controller
 
     public function salesHistory()
     {
-        $sales = PosSale::with(['customer', 'user'])
+        $salonId = auth()->user()->salon_id;
+        $sales = PosSale::where('salon_id', $salonId)
+            ->with(['customer', 'employee', 'items'])
             ->latest()
             ->paginate(20);
 

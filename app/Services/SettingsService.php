@@ -13,6 +13,7 @@ class SettingsService
     protected $defaults = [
         // Theme & Branding
         'theme_color' => 'blue',
+        'theme_color' => 'luxury',
         'logo' => 'default-logo.png',
 
         // Business Details
@@ -196,6 +197,7 @@ class SettingsService
     ];
 
     private $dbErrorOccurred = false;
+    private array $runtimeMemoryCache = [];
 
     public function get($key, $default = null, $salonId = null, $branchId = null)
     {
@@ -213,6 +215,11 @@ class SettingsService
         $cacheKey = $this->cachePrefix . $key .
             ($salonId ? '_s' . $salonId : '') .
             ($branchId ? '_b' . $branchId : '');
+
+        // Fast-path: Return from request-lifecycle memory cache instantly
+        if (array_key_exists($cacheKey, $this->runtimeMemoryCache)) {
+            return $this->runtimeMemoryCache[$cacheKey];
+        }
 
         try {
             $value = Cache::remember($cacheKey, $this->cacheTime, function () use ($key, $default, $salonId, $branchId) {
@@ -264,12 +271,14 @@ class SettingsService
                 $value = '';
             } elseif (is_bool($value) || is_int($value) || is_float($value)) {
                 // Return scalar types as-is — do NOT run trim() on non-strings (PHP 8 TypeError)
+                $this->runtimeMemoryCache[$cacheKey] = $value;
                 return $value;
             } elseif (is_string($value)) {
                 // Remove surrounding quotes if present
                 $value = trim($value, '"\'');
             }
 
+            $this->runtimeMemoryCache[$cacheKey] = $value;
             return $value;
 
         } catch (\Exception $e) {
@@ -389,6 +398,8 @@ class SettingsService
 
     public function clearCache($key = null, $salonId = null, $branchId = null)
     {
+        $this->runtimeMemoryCache = [];
+
         if ($key) {
             Cache::forget($this->cachePrefix . $key .
                 ($salonId ? '_s' . $salonId : '') .
@@ -401,11 +412,81 @@ class SettingsService
 
     public function getThemeColor()
     {
-        $defaultColor = 'pink';
-        if (auth()->check() && auth()->user()->salon && auth()->user()->salon->business_type === 'barber') {
-            $defaultColor = 'barber';
-        }
+        // Default to the luxury Haute Obsidian & Gold theme
+        $defaultColor = 'luxury';
         return $this->get('theme_color', $defaultColor);
+    }
+
+    /**
+     * Get theme color map with primary and accent hex codes
+     */
+    public function getThemePalette(): array
+    {
+        $palettes = [
+            'luxury' => [
+                'primary'      => '#0b0f17', // Obsidian Black
+                'accent'       => '#c5a880', // Champagne Gold
+                'accent_hover' => '#b38e5d',
+                'accent_light' => 'rgba(197, 168, 128, 0.15)',
+                'sidebar'      => '#0b0f17',
+                'surface'      => '#111724',
+                'border'       => '#1f293d',
+                'name'         => 'Luxury Obsidian & Gold',
+            ],
+            'barber' => [
+                'primary'      => '#B45309', // Amber / Leather
+                'accent'       => '#F59E0B',
+                'accent_hover' => '#D97706',
+                'accent_light' => 'rgba(180, 83, 9, 0.15)',
+                'sidebar'      => '#B45309',
+                'surface'      => '#78350F',
+                'border'       => '#92400E',
+                'name'         => 'Barber Amber',
+            ],
+            'pink' => [
+                'primary'      => '#e83e8c',
+                'accent'       => '#e83e8c',
+                'accent_hover' => '#d63384',
+                'accent_light' => 'rgba(232, 62, 140, 0.15)',
+                'sidebar'      => '#e83e8c',
+                'surface'      => '#ffffff',
+                'border'       => '#f8d7da',
+                'name'         => 'Rose Pink',
+            ],
+            'purple' => [
+                'primary'      => '#6f42c1',
+                'accent'       => '#6f42c1',
+                'accent_hover' => '#59359a',
+                'accent_light' => 'rgba(111, 66, 193, 0.15)',
+                'sidebar'      => '#6f42c1',
+                'surface'      => '#ffffff',
+                'border'       => '#e2d9f3',
+                'name'         => 'Royal Purple',
+            ],
+            'blue' => [
+                'primary'      => '#0d6efd',
+                'accent'       => '#0d6efd',
+                'accent_hover' => '#0b5ed7',
+                'accent_light' => 'rgba(13, 110, 253, 0.15)',
+                'sidebar'      => '#0d6efd',
+                'surface'      => '#ffffff',
+                'border'       => '#cfe2ff',
+                'name'         => 'Sapphire Blue',
+            ],
+            'green' => [
+                'primary'      => '#198754',
+                'accent'       => '#198754',
+                'accent_hover' => '#157347',
+                'accent_light' => 'rgba(25, 135, 84, 0.15)',
+                'sidebar'      => '#198754',
+                'surface'      => '#ffffff',
+                'border'       => '#d1e7dd',
+                'name'         => 'Emerald Green',
+            ],
+        ];
+
+        $currentTheme = $this->getThemeColor();
+        return $palettes[$currentTheme] ?? $palettes['luxury'];
     }
 
     public function getBusinessName()

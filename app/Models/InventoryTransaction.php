@@ -35,7 +35,7 @@ class InventoryTransaction extends Model
      * @var array
      */
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:3',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
     ];

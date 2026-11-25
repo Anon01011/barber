@@ -23,8 +23,26 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Header Button Styles -->
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @php
+        $settingsService = app(\App\Services\SettingsService::class);
+        $palette = $settingsService->getThemePalette();
+        $themePrimary = $palette['primary'] ?? '#0b0f17';
+        $themeAccent = $palette['accent'] ?? '#c5a880';
+        $themeAccentHover = $palette['accent_hover'] ?? '#b38e5d';
+    @endphp
+
+    <!-- Header Button Styles & Dynamic Theme Tokens -->
     <style>
+        :root {
+            --theme-primary: {{ $themePrimary }};
+            --theme-accent: {{ $themeAccent }};
+            --theme-accent-hover: {{ $themeAccentHover }};
+        }
+
         html, body {
             overflow-x: clip;
             max-width: 100vw;
@@ -48,26 +66,28 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #d63384, #e91e63);
-            color: white;
+            background: linear-gradient(135deg, {{ $themeAccent }}, {{ $themeAccentHover }});
+            color: #0b0f17;
             border: none;
+            font-weight: 700;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #c02569, #d63384);
+            background: linear-gradient(135deg, {{ $themeAccentHover }}, {{ $themeAccent }});
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(214, 51, 132, 0.2);
+            box-shadow: 0 4px 12px rgba(197, 168, 128, 0.35);
+            color: #0b0f17;
         }
 
         .btn-secondary {
             background: transparent;
-            color: #d63384;
-            border: 1.5px solid #d63384;
+            color: {{ $themeAccent }};
+            border: 1.5px solid {{ $themeAccent }};
         }
 
         .btn-secondary:hover {
-            background: #d63384;
-            color: white;
+            background: {{ $themeAccent }};
+            color: #0b0f17;
             transform: translateY(-1px);
         }
 
@@ -77,8 +97,23 @@
         }
 
         .nav-link:hover {
-            color: #d63384;
-            background: rgba(214, 51, 132, 0.05);
+            color: {{ $themeAccent }};
+            background: rgba(197, 168, 128, 0.08);
+        }
+
+        /* SweetAlert2 Luxury Styling */
+        div.swal2-popup.swal2-luxury {
+            border-radius: 16px !important;
+            border: 1px solid #e8dccb !important;
+            box-shadow: 0 25px 50px -12px rgba(11, 15, 23, 0.25) !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+        div.swal2-popup.swal2-luxury .swal2-confirm {
+            background: linear-gradient(135deg, #0b0f17 0%, #1e293b 100%) !important;
+            color: #c5a880 !important;
+            border-radius: 8px !important;
+            font-weight: 700 !important;
+            padding: 0.6rem 1.5rem !important;
         }
 
         /* Card Styles for Dashboard */
@@ -315,6 +350,53 @@
     @stack('scripts')
 
     <script>
+        // Synthesized Web Audio API Chime
+        function playGuestAppChime(type) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.12);
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(260, now);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) {}
+        }
+
+        // Global Modal Alert
+        window.showModalAlert = function (message, type = 'info', title = null) {
+            playGuestAppChime(type);
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                return window.Swal.fire({
+                    title: title || (type === 'success' ? 'Success' : 'Notice'),
+                    text: message,
+                    icon: type === 'danger' ? 'error' : (type || 'info'),
+                    confirmButtonText: 'OK',
+                    customClass: { popup: 'swal2-luxury' }
+                });
+            } else {
+                console.warn('[ModalAlert intercepted]:', message);
+            }
+        };
+
         // Profile Dropdown Toggle
         document.addEventListener('DOMContentLoaded', function () {
             const profileToggle = document.getElementById('profile-toggle');

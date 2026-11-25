@@ -5,6 +5,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Notification' }}</title>
+    @php
+        $settingsService = app(\App\Services\SettingsService::class);
+        $palette = $settingsService->getThemePalette();
+        $headerColor = $palette['primary'] ?? '#0b0f17';
+        $accentColor = $palette['accent'] ?? '#c5a880';
+        $accentHover = $palette['accent_hover'] ?? '#b38e5d';
+        $appLogo     = $settingsService->getLogoUrl();
+        $appName     = $settingsService->get('app_name', config('app.name', 'SalonPro'));
+    @endphp
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,73 +21,78 @@
             color: #333;
             margin: 0;
             padding: 0;
-            background-color: #f4f6f9;
+            background-color: #f0ece6;
         }
 
         .container {
             max-width: 600px;
             margin: 40px auto;
             background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
+            border: 1px solid #e8dccb;
         }
 
         .header {
-            background-color: #4e73df;
-            color: white;
-            padding: 30px;
+            background-color: {{ $headerColor }};
+            color: #ffffff;
+            padding: 32px 30px;
             text-align: center;
+            border-bottom: 3px solid {{ $accentColor }};
         }
 
         .header h1 {
             margin: 0;
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 22px;
+            font-weight: 700;
+            color: {{ $accentColor }};
+            letter-spacing: 0.5px;
         }
 
         .content {
-            padding: 40px;
-            color: #555;
+            padding: 36px 32px;
+            color: #4b5563;
+            font-size: 15px;
         }
 
         .content h2 {
-            color: #333;
+            color: #0b0f17;
             font-size: 20px;
             margin-top: 0;
+            font-weight: 700;
         }
 
         .content p {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            line-height: 1.65;
         }
 
         .button {
             display: inline-block;
-            padding: 12px 30px;
-            background-color: #4e73df;
-            color: white;
+            padding: 13px 32px;
+            background: linear-gradient(135deg, {{ $accentColor }} 0%, {{ $accentHover }} 100%);
+            color: #0b0f17 !important;
             text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
             margin: 20px 0;
             text-align: center;
-        }
-
-        .button:hover {
-            background-color: #2e59d9;
+            box-shadow: 0 4px 14px rgba(197, 168, 128, 0.35);
         }
 
         .footer {
-            background-color: #f8f9fa;
-            padding: 20px;
+            background-color: {{ $headerColor }};
+            padding: 24px;
             text-align: center;
             font-size: 12px;
-            color: #888;
-            border-top: 1px solid #eee;
+            color: #94a3b8;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .footer a {
-            color: #4e73df;
+            color: {{ $accentColor }};
             text-decoration: none;
         }
 
@@ -90,7 +104,7 @@
             }
 
             .content {
-                padding: 20px;
+                padding: 24px 20px;
             }
         }
     </style>
@@ -99,14 +113,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ $title ?? config('app.name') }}</h1>
+            @if(!empty($appLogo))
+                <div style="margin-bottom: 10px;">
+                    <img src="{{ $appLogo }}" alt="{{ $appName }}" style="max-height: 42px; max-width: 180px;">
+                </div>
+            @endif
+            <h1>{{ $title ?? $appName }}</h1>
         </div>
         <div class="content">
             {!! $content !!}
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; {{ date('Y') }} {{ $appName }}. All rights reserved.</p>
+            <p style="margin-top: 4px; font-size: 11px; color: #64748b;">This is an automated notification.</p>
         </div>
     </div>
 </body>

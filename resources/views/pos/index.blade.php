@@ -12,7 +12,7 @@
 
         /* Tight layout styles to make everything fit */
         .pos-terminal-container {
-            height: calc(100vh - var(--header-height) - 15px);
+            height: calc(100vh - var(--header-height, 60px) - 15px);
             overflow: hidden;
         }
 
@@ -335,9 +335,14 @@
                                             @foreach($services as $service)
                                                 <li>
                                                     <div class="form-check py-1">
-                                                        <input class="form-check-input service-checkbox" type="checkbox" value="{{ $service->id }}" id="service_cb_{{ $service->id }}" data-name="{{ $service->name }}" data-price="{{ $service->price }}">
+                                                        <input class="form-check-input service-checkbox" type="checkbox" value="{{ $service->id }}" id="service_cb_{{ $service->id }}" data-name="{{ $service->name }}" data-price="{{ $service->price }}" data-cogs="{{ $service->estimated_cogs ?? 0 }}">
                                                         <label class="form-check-label small w-100" style="cursor:pointer;" for="service_cb_{{ $service->id }}">
                                                             {{ $service->name }} ({{ format_currency($service->price) }})
+                                                            @if(!empty($service->estimated_cogs) && $service->estimated_cogs > 0)
+                                                                <span class="text-secondary extra-small ms-1" style="font-size: 0.72rem;" title="Estimated Consumable COGS">
+                                                                    <i class="fas fa-flask text-primary"></i> {{ format_currency($service->estimated_cogs) }}
+                                                                </span>
+                                                            @endif
                                                         </label>
                                                     </div>
                                                 </li>
@@ -522,7 +527,7 @@
                     </div>
 
                     <!-- Unified Cart Table -->
-                    <div class="table-responsive mt-2 border rounded shadow-sm" style="overflow-y: auto; flex: 1 1 0; min-height: 0;">
+                    <div class="table-responsive mt-2 border rounded shadow-sm flex-grow-1" style="overflow-y: auto; flex: 1 1 0; min-height: 260px;">
                         <table class="table table-sm table-hover mb-0" id="unifiedCartTable">
                             <thead class="table-light">
                                 <tr class="text-uppercase small text-muted">
@@ -614,6 +619,8 @@
                         </div>
                     </div>
                     <div class="border-top pt-2">
+                        <!-- Selected Cart Items Breakdown in Billing Summary -->
+                        <div id="cartItemsSummaryList" class="mb-2" style="max-height: 200px; overflow-y: auto;"></div>
                         <div class=" row mb-1">
                             <div class="col-8"><small class="text-muted">Subtotal</small></div>
                             <div class="col-4 text-end"><span id="cartSubtotal" class="fw-medium">0.00</span></div>
@@ -665,6 +672,19 @@
                             <div class="col-8"><small class="text-muted">Balance Due</small></div>
                             <div class="col-4 text-end"><span id="outstandingAmount"
                                     class="fw-medium text-danger">0.00</span></div>
+                        </div>
+
+                        <!-- Materials Used (Consumable cost — charged to customer) -->
+                        <div class="d-none row mb-1 align-items-center" id="cartCogsRow">
+                            <div class="col-8">
+                                <small class="text-info">
+                                    <i class="fas fa-flask me-1"></i>
+                                    <strong>Materials Used</strong>
+                                </small>
+                            </div>
+                            <div class="col-4 text-end">
+                                <span id="cartCogs" class="fw-semibold text-info">0.00</span>
+                            </div>
                         </div>
 
                         <!-- Tip -->
@@ -810,16 +830,16 @@
                             <input type="hidden" id="otherAmount" value="0">
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-white border-top p-2">
-                    <!-- Checkout Button -->
-                    <button class="btn btn-success w-100" id="checkoutBtn" disabled data-bs-toggle="modal"
-                        data-bs-target="#saleConfirmationModal">
-                        <i class="fas fa-check-circle me-2"></i>Process Sale
-                    </button>
-                    <button class="btn btn-outline-secondary w-100 mt-2" id="resetBtn">
-                        <i class="fas fa-undo me-2"></i>Reset
-                    </button>
+                    <div class="card-footer bg-white border-top p-2 flex-shrink-0 mt-auto">
+                        <!-- Checkout Button -->
+                        <button class="btn btn-success w-100 fw-bold py-2" id="checkoutBtn" disabled data-bs-toggle="modal"
+                            data-bs-target="#saleConfirmationModal">
+                            <i class="fas fa-check-circle me-2"></i>Process Sale
+                        </button>
+                        <button class="btn btn-outline-secondary w-100 mt-2" id="resetBtn">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -830,7 +850,7 @@
         <button type="button" class="btn btn-primary w-100 py-2 px-3 d-flex justify-content-between align-items-center fw-bold rounded-4 shadow-lg" id="btnStickyCheckout" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%); color: #fff; border: none; font-size: 0.95rem;">
             <span class="d-flex align-items-center">
                 <span class="badge bg-white text-dark rounded-pill me-2 px-2 py-1" id="mobileStickyItemCount">0 Items</span>
-                <span id="mobileStickyTotal">$0.00</span>
+                <span id="mobileStickyTotal">{{ $currencySymbol ?? currency_symbol() }}0.00</span>
             </span>
             <span>
                 <span>Checkout</span>
@@ -1045,6 +1065,8 @@
             let isPaidSale = false; // New flag to track if current sale is paid
             const taxRate = {{ $taxRate ?? 0 }};
             const salonData = @json($salonData);
+            const posServicesData = @json($services->keyBy('id'));
+            const inventoryModuleEnabled = {{ ($inventoryEnabled ?? false) ? 'true' : 'false' }};
 
             function togglePosControls(disabled) {
                 // List of selectors to disable/enable
@@ -1708,6 +1730,18 @@
 
                 // Add item to cart
                 function addToCart(item) {
+                    if (item.type === 'service') {
+                        if (typeof posServicesData !== 'undefined' && posServicesData[item.id]) {
+                            const sData = posServicesData[item.id];
+                            if (item.estimated_cogs === undefined) {
+                                item.estimated_cogs = parseFloat(sData.estimated_cogs || 0);
+                            }
+                            if (!item.consumables_summary) {
+                                item.consumables_summary = sData.consumables_summary || [];
+                            }
+                        }
+                    }
+
                     let existingItem = null;
                     if (item.type === 'service' && item.package_id) {
                         // For package services, use service_id as id, type service
@@ -2072,10 +2106,17 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <div>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <div class="fw-semibold small">${item.name}</div>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <div class="text-muted extra-small text-uppercase" style="font-size: 0.65rem;">${typeLabel}</div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td class="text-center">${staffSelect}</td>
+                                                                                                                                                                                                                                                  ${(item.type === 'service' && item.consumables_summary && item.consumables_summary.length > 0) ? item.consumables_summary.map(function(c) {
+                                                                        if (c.is_billable_extra && c.billable_total > 0) {
+                                                                            return '<div class="text-success extra-small mt-0.5" style="font-size: 0.70rem;"><i class="fas fa-flask me-1" style="font-size:0.65rem;"></i>' + c.name + (c.quantity ? ' &mdash; ' + c.quantity + (c.unit ? ' ' + c.unit : '') : '') + ' <span class="badge bg-success-subtle text-success border border-success-subtle px-1" style="font-size:0.62rem;">+' + formatCurrency(c.billable_total * item.quantity) + ' Billed</span></div>';
+                                                                        } else {
+                                                                            return '<div class="text-secondary extra-small mt-0.5" style="font-size: 0.70rem;"><i class="fas fa-flask text-primary me-1" style="font-size:0.65rem;"></i>' + c.name + (c.quantity ? ' &mdash; ' + c.quantity + (c.unit ? ' ' + c.unit : '') : '') + ' <span class="text-muted" style="font-size:0.62rem;">(Included)</span></div>';
+                                                                        }
+                                                                    }).join('') : ''}
+                                                                                                                                                                                                                                              </div>
+                                                                                                                                                                                                                                          </div>
+                                                                                                                                                                                                                                      </td>
+                                                                                                                                                                                                                                      <td class="text-center">${staffSelect}</td>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <td class="text-center">${qtyInput}</td>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <td class="text-end small">${formatCurrency(item.price)}</td>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <td class="text-end">${discInput}</td>
@@ -2192,7 +2233,20 @@
                         totalTax = tax;
                     }
 
-                    const grandTotal = (netSubtotal - globalDiscount) + tax;
+                    // Calculate Billable Materials (only billable consumables charged to customer, excluding covered/zero-priced items)
+                    let totalBillableMaterials = 0;
+                    cart.forEach(item => {
+                        const isZeroPriced = (item.package_id && parseFloat(item.price) === 0) || (parseFloat(item.price) === 0 && item.booking_id);
+                        if (!isZeroPriced && item.type === 'service' && item.consumables_summary && item.consumables_summary.length > 0) {
+                            item.consumables_summary.forEach(c => {
+                                if (c.is_billable_extra && c.billable_total > 0) {
+                                    totalBillableMaterials += c.billable_total * (parseFloat(item.quantity) || 1);
+                                }
+                            });
+                        }
+                    });
+
+                    const grandTotal = (netSubtotal + totalBillableMaterials - globalDiscount) + tax;
                     const totalDiscount = totalItemDiscount + globalDiscount;
                     let payable = grandTotal + (tipAmount || 0);
 
@@ -2230,9 +2284,41 @@
                         }
                     }
 
+                    // Render selected items and quantities in Billing Summary
+                    let summaryItemsHtml = '';
+                    if (cart.length > 0) {
+                        summaryItemsHtml = '<div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">' +
+                            '<span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Selected Items (' + cart.length + ')</span>' +
+                            '<span class="text-muted" style="font-size: 0.65rem;">Qty &middot; Price</span>' +
+                        '</div>';
+                        cart.forEach(item => {
+                            const iconClass = item.type === 'service' ? 'fa-cut text-primary' : (item.type === 'package' ? 'fa-gift text-warning' : 'fa-box text-success');
+                            const qty = parseFloat(item.quantity) || 1;
+                            const lineTotal = (parseFloat(item.price) || 0) * qty - (parseFloat(item.discount_amount) || 0);
+                            summaryItemsHtml += '<div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light" style="font-size: 0.78rem;">' +
+                                '<div class="text-truncate me-2" style="max-width: 175px;" title="' + (item.name || '') + '">' +
+                                    '<i class="fas ' + iconClass + ' me-1" style="font-size: 0.70rem;"></i>' +
+                                    '<span class="fw-semibold text-dark">' + (item.name || 'Item') + '</span>' +
+                                    '<span class="badge bg-light text-dark border ms-1 px-1" style="font-size: 0.65rem;">&times;' + qty + '</span>' +
+                                '</div>' +
+                                '<div class="fw-bold text-dark text-nowrap">' + formatCurrency(lineTotal) + '</div>' +
+                            '</div>';
+                        });
+                        summaryItemsHtml += '<div class="mb-2"></div>';
+                    }
+                    $('#cartItemsSummaryList').html(summaryItemsHtml);
+
                     // Update UI
                     $('#cartSubtotal').text(formatCurrency(grossSubtotal));
                     $('#cartTax').text(formatCurrency(tax));
+
+                    // Update Materials Billed row (only billable consumables)
+                    if (totalBillableMaterials > 0) {
+                        $('#cartCogsRow').removeClass('d-none');
+                        $('#cartCogs').text(formatCurrency(totalBillableMaterials));
+                    } else {
+                        $('#cartCogsRow').addClass('d-none');
+                    }
 
                     // Only show discount if there is one
                     if (totalDiscount > 0) {

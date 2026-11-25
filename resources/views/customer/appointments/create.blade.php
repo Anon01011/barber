@@ -8,7 +8,7 @@
                     <!-- Header -->
                     <div class="text-center mb-4">
                         <div class="mb-3">
-                            <i class="fas fa-calendar-check text-primary" style="font-size: 3rem;"></i>
+                            <i class="fas fa-calendar-check" style="font-size: 3rem; color: var(--theme-accent, #c5a880);"></i>
                         </div>
                         <h2 class="fw-bold mb-2">Book Your Appointment</h2>
                         <p class="text-muted">Choose your service and preferred time</p>
@@ -23,7 +23,7 @@
                                 <!-- Service Selection -->
                                 <div class="mb-4">
                                     <label class="form-label fw-semibold mb-3">
-                                        <i class="fas fa-cut text-primary me-2"></i>
+                                        <i class="fas fa-cut me-2" style="color: var(--theme-accent, #c5a880);"></i>
                                         Select Service
                                     </label>
                                     <select name="service_id" id="service" class="form-select form-select-lg" required>
@@ -40,23 +40,23 @@
                                 </div>
 
                                 <!-- Service Info Alert -->
-                                <div class="alert alert-primary border-0 d-none" id="serviceInfo" role="alert">
+                                <div class="alert alert-primary border-0 d-none" id="serviceInfo" role="alert" style="background: rgba(197, 168, 128, 0.12); border: 1px solid rgba(197, 168, 128, 0.25) !important;">
                                     <div class="row g-3">
                                         <div class="col-6">
                                             <div class="d-flex align-items-center">
-                                                <i class="fas fa-clock fa-2x text-primary me-3"></i>
+                                                <i class="fas fa-clock fa-2x me-3" style="color: var(--theme-accent, #c5a880);"></i>
                                                 <div>
                                                     <small class="text-muted d-block">Duration</small>
-                                                    <strong id="serviceDuration">0 min</strong>
+                                                    <strong id="serviceDuration" style="color: #0b0f17;">0 min</strong>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="d-flex align-items-center">
-                                                <i class="fas fa-dollar-sign fa-2x text-white me-3"></i>
+                                                <i class="fas fa-dollar-sign fa-2x me-3" style="color: var(--theme-accent, #c5a880);"></i>
                                                 <div>
                                                     <small class="text-muted d-block">Price</small>
-                                                    <strong id="servicePrice">{{ currency_symbol() }}0.00</strong>
+                                                    <strong id="servicePrice" style="color: #0b0f17;">{{ currency_symbol() }}0.00</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -67,7 +67,7 @@
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">
-                                            <i class="fas fa-calendar text-primary me-2"></i>
+                                            <i class="fas fa-calendar me-2" style="color: var(--theme-accent, #c5a880);"></i>
                                             Appointment Date
                                         </label>
                                         <input type="date" name="date" id="date" class="form-control form-control-lg"
@@ -75,7 +75,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">
-                                            <i class="fas fa-clock text-primary me-2"></i>
+                                            <i class="fas fa-clock me-2" style="color: var(--theme-accent, #c5a880);"></i>
                                             Appointment Time
                                         </label>
                                         <select name="time" id="time" class="form-select form-select-lg" required>
@@ -87,7 +87,7 @@
                                 <!-- Notes -->
                                 <div class="mb-4">
                                     <label class="form-label fw-semibold">
-                                        <i class="fas fa-comment-dots text-primary me-2"></i>
+                                        <i class="fas fa-comment-dots me-2" style="color: var(--theme-accent, #c5a880);"></i>
                                         Additional Notes <span class="text-muted small">(Optional)</span>
                                     </label>
                                     <textarea name="notes" id="notes" class="form-control" rows="4"
@@ -96,10 +96,9 @@
 
                                 <!-- Submit Button -->
                                 <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-calendar-check me-2"></i>
+                                    <x-btn type="submit" variant="primary" size="lg" icon="fas fa-calendar-check" block="true">
                                         Confirm Booking
-                                    </button>
+                                    </x-btn>
                                 </div>
                             </form>
                         </div>
@@ -168,35 +167,8 @@
 
             .form-control:focus,
             .form-select:focus {
-                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-            }
-
-            /* Button Styles */
-            .btn {
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                font-weight: 500;
-            }
-
-            .btn-primary {
-                background: linear-gradient(45deg, #0d6efd, #0a58ca);
-                border: none;
-            }
-
-            .btn-primary:hover {
-                background: linear-gradient(45deg, #0a58ca, #084298);
-                transform: translateY(-1px);
-            }
-
-            /* Alert Styles */
-            .alert {
-                border-radius: 0.5rem;
-                border: none;
-            }
-
-            .alert-primary {
-                background-color: rgba(13, 110, 253, 0.1);
-                color: #0d6efd;
+                border-color: var(--theme-accent, #c5a880);
+                box-shadow: 0 0 0 0.25rem rgba(197, 168, 128, 0.2);
             }
 
             /* Card Styles */

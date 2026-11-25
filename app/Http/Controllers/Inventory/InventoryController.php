@@ -68,6 +68,17 @@ class InventoryController extends Controller
     }
 
     /**
+     * Resolve current salon ID safely (works for owners, staff, and super_admin context).
+     */
+    protected function getSalonId(): ?int
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon')->id;
+        }
+        return auth()->user()?->salon_id;
+    }
+
+    /**
      * Display a listing of the inventory items.
      */
     public function index(Request $request)
@@ -117,6 +128,15 @@ class InventoryController extends Controller
                             });
                     }
                 })
+                ->when($request->type, function ($query, $type) {
+                    if ($type === 'retail') {
+                        $query->whereIn('product_type', ['retail', 'dual']);
+                    } elseif ($type === 'consumable') {
+                        $query->whereIn('product_type', ['consumable', 'dual']);
+                    } elseif ($type === 'backbar') {
+                        $query->where('product_type', 'consumable');
+                    }
+                })
                 ->when($request->status === 'out', function ($query) use ($request) {
                     if ($request->branch) {
                         $branchId = $request->branch;
@@ -130,6 +150,17 @@ class InventoryController extends Controller
                 });
 
             $items = $query->latest()->paginate(15);
+
+            // KPI Overview Metrics
+            $kpiStats = [
+                'total_items' => InventoryItem::where('salon_id', $salonId)->active()->count(),
+                'retail_items' => InventoryItem::where('salon_id', $salonId)->active()->whereIn('product_type', ['retail', 'dual'])->count(),
+                'consumable_items' => InventoryItem::where('salon_id', $salonId)->active()->where('product_type', 'consumable')->count(),
+                'low_stock_items' => InventoryItem::where('salon_id', $salonId)->active()->lowStock()->count(),
+                'total_valuation' => (float) (InventoryItem::where('salon_id', $salonId)->active()
+                    ->selectRaw('SUM(CASE WHEN unit_type = base_unit AND pack_capacity IS NOT NULL AND pack_capacity > 0 THEN (purchase_price / pack_capacity) * quantity_in_stock ELSE purchase_price * quantity_in_stock END) as total_val')
+                    ->value('total_val') ?? 0.0),
+            ];
 
             $categories = InventoryCategory::active()
                 ->orderBy('name')
@@ -149,7 +180,8 @@ class InventoryController extends Controller
                 'categories' => $categories,
                 'suppliers' => $suppliers,
                 'branches' => $branches,
-                'filters' => $request->only(['search', 'category', 'status', 'branch']),
+                'kpiStats' => $kpiStats,
+                'filters' => $request->only(['search', 'category', 'status', 'branch', 'type']),
                 'unitTypes' => InventoryItem::$unitTypes,
             ]);
 
@@ -290,12 +322,10 @@ class InventoryController extends Controller
                 ],
                 'description' => 'nullable|string|max:2000',
                 'purchase_price' => 'nullable|numeric|min:0|max:999999.99',
-                'selling_price' => [
-                    'required',
-                    'numeric',
-                    'min:0',
-                    'max:999999.99',
-                ],
+                'selling_price' => 'nullable|numeric|min:0|max:999999.99',
+                'product_type' => 'nullable|in:retail,consumable,dual',
+                'pack_capacity' => 'nullable|numeric|min:0.01|max:999999.99',
+                'base_unit' => 'nullable|string|max:20',
                 'quantity_in_stock' => 'nullable|numeric|min:0|max:999999.9999',
                 'minimum_quantity' => 'nullable|numeric|min:0|max:999999.9999',
                 'unit_type' => 'nullable|string|max:50',
@@ -361,7 +391,13 @@ class InventoryController extends Controller
             $validated['salon_id'] = $salonId;
             $validated['branch_id'] = $userBranchId;
             $validated['is_active'] = $request->boolean('is_active', true);
+            $validated['product_type'] = $validated['product_type'] ?? 'retail';
+            $validated['pack_capacity'] = $validated['pack_capacity'] ?? 1.0;
+            $validated['base_unit'] = $validated['base_unit'] ?? ($validated['unit_type'] ?? 'pcs');
+            $validated['selling_price'] = $validated['selling_price'] ?? 0;
             $validated['purchase_price'] = $validated['purchase_price'] ?? 0;
+            $validated['tax_rate'] = (isset($validated['tax_rate']) && $validated['tax_rate'] !== null && $validated['tax_rate'] !== '') ? (float) $validated['tax_rate'] : 0.00;
+            $validated['is_taxable'] = $request->boolean('is_taxable', false);
             $validated['quantity_in_stock'] = $validated['quantity_in_stock'] ?? 9999; // Default to high stock for basic use
             $validated['minimum_quantity'] = $validated['minimum_quantity'] ?? 0;
             $validated['unit_type'] = $validated['unit_type'] ?? 'pcs';
@@ -495,27 +531,53 @@ class InventoryController extends Controller
 
     /**
      * Show the form for editing the specified inventory item.
+     * Returns JSON for AJAX requests (modal edit), or a full view for direct navigation.
      */
-    public function edit(InventoryItem $inventory)
+    public function edit(Request $request, InventoryItem $inventory)
     {
-        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+        $salonId = $this->getSalonId();
+        if (!$salonId && !auth()->user()->isSuperAdmin()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+        $salonId = $salonId ?? $inventory->salon_id;
+
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== $salonId) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
             abort(403, 'Unauthorized access to this inventory item.');
         }
 
         try {
-            $salonId = auth()->user()->salon_id;
             $categories = InventoryCategory::where('salon_id', $salonId)->active()->orderBy('name')->get(['id', 'name']);
             $suppliers = \App\Models\Supplier::where('salon_id', $salonId)->active()->orderBy('name')->get(['id', 'name']);
 
-            return view('inventory.edit', [
-                'item' => $inventory,
-                'categories' => $categories,
-                'suppliers' => $suppliers,
-                'unitTypes' => InventoryItem::$unitTypes,
+            $inventory->loadMissing(['branches', 'category']);
+
+            // Return JSON for AJAX modal population
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'item' => $inventory,
+                    'categories' => $categories,
+                    'suppliers' => $suppliers,
+                ]);
+            }
+
+            // Direct browser navigation: redirect to inventory index with edit parameter to open modal
+            $salonSlug = request()->route('salon_slug') ?? (auth()->user()?->salon?->slug ?? $salonId);
+            return redirect()->route('admin.inventory.index', [
+                'salon_slug' => $salonSlug,
+                'edit_item' => $inventory->id
             ]);
         } catch (\Exception $e) {
             \Log::error('Edit inventory item error: ' . $e->getMessage());
-            return redirect()->route('admin.inventory.index')
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Failed to load item data.'], 500);
+            }
+            return redirect()->route('admin.inventory.index', ['salon_slug' => request()->route('salon_slug')])
                 ->with('error', 'Failed to load the edit form. Please try again.');
         }
     }
@@ -525,12 +587,17 @@ class InventoryController extends Controller
      */
     public function update(Request $request, InventoryItem $inventory)
     {
-        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== auth()->user()->salon_id) {
+        $salonId = $this->getSalonId();
+        if (!$salonId && !auth()->user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized access to this inventory item.');
+        }
+        $salonId = $salonId ?? $inventory->salon_id;
+
+        if (!auth()->user()->isSuperAdmin() && $inventory->salon_id !== $salonId) {
             abort(403, 'Unauthorized access to this inventory item.');
         }
 
         $userBranchId = auth()->user()->branch_id;
-        $salonId = auth()->user()->salon_id;
 
         // If user is assigned to a branch, force that branch
         if ($userBranchId) {
@@ -553,7 +620,7 @@ class InventoryController extends Controller
             $validated = $request->validate([
                 'category_id' => [
                     'required',
-                    Rule::exists('inventory_categories', 'id')->where('salon_id', auth()->user()->salon_id)
+                    Rule::exists('inventory_categories', 'id')->where('salon_id', $salonId)
                 ],
                 'name' => 'required|string|max:255',
                 'sku' => [
@@ -561,17 +628,15 @@ class InventoryController extends Controller
                     'string',
                     'max:100',
                     Rule::unique('inventory_items', 'sku')
-                        ->where('salon_id', auth()->user()->salon_id)
+                        ->where('salon_id', $salonId)
                         ->ignore($inventory->id),
                 ],
                 'description' => 'nullable|string|max:2000',
                 'purchase_price' => 'nullable|numeric|min:0|max:999999.99',
-                'selling_price' => [
-                    'required',
-                    'numeric',
-                    'min:0',
-                    'max:999999.99',
-                ],
+                'selling_price' => 'nullable|numeric|min:0|max:999999.99',
+                'product_type' => 'nullable|in:retail,consumable,dual',
+                'pack_capacity' => 'nullable|numeric|min:0.01|max:999999.99',
+                'base_unit' => 'nullable|string|max:20',
                 'quantity_in_stock' => 'nullable|numeric|min:0|max:999999.9999',
                 'minimum_quantity' => 'nullable|numeric|min:0|max:999999.9999',
                 'unit_type' => 'nullable|string|max:50',
@@ -580,7 +645,7 @@ class InventoryController extends Controller
                     'string',
                     'max:100',
                     Rule::unique('inventory_items', 'barcode')
-                        ->where('salon_id', auth()->user()->salon_id)
+                        ->where('salon_id', $salonId)
                         ->ignore($inventory->id),
                 ],
                 'location' => 'nullable|string|max:100',
@@ -642,6 +707,18 @@ class InventoryController extends Controller
 
             // Set default values for update if not present
             $validated['purchase_price'] = $validated['purchase_price'] ?? 0;
+            $validated['selling_price'] = $validated['selling_price'] ?? 0;
+            $validated['tax_rate'] = (isset($validated['tax_rate']) && $validated['tax_rate'] !== null && $validated['tax_rate'] !== '') ? (float) $validated['tax_rate'] : 0.00;
+            $validated['is_taxable'] = $request->boolean('is_taxable', false);
+            if (isset($validated['product_type'])) {
+                $validated['product_type'] = $validated['product_type'];
+            }
+            if (isset($validated['pack_capacity'])) {
+                $validated['pack_capacity'] = (float) $validated['pack_capacity'];
+            }
+            if (isset($validated['base_unit'])) {
+                $validated['base_unit'] = $validated['base_unit'];
+            }
 
             if (!isset($validated['quantity_in_stock']) && $request->has('quantity_in_stock')) {
                 $validated['quantity_in_stock'] = 9999;
@@ -863,6 +940,11 @@ class InventoryController extends Controller
                 ->with('error', 'Cannot delete item with remaining stock. Please adjust stock to zero first.');
         }
 
+        if ($inventory->services()->exists()) {
+            return redirect()->back()
+                ->with('error', 'Cannot delete item: it is currently used as a consumable recipe in one or more services. Please remove it from service recipes first.');
+        }
+
         $inventory->delete();
 
         return redirect()->route('admin.inventory.index')
@@ -879,8 +961,8 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate([
-            'type' => 'required|in:purchase,adjustment,return,damaged,lost',
-            'quantity' => 'required|numeric|min:0.0001',
+            'type' => 'required|in:purchase,adjustment,return,damaged,lost,service_consumption',
+            'quantity' => 'required|numeric|min:0',
             'unit_cost' => 'required_if:type,purchase,adjustment|numeric|min:0|nullable',
             'notes' => 'nullable|string|max:1000',
             'branch_id' => [
@@ -914,36 +996,24 @@ class InventoryController extends Controller
         }
 
         // If still no branch ID and we have multiple branches assigned to this item, we need to know which one
-        // (But if we found a default branch above, we are good to go even if multiple exist generally, 
-        // though strictly speaking for accurate stock tracking per branch we should ask. 
-        // However, to prevent the crash and "blocker", we'll use the fallback or error out gracefully if absolutely nothing found).
         if (!$branchId && $inventory->branches()->count() > 1) {
             return redirect()->back()
                 ->with('error', 'Please select a branch to update stock for.');
         }
 
-        // If absolutely no branch found (no default, no assignment), we can't track stock per branch.
-        // But we should probably allow updating the global stock if that's the intention?
-        // For now, let's ensure we don't crash.
-
-
         try {
-            // Calculate the direction of the transaction (in/out)
-            $direction = in_array($type, ['purchase', 'return']) ? 'in' : 'out';
+            DB::beginTransaction();
 
-            // For damaged/lost, we reduce stock but don't record a cost
+            $transactionQty = $quantity;
             $totalCost = in_array($type, ['purchase', 'adjustment'])
                 ? $unitCost * $quantity
                 : null;
-
-            DB::beginTransaction();
 
             // 1. Update Branch Stock (Pivot Table)
             if ($branchId) {
                 $pivotRow = $inventory->branches()->where('branch_id', $branchId)->first();
 
                 if (!$pivotRow) {
-                    // If not assigned to this branch yet, attach it with 0 stock first
                     $inventory->branches()->attach($branchId, [
                         'quantity' => 0,
                         'minimum_quantity' => 0,
@@ -953,16 +1023,30 @@ class InventoryController extends Controller
                 }
 
                 if ($pivotRow) {
-                    $currentQty = $pivotRow->pivot->quantity;
-                    $newQty = $direction === 'in' ? $currentQty + $quantity : $currentQty - $quantity;
+                    $currentQty = (float) $pivotRow->pivot->quantity;
+
+                    if ($type === 'adjustment') {
+                        // Direct count semantics (Audit Fix)
+                        $newQty = $quantity;
+                        $signedDelta = $newQty - $currentQty;
+                        $transactionQty = $signedDelta;
+                        $totalCost = abs($signedDelta) * (float) $unitCost;
+                    } elseif (in_array($type, ['purchase', 'return'])) {
+                        $newQty = $currentQty + $quantity;
+                        $transactionQty = $quantity;
+                    } else {
+                        if ($quantity > $currentQty) {
+                            throw new \Exception("Cannot reduce {$quantity} units. Only {$currentQty} units currently in stock for this branch.");
+                        }
+                        $newQty = max(0, $currentQty - $quantity);
+                        $transactionQty = -$quantity;
+                    }
 
                     $inventory->branches()->updateExistingPivot($branchId, [
                         'quantity' => $newQty
                     ]);
                 } else {
-                    // If branch not assigned, assign it with initial stock
-                    // Only if direction is 'in' (can't remove from non-existent)
-                    if ($direction === 'in') {
+                    if (in_array($type, ['purchase', 'return', 'adjustment'])) {
                         $inventory->branches()->attach($branchId, [
                             'quantity' => $quantity,
                             'minimum_quantity' => 0,
@@ -986,7 +1070,7 @@ class InventoryController extends Controller
             $inventory->transactions()->create([
                 'branch_id' => $branchId,
                 'transaction_type' => $type,
-                'quantity' => $quantity,
+                'quantity' => $transactionQty,
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
                 'notes' => $validated['notes'],

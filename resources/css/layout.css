@@ -1,25 +1,23 @@
 :root {
-    --primary: #ec4899;
-    /* Pink */
-    --primary-dark: #db2777;
-    /* Darker Pink */
-    --secondary: #f43f5e;
-    /* Rose */
-    --dark: #0f172a;
-    /* Deep Slate */
-    --sidebar-bg: #1e293b;
-    /* Slate 800 */
-    --sidebar-accent: #334155;
-    /* Slate 700 */
+    --primary: var(--theme-accent, #c5a880);
+    /* Champagne Gold */
+    --primary-dark: var(--theme-accent-hover, #b38e5d);
+    /* Rich Gold Hover */
+    --secondary: #2c3e50;
+    --dark: var(--theme-primary, #0b0f17);
+    /* Deep Obsidian */
+    --sidebar-bg: var(--theme-sidebar, #0b0f17);
+    /* Obsidian Sidebar */
+    --sidebar-accent: #1a2232;
+    /* Dark Surface */
     --light: #f8fafc;
     /* Lightest Gray */
     --sidebar-width: 250px;
     --sidebar-collapsed-width: 70px;
     --header-height: 60px;
-    /* Updated color variables to match login/roles */
-    --primary-color: var(--primary);
+    /* Updated color variables to match luxury theme */
+    --primary-color: var(--theme-accent, #c5a880);
     --secondary-color: var(--dark);
-    /* Using dark for secondary text */
     --success-color: #1cc88a;
     --info-color: #36b9cc;
     --warning-color: #f6c23e;
@@ -30,6 +28,182 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: var(--light);
     /* Use light variable */
+}
+
+/* ==========================================================================
+   DYNAMIC LUXURY BUTTON SYSTEM
+   ========================================================================== */
+
+/* Universal Button Enhancements */
+.btn {
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    line-height: 1.45;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* 1. Dynamic Primary / Luxury Solid Button */
+.btn-primary,
+.btn-luxury {
+    background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, var(--theme-accent-hover, #b38e5d) 100%) !important;
+    border: 1px solid var(--theme-accent, #c5a880) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(197, 168, 128, 0.2);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-luxury:hover,
+.btn-luxury:focus {
+    background: linear-gradient(135deg, var(--theme-accent-hover, #b38e5d) 0%, #9e7a4b 100%) !important;
+    border-color: var(--theme-accent-hover, #b38e5d) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(197, 168, 128, 0.35);
+    transform: translateY(-1px);
+}
+
+/* 2. Dynamic Outline Primary / Luxury Outline */
+.btn-outline-primary,
+.btn-luxury-outline {
+    background: transparent !important;
+    border: 1.5px solid var(--theme-accent, #c5a880) !important;
+    color: var(--theme-accent, #c5a880) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-luxury-outline:hover,
+.btn-luxury-outline:focus {
+    background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, var(--theme-accent-hover, #b38e5d) 100%) !important;
+    border-color: var(--theme-accent, #c5a880) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(197, 168, 128, 0.25);
+    transform: translateY(-1px);
+}
+
+/* 3. Luxury Dark / Obsidian Button */
+.btn-luxury-dark {
+    background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%) !important;
+    border: 1px solid rgba(197, 168, 128, 0.35) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.btn-luxury-dark:hover,
+.btn-luxury-dark:focus {
+    background: linear-gradient(135deg, #141b27 0%, #243045 100%) !important;
+    border-color: var(--theme-accent, #c5a880) !important;
+    color: var(--theme-accent, #c5a880) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* 4. Luxury Ghost / Soft Pill Button */
+.btn-luxury-ghost {
+    background: rgba(197, 168, 128, 0.12) !important;
+    border: 1px solid transparent !important;
+    color: var(--theme-accent, #c5a880) !important;
+}
+
+.btn-luxury-ghost:hover,
+.btn-luxury-ghost:focus {
+    background: rgba(197, 168, 128, 0.22) !important;
+    color: var(--theme-accent-hover, #b38e5d) !important;
+    border-color: rgba(197, 168, 128, 0.3) !important;
+}
+
+/* 5. Luxury Success Button */
+.btn-success,
+.btn-luxury-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.btn-success:hover,
+.btn-luxury-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* 6. Luxury Danger Button */
+.btn-danger,
+.btn-luxury-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover,
+.btn-luxury-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
+/* 7. Luxury Secondary / Subtle Outline Button */
+.btn-outline-secondary,
+.btn-secondary,
+.btn-luxury-secondary {
+    background: #ffffff !important;
+    border: 1.5px solid #d1d5db !important;
+    color: #374151 !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-luxury-secondary:hover,
+.btn-luxury-secondary:focus {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Dynamic Form Control & Checkbox Focus Styles */
+.form-check-input:checked {
+    background-color: var(--theme-accent, #c5a880) !important;
+    border-color: var(--theme-accent, #c5a880) !important;
+}
+.form-check-input:focus {
+    border-color: var(--theme-accent, #c5a880) !important;
+    box-shadow: 0 0 0 0.2rem rgba(197, 168, 128, 0.25) !important;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--theme-accent, #c5a880) !important;
+    box-shadow: 0 0 0 0.2rem rgba(197, 168, 128, 0.2) !important;
+}
+
+/* Button Sizing */
+.btn-sm {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.825rem;
+    border-radius: 6px;
+}
+
+.btn-lg {
+    padding: 0.65rem 1.4rem;
+    font-size: 1rem;
+    border-radius: 10px;
 }
 
 
@@ -289,60 +463,26 @@ body {
 }
 
 
-/* Role-specific colors */
+/* Role-specific colors — all unified to Luxury Obsidian theme */
+/* The JS theme-override in app.blade.php applies the actual color dynamically */
 
-.bg-super-admin {
-    background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--dark) 100%);
-    --sidebar-active-bg: var(--primary);
-    --sidebar-hover-bg: var(--sidebar-accent);
-}
-
-.bg-salon-admin {
-    background: linear-gradient(180deg, #1cc88a 0%, #13855c 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
-}
-
-.bg-manager {
-    background: linear-gradient(180deg, #36b9cc 0%, #258391 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
-}
-
-.bg-employee {
-    background: linear-gradient(180deg, #f6c23e 0%, #dda20a 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.3);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.2);
-}
-
-.bg-customer {
-    background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
-}
-
-.bg-receptionist {
-    background: linear-gradient(180deg, #858796 0%, #60616f 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
-}
-
-.bg-staff {
-    background: linear-gradient(180deg, #1cc88a 0%, #13855c 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
-}
-
+.bg-super-admin,
+.bg-salon-admin,
+.bg-manager,
+.bg-employee,
+.bg-customer,
+.bg-receptionist,
+.bg-staff,
 .bg-pos-staff {
-    background: linear-gradient(180deg, #36b9cc 0%, #258391 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, var(--sidebar-bg, #0b0f17) 0%, var(--dark, #0b0f17) 100%);
+    --sidebar-active-bg: rgba(197, 168, 128, 0.18);
+    --sidebar-hover-bg: rgba(197, 168, 128, 0.08);
 }
 
 .bg-inventory-staff {
-    background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
-    --sidebar-active-bg: rgba(255, 255, 255, 0.25);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, var(--sidebar-bg, #0b0f17) 0%, var(--dark, #0b0f17) 100%);
+    --sidebar-active-bg: rgba(197, 168, 128, 0.18);
+    --sidebar-hover-bg: rgba(197, 168, 128, 0.08);
 }
 
 
@@ -571,13 +711,13 @@ body.mobile-drawer-open {
 }
 
 .mobile-bottom-nav-item.active {
-    color: var(--primary, #ec4899);
+    color: var(--theme-accent, #c5a880);
     font-weight: 700;
 }
 
 .mobile-bottom-nav-item.active i {
     transform: translateY(-2px);
-    color: var(--primary, #ec4899);
+    color: var(--theme-accent, #c5a880);
 }
 
 .mobile-bottom-nav-item.active::after {
@@ -586,7 +726,7 @@ body.mobile-drawer-open {
     top: 4px;
     width: 20px;
     height: 3px;
-    background: var(--primary, #ec4899);
+    background: var(--theme-accent, #c5a880);
     border-radius: 4px;
 }
 

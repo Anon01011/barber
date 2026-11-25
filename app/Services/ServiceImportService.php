@@ -114,11 +114,72 @@ class ServiceImportService
 
         if ($existingService) {
             $existingService->update($serviceData);
+            $service = $existingService;
         } else {
             if (!$salon->canAddService()) {
                 throw new Exception("Limit reached: You cannot add more services under your current plan.");
             }
-            Service::create($serviceData);
+            $service = Service::create($serviceData);
+        }
+
+        // 3. Sync Assigned Products / Recipe Consumables if column is present
+        $recipeKey = null;
+        foreach ($normalizedRow as $k => $v) {
+            if (str_contains($k, 'assigned_product') || str_contains($k, 'assigned_consumable') || str_contains($k, 'recipe') || str_contains($k, 'consumable')) {
+                $recipeKey = $k;
+                break;
+            }
+        }
+
+        if ($recipeKey && !empty(trim($normalizedRow[$recipeKey] ?? ''))) {
+            $rawRecipe = trim($normalizedRow[$recipeKey]);
+            $recipeItems = array_filter(array_map('trim', preg_split('/[|;]+/', $rawRecipe)));
+
+            foreach ($recipeItems as $itemStr) {
+                if (empty($itemStr)) continue;
+                $parts = array_map('trim', explode(':', $itemStr));
+                $skuOrName = $parts[0] ?? '';
+                if (empty($skuOrName)) continue;
+
+                $qty = isset($parts[1]) && is_numeric($parts[1]) ? (float)$parts[1] : 1.0;
+                $unit = !empty($parts[2]) ? $parts[2] : null;
+                $chargeableStr = strtolower(trim($parts[3] ?? 'no'));
+                $isBillable = in_array($chargeableStr, ['yes', 'true', '1', 'charge', 'chargeable']);
+                $extraPrice = isset($parts[4]) && is_numeric($parts[4]) ? (float)$parts[4] : 0.00;
+
+                $invItem = \App\Models\InventoryItem::withoutGlobalScope('branch')
+                    ->where('salon_id', $salonId)
+                    ->where(function ($q) use ($skuOrName) {
+                        $q->where('sku', $skuOrName)
+                          ->orWhere('name', $skuOrName);
+                    })
+                    ->first();
+
+                if ($invItem) {
+                    if (empty($unit)) {
+                        $unit = $invItem->base_unit ?? $invItem->unit_type ?? 'pcs';
+                    }
+
+                    if ($isBillable && $extraPrice <= 0) {
+                        $capacity = (float)($invItem->pack_capacity ?? 1);
+                        if ($capacity <= 0) $capacity = 1;
+                        $basePrice = (float)($invItem->selling_price > 0 ? $invItem->selling_price : $invItem->purchase_price);
+                        $extraPrice = round($basePrice / $capacity, 4);
+                    }
+
+                    \App\Models\ServiceInventoryItem::updateOrCreate([
+                        'salon_id' => $salonId,
+                        'service_id' => $service->id,
+                        'inventory_item_id' => $invItem->id,
+                    ], [
+                        'quantity' => $qty,
+                        'unit' => $unit,
+                        'is_optional' => false,
+                        'is_billable_extra' => $isBillable,
+                        'extra_price_per_unit' => $extraPrice,
+                    ]);
+                }
+            }
         }
     }
 
@@ -145,14 +206,55 @@ class ServiceImportService
     }
 
     /**
-     * Get template headers
+     * Get template headers and sample rows demonstrating assigned products/recipe consumables.
      */
     public static function getTemplateHeaders(): array
     {
         return [
-            ['Category Name', 'Category Description', 'Service Name', 'Service Description', 'Price', 'Duration (mins)', 'Status', 'Online Booking'],
-            ['Haircut', 'All types of haircuts', 'Men\'s Haircut', 'Standard men\'s haircut', '25.00', '30', 'active', 'yes'],
-            ['Haircut', 'All types of haircuts', 'Women\'s Haircut', 'Standard women\'s haircut', '45.00', '60', 'active', 'yes'],
+            [
+                'Category Name',
+                'Category Description',
+                'Service Name',
+                'Service Description',
+                'Price',
+                'Duration (mins)',
+                'Status',
+                'Online Booking',
+                'Assigned Products (Recipe: SKU:Qty:Unit:Chargeable:ExtraPrice)'
+            ],
+            [
+                'Hair Care',
+                'Treatments and styling',
+                'Deep Conditioning Treatment',
+                'Hydrating hair mask and scalp massage',
+                '35.00',
+                '45',
+                'active',
+                'yes',
+                'SERUM-100ML:15:ml:yes:5.00'
+            ],
+            [
+                'Hair Coloring',
+                'Professional coloring services',
+                'Full Hair Color',
+                'Permanent hair coloring with backbar developer',
+                '80.00',
+                '90',
+                'active',
+                'yes',
+                'DEV-20V-1L:60:ml:no:0 | SERUM-100ML:10:ml:yes:5.00'
+            ],
+            [
+                'Haircut',
+                'All types of haircuts',
+                'Men\'s Haircut',
+                'Standard men\'s haircut and finish',
+                '25.00',
+                '30',
+                'active',
+                'yes',
+                'CLAY-001:1:pcs:no:0'
+            ],
         ];
     }
 }

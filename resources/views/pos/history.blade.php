@@ -52,7 +52,7 @@
                         <tbody>
                             @forelse($sales as $sale)
                                 <tr>
-                                    <td>{{ $sale->sale_number }}</td>
+                                    <td>{{ $sale->invoice_number }}</td>
                                     <td>{{ format_datetime($sale->created_at) }}</td>
                                     <td>{{ $sale->customer->name ?? 'Walk-in' }}</td>
                                     <td>{{ $sale->items->sum('quantity') }} items</td>

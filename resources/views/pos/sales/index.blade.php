@@ -132,7 +132,27 @@
                                             <td>
                                                 {{ $sale->customer->name ?? 'Walk-in Customer' }}
                                             </td>
-                                            <td>{{ $sale->items_count ?? '0' }} items</td>
+                                            <td>
+                                                {{ $sale->items_count ?? '0' }} items
+                                                @php
+                                                    $billableTotal = 0;
+                                                    $consumableCount = 0;
+                                                    foreach ($sale->items ?? [] as $saleItem) {
+                                                        foreach ($saleItem->consumables ?? [] as $c) {
+                                                            $consumableCount++;
+                                                            $billableTotal += (float)($c->billed_amount ?? 0);
+                                                        }
+                                                    }
+                                                @endphp
+                                                @if($consumableCount > 0)
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" title="{{ $consumableCount }} consumable(s) used">
+                                                        <i class="fas fa-flask" style="font-size:0.65rem;"></i> {{ $consumableCount }}
+                                                    </span>
+                                                @endif
+                                                @if($billableTotal > 0)
+                                                    <div class="text-success" style="font-size:0.70rem; font-weight:600;">+{{ format_currency($billableTotal) }} materials</div>
+                                                @endif
+                                            </td>
                                             <td class="fw-medium">{{ format_currency($sale->total) }}</td>
                                             <td>
                                                 @if($sale->status === 'voided')
@@ -161,22 +181,22 @@
                                                 @endif
                                             </td>
                                             <td class="text-end pe-4 sale-actions">
-                                                <a href="{{ route('admin.pos.sales.show', $sale->id) }}" class="btn"
+                                                <a href="{{ route('admin.pos.sales.show', $sale->invoice_number ?? $sale->id) }}" class="btn"
                                                     title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @can('pos.edit_sale')
-                                                <a href="{{ route('admin.pos.sales.edit', $sale->id) }}" class="btn"
+                                                <a href="{{ route('admin.pos.sales.edit', $sale->invoice_number ?? $sale->id) }}" class="btn"
                                                     title="Edit Sale">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 @endcan
-                                                <a href="{{ route('admin.pos.receipt', $sale->id) }}" class="btn"
+                                                <a href="{{ route('admin.pos.receipt', $sale->invoice_number ?? $sale->id) }}" class="btn"
                                                     target="_blank" title="View Receipt">
                                                     <i class="fas fa-receipt"></i>
                                                 </a>
                                                 @if($posReceiptArabicButton ?? true)
-                                                <a href="{{ route('admin.pos.receipt.arabic', $sale->id) }}" class="btn text-info"
+                                                <a href="{{ route('admin.pos.receipt.arabic', $sale->invoice_number ?? $sale->id) }}" class="btn text-info"
                                                     target="_blank" title="View Arabic Receipt">
                                                     <i class="fas fa-print"></i>
                                                 </a>

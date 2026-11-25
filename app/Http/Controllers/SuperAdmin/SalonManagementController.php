@@ -35,8 +35,20 @@ class SalonManagementController extends Controller
             });
         }
 
+        // Filter by business type
+        if ($request->filled('business_type')) {
+            $query->where('business_type', $request->business_type);
+        }
+
+        // Filter by plan
+        if ($request->filled('plan_id')) {
+            $query->whereHas('activeSubscription', function ($q) use ($request) {
+                $q->where('plan_id', $request->plan_id);
+            });
+        }
+
         // Filter by status
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', true);
             } elseif ($request->status === 'inactive') {
@@ -48,9 +60,12 @@ class SalonManagementController extends Controller
             }
         }
 
-        $salons = $query->latest()->paginate(15);
+        $salons = $query->latest()->paginate(15)->withQueryString();
 
-        return view('super-admin.salons.index', compact('salons'));
+        $businessTypes = Salon::whereNotNull('business_type')->distinct()->pluck('business_type')->toArray();
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('name')->get();
+
+        return view('super-admin.salons.index', compact('salons', 'businessTypes', 'plans'));
     }
 
     /**

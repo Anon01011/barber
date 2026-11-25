@@ -41,7 +41,7 @@
             } else if (range === 'thisMonth') {
                 s = new Date(s.getFullYear(), s.getMonth(), 1);
             } else if (range === 'last30') {
-                s.setDate(s.getDate() - 29);
+                s.setDate(s.getDate() - 30);
             }
 
             if (formatDate(s) === currentStart && formatDate(e) === currentEnd) {
@@ -62,7 +62,7 @@
                 } else if (range === 'thisMonth') {
                     startObj = new Date(startObj.getFullYear(), startObj.getMonth(), 1);
                 } else if (range === 'last30') {
-                    startObj.setDate(startObj.getDate() - 29);
+                    startObj.setDate(startObj.getDate() - 30);
                 }
 
                 startDateInput.value = formatDate(startObj);
@@ -78,6 +78,16 @@
     // Charts Initializer
     // -------------------------------------------------------------
     function initAnalyticsCharts() {
+        if (typeof ApexCharts === 'undefined') {
+            setTimeout(initAnalyticsCharts, 80);
+            return;
+        }
+
+        if (window.__posAnalyticsInitialized) {
+            return;
+        }
+        window.__posAnalyticsInitialized = true;
+
         const config = window.posAnalyticsConfig || {};
         const currencySymbol = config.currencySymbol || '$';
 
@@ -92,6 +102,11 @@
         function renderRevenueChart(data, type) {
             const chartEl = document.querySelector("#revenueChart");
             if (!chartEl) return;
+
+            if (revenueChart) {
+                try { revenueChart.destroy(); } catch (e) {}
+            }
+            chartEl.innerHTML = '';
 
             const dates = Object.keys(data);
             const values = Object.values(data);
@@ -163,12 +178,14 @@
         renderRevenueChart(dailyData, 'day');
 
         window.updateRevenueChart = function (period, btnEl) {
-            document.querySelectorAll('.segmented-btn-group button').forEach(btn => btn.classList.remove('active'));
-            if (btnEl) {
+            document.querySelectorAll('.segmented-btn-group button').forEach(btn => {
+                if (btn && btn.classList) btn.classList.remove('active');
+            });
+            if (btnEl && btnEl.classList) {
                 btnEl.classList.add('active');
             } else if (window.event && window.event.target) {
                 const target = window.event.target.closest('button');
-                if (target) target.classList.add('active');
+                if (target && target.classList) target.classList.add('active');
             }
 
             if (period === 'day') {
@@ -184,6 +201,7 @@
         let distChart = null;
         const distEl = document.querySelector("#paymentDistributionChart");
         if (distEl && config.paymentAnalytics) {
+            distEl.innerHTML = '';
             const pa = config.paymentAnalytics;
             const paymentDistributionOptions = {
                 series: [
@@ -250,6 +268,7 @@
         let catChart = null;
         const catEl = document.querySelector("#categoryChart");
         if (catEl && Array.isArray(config.categoryData)) {
+            catEl.innerHTML = '';
             const categoryLabels = config.categoryData.map(item => item.name);
             const categorySeries = config.categoryData.map(item => item.total_revenue);
 
@@ -311,6 +330,7 @@
         let hrChart = null;
         const hrEl = document.querySelector("#hourlyChart");
         if (hrEl) {
+            hrEl.innerHTML = '';
             const hours = Array.from({ length: 24 }, (_, i) => i);
             const hourlyValues = hours.map(h => hourlyData[h] || 0);
 
@@ -329,8 +349,11 @@
                     categories: hours.map(h => `${h}:00`),
                     labels: {
                         style: { colors: '#64748b', fontSize: '10px' },
-                        rotate: -45,
-                        rotateAlways: false
+                        rotate: 0,
+                        formatter: function (val) {
+                            const h = parseInt(val, 10);
+                            return (h % 2 === 0) ? `${h}:00` : '';
+                        }
                     },
                     axisBorder: { show: false },
                     axisTicks: { show: false }
@@ -372,6 +395,7 @@
         let pmChart = null;
         const pmEl = document.querySelector("#paymentMethodChart");
         if (pmEl && config.paymentMethodData) {
+            pmEl.innerHTML = '';
             const pmd = config.paymentMethodData;
             const pmLabels = ['Cash', 'Card', 'Online', 'Other'];
             const pmAmounts = [pmd.cash || 0, pmd.card || 0, pmd.online || 0, pmd.other || 0];
@@ -430,6 +454,7 @@
         let vrChart = null;
         const vrEl = document.querySelector("#voidReasonsChart");
         if (vrEl && Array.isArray(config.voidReasonsData) && config.voidReasonsData.length > 0) {
+            vrEl.innerHTML = '';
             const voidReasonsOptions = {
                 series: [{
                     name: 'Void Count',

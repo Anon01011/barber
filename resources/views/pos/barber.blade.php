@@ -750,6 +750,9 @@
 
                     <!-- Order Summary & Checkout Footer -->
                     <div class="pos-order-summary">
+                        <!-- Selected Cart Items Breakdown -->
+                        <div id="cartItemsSummaryList" style="max-height: 160px; overflow-y: auto; margin-bottom: 6px;"></div>
+
                         <!-- Subtotal Line -->
                         <div class="pos-summary-line">
                             <span class="text-lbl">Subtotal</span>
@@ -764,7 +767,7 @@
                                     <input type="number" id="discountValue" placeholder="0" min="0" step="0.01">
                                     <select id="discountType">
                                         <option value="percent">%</option>
-                                        <option value="fixed">{{ $currencySymbol ?? '₹' }}</option>
+                                        <option value="fixed">{{ $currencySymbol ?? currency_symbol() }}</option>
                                     </select>
                                     <button type="button" id="applyDiscount" class="d-none"></button>
                                     <button type="button" id="clearDiscount" class="d-none disc-clear-btn" title="Clear Discount"><i class="fas fa-times"></i></button>
@@ -786,8 +789,13 @@
                         </div>
 
                         <!-- Tip Selector Pills (Reasonable percentages & compact single-row layout) -->
+
+
+
                         @if($tipEnabled ?? true)
-                            <div class="pos-tip-wrapper d-flex align-items-center justify-content-between gap-1 py-1 px-2 my-1">
+                            
+
+                        <div class="pos-tip-wrapper d-flex align-items-center justify-content-between gap-1 py-1 px-2 my-1">
                                 <span class="text-lbl fw-semibold" style="font-size: 0.7rem; white-space: nowrap;">Tip</span>
                                 <div class="pos-tip-quick-group flex-grow-1">
                                     <button type="button" class="pos-tip-pill active" data-pct="0">No Tip</button>
@@ -797,7 +805,7 @@
                                     <button type="button" class="pos-tip-pill" data-pct="custom">Custom</button>
                                 </div>
                                 <div class="d-flex align-items-center gap-1 bg-white border rounded px-1 flex-shrink-0" style="height: 22px;">
-                                    <span class="text-muted" style="font-size: 0.65rem;">{{ $currencySymbol ?? '₹' }}</span>
+                                    <span class="text-muted" style="font-size: 0.65rem;">{{ $currencySymbol ?? currency_symbol() }}</span>
                                     <input type="number" class="border-0 bg-transparent text-end fw-bold text-dark" style="width: 36px; font-size: 0.72rem; outline: none; padding: 0;" id="tipAmount" value="0" min="0" step="0.01">
                                 </div>
                             </div>
@@ -818,6 +826,16 @@
                             <span id="payableAmount">0.00</span>
                             <span id="outstandingAmount">0.00</span>
                         </div>
+
+                        <!-- Materials Used (Consumable cost — charged to customer) -->
+                        <div class="d-none pos-summary-line" id="cartCogsRow">
+                            <span class="text-lbl">
+                                <i class="fas fa-flask text-info me-1"></i>
+                                <strong>Materials Used</strong>
+                            </span>
+                            <span class="text-val fw-semibold text-info" id="cartCogs">0.00</span>
+                        </div>
+
 
                         <!-- Payment Method Selection Tiles -->
                         <div class="payment-device-tiles">
@@ -1112,6 +1130,55 @@
         </div>
     </div>
 
+    {{-- Product Quick-Add Modal --}}
+    <div class="modal fade" id="posProductQuickModal" tabindex="-1" aria-labelledby="posProductQuickModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0" id="posProductQuickModalLabel">
+                            <i class="fas fa-box text-success me-2"></i>Add Product
+                        </h6>
+                        <div class="text-muted" style="font-size: 0.8rem;" id="posProductModalName"></div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <input type="hidden" id="posProductModalItemId">
+                    <input type="hidden" id="posProductModalItemPrice">
+                    <input type="hidden" id="posProductModalStock">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Staff <span class="text-muted fw-normal">(optional)</span></label>
+                        <select class="form-select form-select-sm" id="posProductModalStaff">
+                            <option value="">No Staff Assigned</option>
+                            @foreach($staff as $s)
+                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted mb-1">Quantity</label>
+                            <input type="number" class="form-control form-control-sm" id="posProductModalQty" value="1" min="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted mb-1">Discount (<span id="posProductModalPrice"></span>)</label>
+                            <input type="number" class="form-control form-control-sm" id="posProductModalDisc" value="0" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                    <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-sm px-4 fw-semibold" id="posProductModalAddBtn">
+                        <i class="fas fa-plus me-1"></i>Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('styles')
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     @endpush
@@ -1235,6 +1302,7 @@
 
                 const currencySymbol = {!! json_encode($currencySymbol ?? '$') !!};
                 const posReceiptArabicEnabled = @json($posReceiptArabic ?? true);
+                const posServicesData = @json($services->keyBy('id'));
 
                 // Initialize cart array
                 let cart = [];
@@ -1382,13 +1450,33 @@
                     });
                 }
 
-                // Click item card to add to cart directly
+                // Click item card to add to cart
                 $(document).on('click', '.pos-item-card, .item-card', function () {
                     const $card = $(this);
                     const type = $card.data('type');
                     const id = $card.data('id');
                     const name = $card.data('display-name') || $card.data('name');
                     const price = parseFloat($card.data('price') || 0);
+                    const stock = parseInt($card.data('stock') || 999);
+
+                    // Products: show staff+qty modal before adding
+                    if (type === 'product') {
+                        if (stock <= 0) {
+                            showAlert('This product is out of stock', 'warning');
+                            return;
+                        }
+                        $('#posProductModalName').text(name);
+                        $('#posProductModalPrice').text(formatCurrency(price));
+                        $('#posProductModalItemId').val(id);
+                        $('#posProductModalItemPrice').val(price);
+                        $('#posProductModalStock').val(stock);
+                        $('#posProductModalQty').val(1).attr('max', stock);
+                        $('#posProductModalStaff').val('');
+                        $('#posProductModalDisc').val(0);
+                        const $modal = new bootstrap.Modal(document.getElementById('posProductQuickModal'));
+                        $modal.show();
+                        return;
+                    }
 
                     // Check if this service can be covered by a package balance
                     let packageId = null;
@@ -1420,6 +1508,33 @@
                         notes: notes,
                         package_id: packageId
                     });
+                });
+
+                // Product quick modal — confirm add
+                $('#posProductModalAddBtn').on('click', function () {
+                    const id = $('#posProductModalItemId').val();
+                    const price = parseFloat($('#posProductModalItemPrice').val() || 0);
+                    const stock = parseInt($('#posProductModalStock').val() || 0);
+                    const qty = parseInt($('#posProductModalQty').val() || 1);
+                    const disc = parseFloat($('#posProductModalDisc').val() || 0);
+                    const staffId = $('#posProductModalStaff').val() || null;
+                    const name = $('#posProductModalName').text();
+
+                    if (qty < 1) { showAlert('Quantity must be at least 1', 'warning'); return; }
+                    if (qty > stock) { showAlert('Only ' + stock + ' in stock', 'warning'); return; }
+
+                    addToCart({
+                        type: 'product',
+                        id: id,
+                        name: name,
+                        price: price,
+                        quantity: qty,
+                        staff_id: staffId,
+                        discount_amount: disc,
+                        notes: ''
+                    });
+
+                    bootstrap.Modal.getInstance(document.getElementById('posProductQuickModal')).hide();
                 });
 
                 let pendingLoadReservation = null;
@@ -2353,6 +2468,18 @@
 
                 // Add item to cart
                 function addToCart(item) {
+                    if (item.type === 'service') {
+                        if (typeof posServicesData !== 'undefined' && posServicesData[item.id]) {
+                            const sData = posServicesData[item.id];
+                            if (item.estimated_cogs === undefined) {
+                                item.estimated_cogs = parseFloat(sData.estimated_cogs || 0);
+                            }
+                            if (!item.consumables_summary) {
+                                item.consumables_summary = sData.consumables_summary || [];
+                            }
+                        }
+                    }
+
                     let existingItem = null;
                     if (item.type === 'service' && item.package_id) {
                         // For package services, use service_id as id, type service
@@ -2742,8 +2869,8 @@
                             if (item.type === 'service') {
                                 let filtered = typeof staffList !== 'undefined' ? staffList : [];
                                 staffSelectOptions = `<select class="pos-barber-select staff-select" data-index="${index}" ${isPaidSale ? 'disabled' : ''}>
-                                    <option value="">👤 Stylist</option>
-                                    ${filtered.map(s => `<option value="${s.id}" ${s.id == item.staff_id ? 'selected' : ''}>✂️ ${s.name}</option>`).join('')}
+                                    <option value="">Select Stylist</option>
+                                    ${filtered.map(s => `<option value="${s.id}" ${s.id == item.staff_id ? 'selected' : ''}>${s.name}</option>`).join('')}
                                 </select>`;
                             }
 
@@ -2777,6 +2904,13 @@
                                         <div class="pos-order-item-title fw-semibold text-dark text-truncate me-2" style="font-size: 0.8rem; max-width: 160px;" title="${item.name}">${item.name}</div>
                                         <div class="pos-order-item-price fw-bold text-dark text-nowrap" style="font-size: 0.825rem;">${formatCurrency(lineTotal)}</div>
                                     </div>
+                                    ${(item.type === 'service' && item.consumables_summary && item.consumables_summary.length > 0) ? item.consumables_summary.map(function(c) {
+                                        if (c.is_billable_extra && c.billable_total > 0) {
+                                            return '<div class="text-success extra-small mt-0.5" style="font-size: 0.68rem;"><i class="fas fa-flask me-1" style="font-size:0.63rem;"></i>' + c.name + (c.quantity ? ' &mdash; ' + c.quantity + (c.unit ? ' ' + c.unit : '') : '') + ' <span class="badge bg-success-subtle text-success border border-success-subtle px-1" style="font-size:0.60rem;">+' + formatCurrency(c.billable_total * item.quantity) + ' Billed</span></div>';
+                                        } else {
+                                            return '<div class="text-secondary extra-small mt-0.5" style="font-size: 0.68rem;"><i class="fas fa-flask text-primary me-1" style="font-size:0.63rem;"></i>' + c.name + (c.quantity ? ' &mdash; ' + c.quantity + (c.unit ? ' ' + c.unit : '') : '') + ' <span class="text-muted" style="font-size:0.60rem;">(Included)</span></div>';
+                                        }
+                                    }).join('') : ''}
                                     <div class="d-flex justify-content-between align-items-center mt-1 gap-1">
                                         <div class="d-flex align-items-center gap-1 flex-grow-1" style="min-width: 0;">
                                             ${staffSelectOptions}
@@ -3023,7 +3157,20 @@
                         totalTax = tax;
                     }
 
-                    const grandTotal = (netSubtotal - globalDiscount) + tax;
+                    // Calculate Billable Materials (only billable consumables charged to customer, excluding covered/zero-priced items)
+                    let totalBillableMaterials = 0;
+                    cart.forEach(item => {
+                        const isZeroPriced = (item.package_id && parseFloat(item.price) === 0) || (parseFloat(item.price) === 0 && item.booking_id);
+                        if (!isZeroPriced && item.type === 'service' && item.consumables_summary && item.consumables_summary.length > 0) {
+                            item.consumables_summary.forEach(c => {
+                                if (c.is_billable_extra && c.billable_total > 0) {
+                                    totalBillableMaterials += c.billable_total * (parseFloat(item.quantity) || 1);
+                                }
+                            });
+                        }
+                    });
+
+                    const grandTotal = (netSubtotal + totalBillableMaterials - globalDiscount) + tax;
                     const totalDiscount = totalItemDiscount + globalDiscount;
                     let payable = grandTotal + (tipAmount || 0);
 
@@ -3064,6 +3211,38 @@
                     // Update UI
                     $('#cartSubtotal').text(formatCurrency(grossSubtotal));
                     $('#cartTax').text(formatCurrency(tax));
+
+                    // Update Materials Billed row (only billable consumables)
+                    if (totalBillableMaterials > 0) {
+                        $('#cartCogsRow').removeClass('d-none');
+                        $('#cartCogs').text(formatCurrency(totalBillableMaterials));
+                    } else {
+                        $('#cartCogsRow').addClass('d-none');
+                    }
+
+                    // Render selected items list in billing summary
+                    let summaryItemsHtml = '';
+                    if (cart.length > 0) {
+                        summaryItemsHtml = '<div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">' +
+                            '<span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Selected Items (' + cart.length + ')</span>' +
+                            '<span class="text-muted" style="font-size: 0.65rem;">Qty &middot; Price</span>' +
+                        '</div>';
+                        cart.forEach(item => {
+                            const iconClass = item.type === 'service' ? 'fa-cut text-primary' : (item.type === 'package' ? 'fa-gift text-warning' : 'fa-box text-success');
+                            const qty = parseFloat(item.quantity) || 1;
+                            const lineTotal = (parseFloat(item.price) || 0) * qty - (parseFloat(item.discount_amount) || 0);
+                            summaryItemsHtml += '<div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light" style="font-size: 0.78rem;">' +
+                                '<div class="text-truncate me-2" style="max-width: 175px;" title="' + (item.name || '') + '">' +
+                                    '<i class="fas ' + iconClass + ' me-1" style="font-size: 0.70rem;"></i>' +
+                                    '<span class="fw-semibold text-dark">' + (item.name || 'Item') + '</span>' +
+                                    '<span class="badge bg-light text-dark border ms-1 px-1" style="font-size: 0.65rem;">&times;' + qty + '</span>' +
+                                '</div>' +
+                                '<div class="fw-bold text-dark text-nowrap">' + formatCurrency(lineTotal) + '</div>' +
+                            '</div>';
+                        });
+                        summaryItemsHtml += '<div class="mb-1"></div>';
+                    }
+                    $('#cartItemsSummaryList').html(summaryItemsHtml);
 
                     // Always show discount row so user can enter a discount
                     $('#cartDiscountRow').show();

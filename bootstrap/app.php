@@ -46,5 +46,48 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Use Laravel's default exception handling
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'Your session has expired. Please refresh the page.',
+                    'session_expired' => true,
+                    'redirect' => route('login'),
+                ], 419);
+            }
+            return redirect()->route('login')->with('warning', 'Your session has expired. Please sign in again.');
+        });
+
+        // Always serve custom Blade error views for web requests — even when APP_DEBUG=true.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return null;
+            }
+            if (view()->exists('errors.404')) {
+                return response()->view('errors.404', [], 404);
+            }
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            $status = $e->getStatusCode();
+            if ($status === 419) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'message' => 'Your session has expired. Please refresh the page.',
+                        'session_expired' => true,
+                        'redirect' => route('login'),
+                    ], 419);
+                }
+                return redirect()->route('login')->with('warning', 'Your session has expired. Please sign in again.');
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return null;
+            }
+
+            if (in_array($status, [403, 500, 503]) && view()->exists("errors.{$status}")) {
+                return response()->view("errors.{$status}", [], $status);
+            }
+
+            return null;
+        });
     })->create();

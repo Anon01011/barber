@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.app')
 
 @section('title', 'Stock Alerts')
 
@@ -8,8 +8,8 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <h1 class="h3 mb-0">Stock Alerts</h1>
-                    <button type="button" class="btn btn-primary" onclick="generateAlerts()">
-                        <i class="fas fa-sync me-1"></i> Generate Alerts
+                    <button type="button" class="btn btn-primary rounded-3 px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#confirmGenerateAlertsModal">
+                        <i class="fas fa-sync me-1.5"></i> Generate Alerts
                     </button>
                 </div>
             </div>
@@ -140,15 +140,27 @@
                             @forelse($alerts as $alert)
                                 <tr>
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ $alert->inventoryItem->image_url }}"
-                                                alt="{{ $alert->inventoryItem->name }}" class="rounded me-2"
-                                                style="width: 40px; height: 40px; object-fit: cover;">
-                                            <div>
-                                                <div class="fw-medium">{{ $alert->inventoryItem->name }}</div>
-                                                <small class="text-muted">{{ $alert->inventoryItem->sku }}</small>
+                                        @if($alert->inventoryItem)
+                                            <div class="d-flex align-items-center">
+                                                @if(!empty($alert->inventoryItem->image_url))
+                                                    <img src="{{ $alert->inventoryItem->image_url }}"
+                                                        alt="{{ $alert->inventoryItem->name }}" class="rounded me-2"
+                                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                                @else
+                                                    <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-box text-muted"></i>
+                                                    </div>
+                                                @endif
+                                                <div>
+                                                    <a href="{{ route('admin.inventory.index', ['edit_item' => $alert->inventory_item_id]) }}" class="text-decoration-none">
+                                                        <div class="fw-medium text-dark">{{ $alert->inventoryItem->name }}</div>
+                                                    </a>
+                                                    <small class="text-muted">{{ $alert->inventoryItem->sku }}</small>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @else
+                                            <span class="text-muted fst-italic">Item no longer exists</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <span
@@ -182,10 +194,12 @@
                                                 </button>
                                             </form>
                                         @endif
-                                        <a href="{{ route('admin.inventory.edit', $alert->inventoryItem) }}"
-                                            class="btn btn-sm btn-primary" title="View Product">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                        @if($alert->inventoryItem)
+                                            <a href="{{ route('admin.inventory.index', ['edit_item' => $alert->inventory_item_id]) }}"
+                                                class="btn btn-sm btn-primary" title="View / Edit Product">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -208,14 +222,54 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal: Generate Stock Alerts -->
+    <div class="modal fade" id="confirmGenerateAlertsModal" tabindex="-1" aria-labelledby="confirmGenerateAlertsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header border-0 py-3 px-4 text-white" style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%);">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded-3 me-3 d-flex align-items-center justify-content-center" style="background: rgba(197, 168, 128, 0.2); width: 40px; height: 40px;">
+                            <i class="fas fa-bell" style="color: #c5a880; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-white" id="confirmGenerateAlertsModalLabel" style="font-size: 16px;">Generate Stock Alerts</h5>
+                            <small class="text-white-50" style="font-size: 12px;">Threshold scan across all branches</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="p-2.5 rounded-circle bg-warning bg-opacity-10 text-warning flex-shrink-0" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-exclamation-triangle fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-1">Generate alerts for all inventory items?</h6>
+                            <p class="text-muted small mb-0">
+                                This action will evaluate current stock quantities against reorder levels for all items and branches, automatically flagging items that are low or out of stock.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light px-3 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4 rounded-3 fw-semibold" id="btnExecuteGenerateAlerts" onclick="executeGenerateAlerts()">
+                        <i class="fas fa-sync me-1.5"></i> Generate Alerts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
-            function generateAlerts() {
-                if (!confirm('Generate stock alerts for all items?')) return;
+            function executeGenerateAlerts() {
+                const modalEl = document.getElementById('confirmGenerateAlertsModal');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                const btn = document.getElementById('btnExecuteGenerateAlerts');
 
-                const btn = event.target.closest('button');
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5"></span> Generating...';
 
                 fetch('{{ route("admin.inventory.alerts.generate") }}', {
                     method: 'POST',
@@ -224,23 +278,34 @@
                         'Accept': 'application/json'
                     }
                 })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            location.reload();
+                .then(res => res.json())
+                .then(data => {
+                    modal.hide();
+                    if (data.success) {
+                        if (typeof window.showModalAlert === 'function') {
+                            window.showModalAlert(data.message || 'Stock alerts generated successfully!', 'success', 'Success', () => {
+                                location.reload();
+                            });
                         } else {
-                            alert('Error: ' + data.message);
+                            location.reload();
                         }
-                    })
-                    .catch(err => {
-                        alert('Failed to generate alerts');
-
-                    })
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-sync me-1"></i> Generate Alerts';
-                    });
+                    } else {
+                        const errMsg = data.message || 'Failed to generate stock alerts.';
+                        if (typeof window.showModalAlert === 'function') {
+                            window.showModalAlert(errMsg, 'error', 'Error');
+                        }
+                    }
+                })
+                .catch(err => {
+                    modal.hide();
+                    if (typeof window.showModalAlert === 'function') {
+                        window.showModalAlert('A network error occurred while generating stock alerts.', 'error', 'Error');
+                    }
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync me-1.5"></i> Generate Alerts';
+                });
             }
         </script>
     @endpush

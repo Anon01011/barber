@@ -1,8 +1,8 @@
 <style>
     #billActivityModal {
-        --primary-color: #7c3aed;
-        --primary-light: #f5f3ff;
-        --primary-dark: #6d28d9;
+        --primary-color: var(--theme-accent, #c5a880);
+        --primary-light: rgba(197, 168, 128, 0.12);
+        --primary-dark: var(--theme-accent-hover, #b38e5d);
         --border-color: #e2e8f0;
     }
     #billActivityModal .modal-content {
@@ -114,9 +114,9 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 95%;">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 8px; overflow: hidden;">
             <div class="modal-header border-0 text-white py-3 px-3"
-                style="background: linear-gradient(135deg, var(--primary-color) 0%, #5b21b6 100%); border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                <h5 class="modal-title d-flex align-items-center gap-2 mb-0 fw-semibold">
-                    <i class="fas fa-file-invoice me-2"></i> Bill Activity
+                style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-bottom: 1px solid rgba(197, 168, 128, 0.25) !important;">
+                <h5 class="modal-title d-flex align-items-center gap-2 mb-0 fw-semibold text-white">
+                    <i class="fas fa-file-invoice me-2" style="color: #c5a880;"></i> Bill Activity
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>

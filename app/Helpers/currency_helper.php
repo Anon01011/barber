@@ -2,28 +2,28 @@
 
 if (!function_exists('currency_symbol')) {
     /**
-     * Get salon's currency symbol from settings
+     * Get salon's currency symbol from settings (optimized with static in-memory caching)
      * 
      * @return string
      */
     function currency_symbol(): string
     {
-        try {
-            $settings = app(\App\Services\SettingsService::class);
-            $salon = app()->bound('current_salon') ? app('current_salon') : null;
-            $salonId = $salon ? $salon->id : null;
+        static $symbolCache = [];
 
+        try {
+            $salon = app()->bound('current_salon') ? app('current_salon') : null;
+            $salonId = $salon ? $salon->id : (auth()->check() ? auth()->user()->salon_id : 0);
+
+            if (isset($symbolCache[$salonId])) {
+                return $symbolCache[$salonId];
+            }
+
+            $settings = app(\App\Services\SettingsService::class);
             $symbol = $settings->get('currency_symbol', '$', $salonId);
 
-            \Log::info('Currency symbol retrieved:', [
-                'salon_id' => $salonId,
-                'symbol' => $symbol,
-                'current_salon_bound' => app()->bound('current_salon')
-            ]);
-
+            $symbolCache[$salonId] = $symbol;
             return $symbol;
         } catch (\Exception $e) {
-            \Log::error('Error in currency_symbol helper: ' . $e->getMessage());
             return '$'; // Default fallback
         }
     }
@@ -31,24 +31,31 @@ if (!function_exists('currency_symbol')) {
 
 if (!function_exists('currency_code')) {
     /**
-     * Get salon's currency code from settings
+     * Get salon's currency code from settings (optimized with static in-memory caching)
      * 
      * @return string
      */
     function currency_code(): string
     {
-        try {
-            $settings = app(\App\Services\SettingsService::class);
-            $salon = app()->bound('current_salon') ? app('current_salon') : null;
-            $salonId = $salon ? $salon->id : null;
+        static $codeCache = [];
 
+        try {
+            $salon = app()->bound('current_salon') ? app('current_salon') : null;
+            $salonId = $salon ? $salon->id : (auth()->check() ? auth()->user()->salon_id : 0);
+
+            if (isset($codeCache[$salonId])) {
+                return $codeCache[$salonId];
+            }
+
+            $settings = app(\App\Services\SettingsService::class);
             $code = $settings->get('currency_code', 'USD', $salonId);
 
             // If custom currency, get the custom code
             if ($code === 'CUSTOM') {
-                return $settings->get('custom_currency_code', 'USD', $salonId);
+                $code = $settings->get('custom_currency_code', 'USD', $salonId);
             }
 
+            $codeCache[$salonId] = $code;
             return $code;
         } catch (\Exception $e) {
             return 'USD'; // Default fallback

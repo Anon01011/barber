@@ -144,4 +144,62 @@ class Service extends Model
     {
         return $query->where('available_for_online_booking', true);
     }
+
+    /**
+     * Service recipe items (raw relation).
+     */
+    public function recipeItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ServiceInventoryItem::class, 'service_id');
+    }
+
+    /**
+     * Consumable products linked to this service recipe.
+     */
+    public function consumables(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(InventoryItem::class, 'service_inventory_items')
+            ->withPivot([
+                'id',
+                'quantity',
+                'unit',
+                'is_optional',
+                'is_billable_extra',
+                'extra_price_per_unit',
+                'notes'
+            ])
+            ->withTimestamps();
+    }
+
+    /**
+     * Calculate estimated Cost of Goods Sold (COGS) based on recipe consumables.
+     */
+    public function calculateEstimatedCogs(): float
+    {
+        $cogs = 0.0;
+        foreach ($this->consumables as $item) {
+            $costPerUnit = $item->cost_per_unit;
+            $qty = (float) $item->pivot->quantity;
+            $cogs += ($costPerUnit * $qty);
+        }
+        return round($cogs, 2);
+    }
+
+    /**
+     * Calculate gross profit margin on this service.
+     */
+    public function calculateGrossMargin(): array
+    {
+        $price = (float) $this->price;
+        $cogs = $this->calculateEstimatedCogs();
+        $profit = $price - $cogs;
+        $marginPercent = $price > 0 ? round(($profit / $price) * 100, 1) : 0.0;
+
+        return [
+            'price' => $price,
+            'cogs' => $cogs,
+            'gross_profit' => $profit,
+            'margin_percent' => $marginPercent,
+        ];
+    }
 }

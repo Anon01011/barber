@@ -5,9 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class CustomerController extends Controller
 {
@@ -197,6 +202,10 @@ class CustomerController extends Controller
             'notes' => 'nullable|string|max:1000',
             'medical_notes' => 'nullable|string|max:1000',
             'custom_fields' => 'nullable|array',
+            'grant_login_access' => 'nullable|boolean',
+            'password_mode' => 'nullable|in:auto,manual',
+            'portal_password' => 'nullable|required_if:password_mode,manual|string|min:8|max:100',
+            'credential_notify' => 'nullable|in:email,sms,both',
         ], [
             'email.required_if' => 'The email field is required when email is selected as preferred contact method.',
             'first_name.required' => 'First name is required.',
@@ -245,6 +254,19 @@ class CustomerController extends Controller
             }
 
             $customer = Customer::create($data);
+
+            // Handle portal login access grant
+            if ($request->boolean('grant_login_access') && !empty($customer->email)) {
+                try {
+                    $this->grantCustomerLoginAccess($customer, $request, $salon);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to grant login access to customer', [
+                        'customer_id' => $customer->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Non-fatal: customer is still created
+                }
+            }
 
             // Check if new customer notifications are enabled
             $settingsService = app(\App\Services\SettingsService::class);
@@ -301,6 +323,80 @@ class CustomerController extends Controller
                 'message' => 'Failed to create customer',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Grant a customer portal login access — creates a linked User account with the 'customer' role.
+     * Sends credentials via email and/or SMS based on the request preference.
+     */
+    protected function grantCustomerLoginAccess(Customer $customer, Request $request, $salon): void
+    {
+        // Determine password
+        $passwordMode = $request->input('password_mode', 'auto');
+        $plainPassword = ($passwordMode === 'manual' && $request->filled('portal_password'))
+            ? $request->input('portal_password')
+            : Str::password(12, true, true, false); // letters + numbers, no symbols
+
+        // Find or create the linked User record
+        $user = User::where('email', $customer->email)->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name'          => $customer->name,
+                'email'         => $customer->email,
+                'password'      => Hash::make($plainPassword),
+                'salon_id'      => $customer->salon_id,
+                'status'        => 'active',
+                'email_verified_at' => now(),
+            ]);
+        } else {
+            // Update password if user already exists
+            $user->update(['password' => Hash::make($plainPassword)]);
+        }
+
+        // Assign customer role (Spatie)
+        if (!$user->hasRole('customer')) {
+            $customerRole = Role::where('name', 'customer')->first();
+            if ($customerRole) {
+                $user->assignRole($customerRole);
+            }
+        }
+
+        // Link customer record to the user
+        $customer->update(['user_id' => $user->id]);
+
+        // Send credentials
+        $notifyMethod = $request->input('credential_notify', 'email');
+        $settingsService = app(\App\Services\SettingsService::class);
+        $appName  = $settingsService->get('app_name', config('app.name', 'SalonPro'));
+        $appLogo  = $settingsService->getLogoUrl();
+        $loginUrl = route('login');
+
+        // Email credentials
+        if (in_array($notifyMethod, ['email', 'both']) && $customer->email) {
+            try {
+                Mail::send(
+                    'emails.customer.login-credentials',
+                    compact('customer', 'salon', 'plainPassword', 'loginUrl', 'appName', 'appLogo'),
+                    function ($message) use ($customer, $salon, $appName) {
+                        $message->to($customer->email, $customer->name)
+                                ->subject("Your {$salon->name} Client Portal Access — Login Credentials");
+                    }
+                );
+            } catch (\Exception $e) {
+                Log::warning('Failed to send login credentials email: ' . $e->getMessage());
+            }
+        }
+
+        // SMS credentials (if notification service supports it)
+        if (in_array($notifyMethod, ['sms', 'both']) && $customer->phone) {
+            try {
+                $smsBody = "Welcome to {$salon->name}!\nYour login: {$customer->email}\nPassword: {$plainPassword}\nPortal: {$loginUrl}";
+                $this->notificationService->sendSms($customer->phone, $smsBody, $customer->country_code ?? '');
+            } catch (\Exception $e) {
+                Log::warning('Failed to send login credentials SMS: ' . $e->getMessage());
+            }
         }
     }
 
@@ -464,6 +560,7 @@ class CustomerController extends Controller
                     'send_promotional_sms' => (bool) $customer->send_promotional_sms,
                     'send_transactional_sms' => (bool) $customer->send_transactional_sms,
                     'custom_fields' => $customer->custom_fields,
+                    'has_portal_access' => !empty($customer->user_id),
                 ]
             ]);
         }
@@ -502,6 +599,10 @@ class CustomerController extends Controller
             'notes' => 'nullable|string|max:1000',
             'medical_notes' => 'nullable|string|max:1000',
             'custom_fields' => 'nullable|array',
+            'grant_login_access' => 'nullable|boolean',
+            'password_mode' => 'nullable|in:auto,manual',
+            'portal_password' => 'nullable|required_if:password_mode,manual|string|min:8|max:100',
+            'credential_notify' => 'nullable|in:email,sms,both',
         ], [
             'email.required_if' => 'The email field is required when email is selected as preferred contact method.',
             'first_name.required' => 'First name is required.',
@@ -531,6 +632,19 @@ class CustomerController extends Controller
             }
 
             $customer->update($data);
+
+            // Handle portal login access grant or reset
+            if ($request->boolean('grant_login_access') && !empty($customer->email)) {
+                try {
+                    $this->grantCustomerLoginAccess($customer, $request, auth()->user()->salon);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to update login access for customer', [
+                        'customer_id' => $customer->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Customer updated successfully',

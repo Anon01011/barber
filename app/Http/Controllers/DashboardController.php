@@ -29,6 +29,14 @@ class DashboardController extends Controller
             return redirect()->route('admin.super.dashboard');
         }
 
+        // Customer portal check (takes precedence if user is primarily customer)
+        if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'admin', 'manager', 'super_admin'])) {
+            if (!$user->hasRole('employee') || ($user->customer()->exists() && !$user->employee()->exists())) {
+                $slug = optional($user->salon)->slug ?? request()->route('salon_slug') ?? 'demo-salon';
+                return redirect()->route('customer.dashboard', ['salon_slug' => $slug]);
+            }
+        }
+
         if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'admin', 'manager', 'receptionist'])) {
             if (!$request->has('view') && !$request->has('mode')) {
                 $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');

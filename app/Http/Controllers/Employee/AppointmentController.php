@@ -305,6 +305,20 @@ class AppointmentController extends Controller
                 ], 403);
             }
 
+            // SECURITY: Verify that this booking is either unassigned, assigned to this employee, or the user is an admin/manager
+            if ($booking->staff_id !== null && $booking->staff_id !== $user->id && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+                DB::rollBack();
+                Log::warning('Employee attempted to reject booking assigned to another staff member', [
+                    'user_id' => $user->id,
+                    'booking_staff_id' => $booking->staff_id,
+                    'booking_id' => $booking->id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You cannot reject an appointment assigned to another staff member.'
+                ], 403);
+            }
+
             // Allow rejection even if assigned
             if ($booking->status !== 'pending') {
                 throw new \Exception('This appointment is no longer available for rejection.');

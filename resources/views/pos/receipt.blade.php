@@ -409,6 +409,12 @@
                                         @if($subItem->staff)
                                             <div style="font-size: 0.7rem; color: #888;">Staff: {{ $subItem->staff->name }}</div>
                                         @endif
+                                        @if($subItem->consumables && $subItem->consumables->isNotEmpty())
+                                            <div style="font-size: 0.65rem; color: #888; margin-top: 1px;">
+                                                <i class="fas fa-flask" style="font-size: 0.60rem;"></i> Consumables: 
+                                                {{ $subItem->consumables->map(fn($c) => ($c->inventoryItem->name ?? 'Item') . ' (' . (float)$c->quantity_used . ($c->unit ? ' '.$c->unit : '') . ')' . ((float)($c->billed_amount ?? 0) > 0 ? ' +'.format_currency($c->billed_amount) : ''))->implode(', ') }}
+                                            </div>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="text-center small text-muted">
@@ -425,6 +431,12 @@
                                     {!! renderDual($item->item_name, optional($item->item)->name_ar, $arabicEnabled, 'text-left', true) !!}
                                     @if($item->staff)
                                         <div style="font-size: 0.75rem; color: #666;">Staff: {{ $item->staff->name }}</div>
+                                    @endif
+                                    @if($item->consumables && $item->consumables->isNotEmpty())
+                                        <div style="font-size: 0.68rem; color: #666; margin-top: 2px;">
+                                            <i class="fas fa-flask" style="font-size: 0.65rem;"></i> Consumables:
+                                            {{ $item->consumables->map(fn($c) => ($c->inventoryItem->name ?? 'Item') . ' (' . (float)$c->quantity_used . ($c->unit ? ' '.$c->unit : '') . ')' . ((float)($c->billed_amount ?? 0) > 0 ? ' +'.format_currency($c->billed_amount) : ''))->implode(', ') }}
+                                        </div>
                                     @endif
                                 </td>
                                 <td class="text-center">

@@ -68,8 +68,8 @@ class ProductImportExportController extends Controller
                 $records[] = $normalizedRecord;
             }
             
-            $salonId = auth()->user()->salon_id;
-            $branchId = auth()->user()->branch_id;
+            $salonId = $this->getSalonId();
+            $branchId = $this->getBranchId();
             
             $results = $this->importService->import($records, $salonId, $branchId);
             
@@ -100,14 +100,43 @@ class ProductImportExportController extends Controller
      */
     public function export()
     {
-        $salonId = auth()->user()->salon_id;
-        $branchId = auth()->user()->branch_id;
+        $salonId = $this->getSalonId();
+        $branchId = $this->getBranchId();
         
         $data = $this->exportService->export($salonId, $branchId);
         
         $filename = 'products_export_' . date('Y-m-d_His') . '.csv';
         
         return $this->generateCsvResponse($data, $filename);
+    }
+
+    /**
+     * Resolve current salon ID safely across all authentication and tenant contexts.
+     */
+    protected function getSalonId(): int
+    {
+        $salonId = app()->bound('current_salon') && app('current_salon')
+            ? app('current_salon')->id
+            : (auth()->user()?->salon_id ?? session('current_salon_id'));
+
+        if (!$salonId && request()->route('salon_slug')) {
+            $salon = \App\Models\Salon::where('slug', request()->route('salon_slug'))->first();
+            $salonId = $salon?->id;
+        }
+
+        if (!$salonId) {
+            abort(404, 'Salon context not found.');
+        }
+
+        return (int) $salonId;
+    }
+
+    /**
+     * Resolve current branch ID safely.
+     */
+    protected function getBranchId(): ?int
+    {
+        return session('current_branch_id') ?? auth()->user()?->branch_id;
     }
 
     /**

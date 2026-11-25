@@ -29,7 +29,8 @@
                         @endif
                     </div>
                     <div class="card-body">
-                        <table class="table table-borderless">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
                             <tr>
                                 <th width="30%">Salon:</th>
                                 <td>
@@ -101,7 +102,8 @@
                                     <td class="text-info">{{ $subscription->paused_at->format('M d, Y H:i') }}</td>
                                 </tr>
                             @endif
-                        </table>
+                            </table>
+                        </div>
 
                         <hr>
 

@@ -107,7 +107,7 @@
                                             @if($rating->booking && $rating->booking->package)
                                                 <div class="mt-1">
                                                     <span class="badge bg-purple-subtle text-purple-emphasis rounded-pill px-2 py-1"
-                                                        style="background-color: #f3e8ff !important; color: #7c3aed !important; font-size: 0.65em;">
+                                                        style="background-color: rgba(197, 168, 128, 0.15) !important; color: #b38e5d !important; font-size: 0.65em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                         <i class="fas fa-box me-1"></i>{{ $rating->booking->package->name }}
                                                     </span>
                                                 </div>
@@ -185,7 +185,7 @@
                                             <span class="badge bg-light text-dark border">{{ $rating->service->name }}</span>
                                             @if($rating->booking && $rating->booking->package)
                                                 <div class="mt-1">
-                                                    <span class="badge bg-purple-subtle text-purple-emphasis rounded-pill px-2 py-1" style="background-color: #f3e8ff !important; color: #7c3aed !important; font-size: 0.65em;">
+                                                    <span class="badge bg-purple-subtle text-purple-emphasis rounded-pill px-2 py-1" style="background-color: rgba(197, 168, 128, 0.15) !important; color: #b38e5d !important; font-size: 0.65em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                         <i class="fas fa-box me-1"></i>{{ $rating->booking->package->name }}
                                                     </span>
                                                 </div>

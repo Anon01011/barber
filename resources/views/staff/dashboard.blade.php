@@ -4,20 +4,21 @@
 @section('content')
     <div class="container-fluid py-4">
         <!-- Welcome Section -->
-        <div class="row mb-5">
+        <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm bg-gradient-primary text-white overflow-hidden position-relative">
-                    <div class="card-body p-5 position-relative z-index-2">
+                <div class="card border-0 shadow-sm text-white overflow-hidden position-relative" style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-radius: 14px; border: 1px solid rgba(197, 168, 128, 0.25) !important;">
+                    <div class="card-body p-4 p-md-5 position-relative z-index-2">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
-                                <h2 class="display-6 fw-bold mb-2">Welcome back, {{ Auth::user()->name }}! 👋</h2>
-                                <p class="lead mb-0 opacity-90">Here's what's happening in your schedule today.</p>
+                                <span class="badge px-3 py-1 mb-2 rounded-pill fw-semibold text-uppercase" style="background: rgba(197, 168, 128, 0.15); color: #c5a880; font-size: 11px; letter-spacing: 0.5px;">Staff Workspace</span>
+                                <h2 class="display-6 fw-bold mb-2 text-white">Welcome back, {{ Auth::user()->name }}!</h2>
+                                <p class="lead mb-0 opacity-90" style="color: #cbd5e1; font-size: 1rem;">Here is what is scheduled for your day ahead.</p>
                             </div>
                             <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                                <a href="{{ route('employee.appointments.today', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                    class="btn btn-light text-primary fw-bold shadow-sm px-4 py-2 rounded-pill">
-                                    <i class="fas fa-calendar-day me-2"></i>View My Schedule
-                                </a>
+                                <x-btn href="{{ route('employee.appointments.today', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
+                                    variant="primary" icon="fas fa-calendar-day" class="rounded-pill px-4 py-2 fw-semibold">
+                                    View My Schedule
+                                </x-btn>
                             </div>
                         </div>
                     </div>

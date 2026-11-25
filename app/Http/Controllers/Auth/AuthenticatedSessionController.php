@@ -32,8 +32,14 @@ class AuthenticatedSessionController extends Controller
             }
         }
 
+        $settings = app(\App\Services\SettingsService::class);
+        $appName = $settings->get('app_name', config('app.name', 'SalonPro'));
+        $appLogo = $settings->getLogoUrl();
+        $faviconUrl = $settings->getFaviconUrl();
+        $activeRole = $request->query('role', 'salon');
+
         \Illuminate\Support\Facades\Log::info('AuthenticatedSessionController: Showing login view');
-        return view('auth.login');
+        return view('auth.login', compact('settings', 'appName', 'appLogo', 'faviconUrl', 'activeRole'));
     }
 
     /**

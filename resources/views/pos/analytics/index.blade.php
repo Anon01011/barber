@@ -3,7 +3,6 @@
 @section('title', 'Sales Analytics')
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.css" rel="stylesheet">
     <link href="{{ asset('css/pos-analytics.css') }}" rel="stylesheet">
 @endpush
 
@@ -101,8 +100,8 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="w-100">
                         <div class="analytics-metric-title text-primary">Total Paid (Inflow)</div>
-                        <div class="analytics-metric-val text-primary">{{ $sym }}{{ number_format($salesData['totalPaid'] ?? 0, 2) }}</div>
-                        <div class="analytics-metric-sub">+ {{ $sym }}{{ number_format($salesData['totalTips'] ?? 0, 2) }} tips = {{ $sym }}{{ number_format(($salesData['totalPaid'] ?? 0) + ($salesData['totalTips'] ?? 0), 2) }} inflow</div>
+                        <div class="analytics-metric-val text-primary">{{ $sym }}{{ number_format(($salesData['totalPaid'] ?? 0) + ($salesData['totalTips'] ?? 0), 2) }}</div>
+                        <div class="analytics-metric-sub">Sales: {{ $sym }}{{ number_format($salesData['totalPaid'] ?? 0, 2) }} &bull; Tips: +{{ $sym }}{{ number_format($salesData['totalTips'] ?? 0, 2) }}</div>
                     </div>
                     <div class="metric-icon-box bg-primary bg-opacity-10 text-primary ms-2">
                         <i class="fas fa-hand-holding-usd"></i>
@@ -400,7 +399,7 @@
                         </div>
                         <div class="d-flex justify-content-between mb-1 text-danger">
                             <span><i class="fas fa-circle text-danger me-1" style="font-size:0.5rem;"></i>Net Refunded</span>
-                            <span class="fw-semibold">&minus;{{ $sym }}{{ number_format($paymentAnalytics['net_refunded'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['refund_net_percentage'] ?? 0, 1) }}%)</small></span>
+                            <span class="fw-semibold">{{ ($paymentAnalytics['net_refunded'] ?? 0) > 0 ? '&minus;' : '' }}{{ $sym }}{{ number_format($paymentAnalytics['net_refunded'] ?? 0, 2) }} <small>({{ number_format($paymentAnalytics['refund_net_percentage'] ?? 0, 1) }}%)</small></span>
                         </div>
                         <div class="d-flex justify-content-between mb-1 text-info">
                             <span><i class="fas fa-circle text-info me-1" style="font-size:0.5rem;"></i>Tips</span>
@@ -514,7 +513,15 @@
             <div class="col-12 col-md-6">
                 <div class="p-2 bg-light rounded-3 border">
                     <span class="small fw-semibold text-muted d-block mb-1 px-2">Void Reasons Chart</span>
-                    <div id="voidReasonsChart" style="height: 140px;"></div>
+                    @if(!empty($voidAnalytics['total_voided']) && $voidAnalytics['total_voided'] > 0)
+                        <div id="voidReasonsChart" style="height: 140px;"></div>
+                    @else
+                        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-3" style="min-height: 140px;">
+                            <i class="fas fa-check-circle text-success mb-2" style="font-size: 1.75rem; opacity: 0.85;"></i>
+                            <span class="small fw-semibold text-dark">No Voided Transactions</span>
+                            <span class="text-muted" style="font-size: 0.72rem;">All orders were completed successfully with zero cancellations</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -620,7 +627,7 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush analytics-table-scroll">
                         @forelse($recentTransactions as $transaction)
-                            <a href="{{ route('admin.pos.sales.show', $transaction['id']) }}" class="list-group-item list-group-item-action p-2 px-3 border-0 border-bottom text-decoration-none">
+                            <a href="{{ route('admin.pos.sales.show', $transaction['invoice_number'] ?? $transaction['id']) }}" class="list-group-item list-group-item-action p-2 px-3 border-0 border-bottom text-decoration-none">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
                                         <div class="metric-icon-box bg-light text-primary border me-2" style="width:32px;height:32px;font-size:0.8rem;">
@@ -675,7 +682,6 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.js"></script>
     <script>
         window.posAnalyticsConfig = {
             currencySymbol: '{{ currency_symbol() }}',

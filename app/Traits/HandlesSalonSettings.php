@@ -18,6 +18,7 @@ trait HandlesSalonSettings
         return [
             'logo' => 'nullable|image|max:2048',
             'theme_color' => 'nullable|in:pink,blue,purple,green,barber',
+            'theme_color' => 'nullable|in:luxury,barber,pink,blue,purple,green',
             'business_name' => 'required|string|max:255',
             'business_email' => 'required|email|max:255|unique:salons,email,' . $salonId,
             'business_phone' => 'nullable|string|max:20',

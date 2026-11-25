@@ -2,23 +2,24 @@
 
 <style>
     #editCustomerModal {
-        --primary-color: #7c3aed;
-        --primary-light: #f5f3ff;
-        --primary-dark: #6d28d9;
+        --primary-color: var(--theme-accent, #c5a880);
+        --primary-light: rgba(197, 168, 128, 0.12);
+        --primary-dark: var(--theme-accent-hover, #b38e5d);
         --border-color: #e2e8f0;
         --text-color: #334155;
     }
 
     #editCustomerModal .modal-content {
-        border-radius: 16px;
+        border-radius: 14px;
         border: none;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
 
     #editCustomerModal .modal-header {
-        border-bottom: none;
+        border-bottom: 1px solid rgba(197, 168, 128, 0.25);
         padding: 1.25rem 1.5rem;
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%);
         position: relative;
         overflow: hidden;
     }
@@ -99,7 +100,7 @@
     #editCustomerModal .form-control:focus,
     #editCustomerModal .form-select:focus {
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+        box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.2);
         outline: none;
     }
 
@@ -157,8 +158,8 @@
             <!-- Modern Header with Gradient and fixed transparent icon bg -->
             <div class="modal-header text-white">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.15);">
-                        <i class="fas fa-user-edit fa-lg text-white"></i>
+                    <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(197, 168, 128, 0.15);">
+                        <i class="fas fa-user-edit fa-lg" style="color: #c5a880;"></i>
                     </div>
                     <div>
                         <h5 class="modal-title m-0">Edit Customer</h5>
@@ -347,19 +348,96 @@
                         </div>
                     </div>
 
+                    <!-- Portal Login Access Section -->
+                    <div class="card border-0 mb-3" style="border: 1px solid #e8dccb !important; background: linear-gradient(135deg, #fdfcfa 0%, #faf7f2 100%);">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="p-2 rounded-2 me-2" style="background: rgba(197,168,128,0.15);">
+                                    <i class="fas fa-key" style="color: #c5a880;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-semibold text-dark" style="font-size:13px;">Portal Login Access</h6>
+                                    <small class="text-muted">Allow this customer to log in to their client portal</small>
+                                </div>
+                                <div class="form-check form-switch ms-2 mb-0">
+                                    <input class="form-check-input" type="checkbox" name="grant_login_access"
+                                        value="1" id="grantLoginToggle_EDIT" onchange="toggleLoginAccessSection('EDIT')">
+                                </div>
+                            </div>
+
+                            <div id="loginAccessSection_status" class="mb-2" style="display:none;">
+                                <span class="badge" style="background:#0b0f17; color:#c5a880; font-size:11px;">
+                                    <i class="fas fa-check-circle me-1"></i>Portal access active
+                                </span>
+                                <small class="text-muted ms-2">Enable the toggle to reset the password and re-send credentials.</small>
+                            </div>
+
+                            <div id="loginAccessFields_EDIT" style="display:none;">
+                                <div class="p-3 rounded-2 mb-3" style="background:#fff8f0; border:1px solid #f0dfc0;">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="fas fa-info-circle text-warning mt-1" style="font-size:11px;"></i>
+                                        <small class="text-muted">A new password will be generated/set and credentials will be resent to the customer's email.</small>
+                                    </div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold" style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280;">
+                                            <i class="fas fa-lock me-1" style="color:#c5a880;"></i>Password Setup
+                                        </label>
+                                        <div class="d-flex gap-3 mb-1">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="password_mode_EDIT" id="auto_pass_EDIT" value="auto" checked onchange="togglePasswordMode('EDIT')">
+                                                <label class="form-check-label small" for="auto_pass_EDIT">
+                                                    <i class="fas fa-magic me-1 text-success"></i>Auto-generate &amp; email
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="password_mode_EDIT" id="manual_pass_EDIT" value="manual" onchange="togglePasswordMode('EDIT')">
+                                                <label class="form-check-label small" for="manual_pass_EDIT">
+                                                    <i class="fas fa-pen me-1" style="color:#c5a880;"></i>Set manually
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" id="manualPassField_EDIT" style="display:none;">
+                                        <label class="form-label fw-semibold small">
+                                            <i class="fas fa-key me-1" style="color:#c5a880;"></i>New Password
+                                        </label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="password" class="form-control" name="portal_password"
+                                                id="portalPasswordInput_EDIT" placeholder="Min. 8 characters" autocomplete="new-password">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePortalPassVis('EDIT')">
+                                                <i class="fas fa-eye" id="portalPassEye_EDIT"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">
+                                            <i class="fas fa-paper-plane me-1" style="color:#c5a880;"></i>Send Credentials Via
+                                        </label>
+                                        <select class="form-select form-select-sm" name="credential_notify">
+                                            <option value="email" selected>Email only</option>
+                                            <option value="sms">SMS only</option>
+                                            <option value="both">Email and SMS</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Footer actions --}}
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                         <div class="text-muted small">
                             <i class="fas fa-info-circle me-1"></i> Fields marked with * are required
                         </div>
-                        <div class="d-flex">
-                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-1"></i> Cancel
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
-                                <i class="fas fa-save me-1"></i> Save Changes
-                            </button>
+                        <div class="d-flex gap-2">
+                            <x-btn type="button" variant="secondary" icon="fas fa-times" data-bs-dismiss="modal">
+                                Cancel
+                            </x-btn>
+                            <x-btn type="submit" variant="primary" icon="fas fa-save" id="saveEditCustomerBtn">
+                                Save Changes
+                            </x-btn>
                         </div>
                     </div>
                 </form>
@@ -442,6 +520,16 @@
                             document.getElementById('editMedicalNotes').value = customer.medical_notes || '';
                             document.getElementById('editSendPromotional').checked = customer.send_promotional_sms || false;
                             document.getElementById('editSendTransactional').checked = customer.send_transactional_sms || false;
+
+                            // Portal access toggle and indicator
+                            const portalToggle = document.getElementById('grantLoginToggle_EDIT');
+                            const portalStatus = document.getElementById('loginAccessSection_status');
+                            const portalFields = document.getElementById('loginAccessFields_EDIT');
+                            if (portalToggle) portalToggle.checked = false;
+                            if (portalFields) portalFields.style.display = 'none';
+                            if (portalStatus) {
+                                portalStatus.style.display = customer.has_portal_access ? 'block' : 'none';
+                            }
 
                             // Handle conditional email requirement
                             updateEmailRequirement();

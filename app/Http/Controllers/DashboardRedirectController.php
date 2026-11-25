@@ -28,21 +28,41 @@ class DashboardRedirectController extends Controller
                 return redirect()->route('admin.super.dashboard');
             }
 
-            // Normal redirection logic...
+            // Resolve salon slug safely
+            $slug = null;
             if ($user->salon_id) {
                 $user->load('salon');
                 if ($user->salon && !empty(trim($user->salon->slug))) {
                     $slug = trim($user->salon->slug);
-                    if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'manager', 'receptionist'])) {
-                        $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
-                        if ($canUsePos) {
-                            return redirect()->route('admin.pos.index', ['salon_slug' => $slug, 'view' => 'barber']);
-                        }
-                        return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
-                    }
-
-                    return redirect()->route('dashboard', ['salon_slug' => $slug]);
                 }
+            }
+            if (!$slug) {
+                $slug = session('current_salon_slug') ?? (app()->bound('current_salon') ? optional(app('current_salon'))->slug : null) ?? 'demo-salon';
+            }
+
+            // Customer portal redirect
+            if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'manager', 'super_admin'])) {
+                // If user is primarily customer (no employee role, or customer profile without staff profile)
+                if (!$user->hasRole('employee') || ($user->customer()->exists() && !$user->employee()->exists())) {
+                    return redirect()->route('customer.dashboard', ['salon_slug' => $slug]);
+                }
+            }
+
+            // Normal redirection logic...
+            if ($user->salon_id && $slug) {
+                if ($user->hasRole('employee') && !$user->hasAnyRole(['salon_admin', 'manager', 'receptionist'])) {
+                    $canUsePos = $user->salon && $user->salon->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled() && $user->can('pos.view');
+                    if ($canUsePos) {
+                        return redirect()->route('admin.pos.index', ['salon_slug' => $slug, 'view' => 'barber']);
+                    }
+                    return redirect()->route('employee.dashboard', ['salon_slug' => $slug]);
+                }
+
+                if ($user->hasRole('customer')) {
+                    return redirect()->route('customer.dashboard', ['salon_slug' => $slug]);
+                }
+
+                return redirect()->route('dashboard', ['salon_slug' => $slug]);
             }
 
             // Fallback

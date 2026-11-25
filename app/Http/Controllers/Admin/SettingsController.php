@@ -36,7 +36,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             // General
             'logo' => 'nullable|image|max:2048',
-            'theme_color' => 'required|in:pink,blue,purple,green,barber',
+            'theme_color' => 'required|in:luxury,barber,pink,blue,purple,green',
             'business_name' => 'required|string|max:255',
             'business_email' => 'required|email|max:255',
             'business_phone' => 'nullable|string|max:20',

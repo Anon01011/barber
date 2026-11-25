@@ -217,6 +217,41 @@
 
 @push('styles')
 <style>
+    .color-radio-group {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .color-option {
+        position: relative;
+        cursor: pointer;
+    }
+    .color-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .color-check {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+        cursor: pointer;
+    }
+    .color-option input[type="radio"]:checked + .color-check {
+        border-color: #0b0f17;
+        transform: scale(1.12);
+        box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.45);
+    }
+    .bg-luxury {
+        background: linear-gradient(135deg, #0b0f17 0%, #1a2233 55%, #c5a880 100%) !important;
+    }
+    .bg-barber {
+        background-color: #B45309 !important;
+    }
     .color-preview {
         width: 24px;
         height: 24px;
@@ -252,11 +287,12 @@
 
         // Color mapping for theme colors
         const colorMap = {
+            'luxury': '#0b0f17',
+            'barber': '#B45309',
             'pink': '#e83e8c',
             'blue': '#0d6efd',
             'purple': '#6f42c1',
-            'green': '#198754',
-            'barber': '#B45309'
+            'green': '#198754'
         };
         
         // Function to update sidebar theme color

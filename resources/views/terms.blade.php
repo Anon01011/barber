@@ -103,13 +103,19 @@
                         </div>
                     @empty
                         @if(!empty($cms['termsFormatted']))
-                            {!! $cms['termsFormatted'] !!}
+                            @if(!str_contains($cms['termsFormatted'], 'id="section-1"'))
+                                <div id="section-1">
+                                    {!! $cms['termsFormatted'] !!}
+                                </div>
+                            @else
+                                {!! $cms['termsFormatted'] !!}
+                            @endif
                         @elseif(!empty($cms['termsContent']))
-                            <div style="color: #334155; line-height: 1.85; font-size: 1rem;">
+                            <div id="section-1" style="color: #334155; line-height: 1.85; font-size: 1rem;">
                                 {!! nl2br(e($cms['termsContent'])) !!}
                             </div>
                         @else
-                            <div class="alert alert-info">
+                            <div class="alert alert-info" id="section-1">
                                 Terms &amp; Conditions are currently being updated.
                             </div>
                         @endif

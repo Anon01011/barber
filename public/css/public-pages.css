@@ -1816,8 +1816,13 @@ img {
 }
 
 @media (min-width: 1024px) {
+    .pub-plans-carousel-wrap .pub-carousel-controls,
     .pub-carousel-controls.hide-on-desktop {
         display: none;
+    }
+    .pub-plans-carousel-wrap.horizontal-scroll .pub-carousel-controls,
+    .pub-plans-carousel-wrap.pub-horizontal-scroll .pub-carousel-controls {
+        display: flex;
     }
 }
 

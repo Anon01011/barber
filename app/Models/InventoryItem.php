@@ -44,15 +44,19 @@ class InventoryItem extends Model
         'expiry_date',
         'manufacturer',
         'brand',
-        'is_active'
+        'is_active',
+        'product_type',
+        'pack_capacity',
+        'base_unit'
     ];
 
     protected $casts = [
         'purchase_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
-        'quantity_in_stock' => 'integer',
-        'minimum_quantity' => 'integer',
-        'reorder_level' => 'integer',
+        'quantity_in_stock' => 'decimal:3',
+        'pack_capacity' => 'decimal:2',
+        'minimum_quantity' => 'decimal:3',
+        'reorder_level' => 'decimal:3',
         'tax_rate' => 'decimal:2',
         'is_taxable' => 'boolean',
         'weight' => 'decimal:2',
@@ -148,10 +152,22 @@ class InventoryItem extends Model
             // Set default values
             $model->is_active = $model->is_active ?? true;
             $model->is_taxable = $model->is_taxable ?? true;
-            $model->tax_rate = $model->tax_rate ?? 0;
+            $model->tax_rate = ($model->tax_rate !== null && $model->tax_rate !== '') ? (float) $model->tax_rate : 0.00;
+        });
+
+        static::saving(function ($model) {
+            // Ensure tax_rate is never null or empty string upon creating or updating
+            if ($model->tax_rate === null || $model->tax_rate === '') {
+                $model->tax_rate = 0.00;
+            }
         });
 
         static::updating(function ($model) {
+            // Ensure tax_rate is never null
+            if ($model->tax_rate === null || $model->tax_rate === '') {
+                $model->tax_rate = 0.00;
+            }
+
             // Ensure SKU is uppercase and valid format if provided
             if (!empty($model->sku)) {
                 $model->sku = strtoupper($model->sku);
@@ -412,6 +428,14 @@ class InventoryItem extends Model
     }
 
     /**
+     * Mutator to ensure tax_rate is never saved as null.
+     */
+    public function setTaxRateAttribute($value): void
+    {
+        $this->attributes['tax_rate'] = ($value !== null && $value !== '') ? (float) $value : 0.00;
+    }
+
+    /**
      * Scope a query to only include active items.
      */
     public function scopeActive($query)
@@ -443,5 +467,78 @@ class InventoryItem extends Model
     public function scopeOutOfStock($query)
     {
         return $query->where('quantity_in_stock', '<=', 0);
+    }
+
+    /**
+     * Services that consume this inventory item in their recipe.
+     */
+    public function services(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'service_inventory_items')
+            ->withPivot(['id', 'quantity', 'unit', 'is_optional', 'is_billable_extra', 'extra_price_per_unit', 'notes'])
+            ->withTimestamps();
+    }
+
+    /**
+     * POS consumable usage records.
+     */
+    public function posConsumptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PosSaleItemConsumable::class, 'inventory_item_id');
+    }
+
+    /**
+     * Calculate cost per single base unit (e.g. per ml, per gram, or per piece).
+     */
+    public function getCostPerUnitAttribute(): float
+    {
+        $purchasePrice = (float) $this->purchase_price;
+        $capacity = (float) ($this->pack_capacity ?? 1.0);
+
+        if ($capacity <= 0) {
+            $capacity = 1.0;
+        }
+
+        return round($purchasePrice / $capacity, 4);
+    }
+
+    /**
+     * Scopes for product classification
+     */
+    public function scopeRetail($query)
+    {
+        return $query->whereIn('product_type', ['retail', 'dual']);
+    }
+
+    public function scopeConsumables($query)
+    {
+        return $query->whereIn('product_type', ['consumable', 'dual']);
+    }
+
+    public function scopeBackbarOnly($query)
+    {
+        return $query->where('product_type', 'consumable');
+    }
+
+    /**
+     * Consume a quantity of this item for a service and record the transaction.
+     */
+    public function consumeForService(float $quantity, int $saleId, int $serviceId, ?int $staffId = null, string $notes = ''): void
+    {
+        $this->decrement('quantity_in_stock', $quantity);
+        $costPerUnit = (float) $this->cost_per_unit;
+
+        \App\Models\InventoryTransaction::create([
+            'branch_id' => $this->branch_id ?? null,
+            'item_id' => $this->id,
+            'transaction_type' => 'service_consumption',
+            'quantity' => -$quantity,
+            'unit_cost' => $costPerUnit,
+            'total_cost' => round($quantity * $costPerUnit, 2),
+            'reference_id' => $saleId,
+            'reference_type' => \App\Models\PosSale::class,
+            'notes' => $notes ?: "Service consumption for Service #{$serviceId}",
+            'created_by' => auth()->id() ?? $staffId,
+        ]);
     }
 }

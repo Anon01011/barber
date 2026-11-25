@@ -297,6 +297,36 @@
             color: #6b7280;
         }
 
+        .sa-badge-barber {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #ffedd5;
+        }
+
+        .sa-badge-salon {
+            background: #fdf2f8;
+            color: #be185d;
+            border: 1px solid #fce7f3;
+        }
+
+        .sa-badge-spa {
+            background: #f0fdfa;
+            color: #0f766e;
+            border: 1px solid #ccfbf1;
+        }
+
+        .sa-badge-business {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+
+        .sa-badge-trial {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #dbeafe;
+        }
+
         /* ── Date ── */
         .date-text {
             font-size: 0.82rem;
@@ -407,14 +437,34 @@
         {{-- Filter Bar --}}
         <div class="sa-filter-bar">
             <form method="GET" action="{{ route('admin.salons.index') }}" class="row g-2 align-items-center">
-                <div class="col-12 col-sm-auto flex-grow-1" style="max-width:380px;">
+                <div class="col-12 col-md-3 flex-grow-1" style="max-width:340px;">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                         <input type="text" name="search" class="form-control" placeholder="Search by name, email or owner…"
                             value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-12 col-sm-auto" style="min-width:160px;">
+                <div class="col-12 col-sm-auto" style="min-width:150px;">
+                    <select name="business_type" class="form-select">
+                        <option value="">All Business Types</option>
+                        @foreach($businessTypes ?? [] as $bType)
+                            <option value="{{ $bType }}" {{ request('business_type') === $bType ? 'selected' : '' }}>
+                                {{ ucfirst($bType) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-sm-auto" style="min-width:150px;">
+                    <select name="plan_id" class="form-select">
+                        <option value="">All Plans</option>
+                        @foreach($plans ?? [] as $p)
+                            <option value="{{ $p->id }}" {{ request('plan_id') == $p->id ? 'selected' : '' }}>
+                                {{ $p->name }} ({{ ucfirst($p->business_type ?? 'Universal') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-sm-auto" style="min-width:130px;">
                     <select name="status" class="form-select">
                         <option value="">All Statuses</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
@@ -423,11 +473,11 @@
                     </select>
                 </div>
                 <div class="col-auto">
-                    <button type="submit" class="btn-apply">Filter</button>
+                    <button type="submit" class="btn-apply"><i class="fas fa-filter me-1"></i> Filter</button>
                 </div>
-                @if(request('search') || request('status'))
+                @if(request('search') || request('status') || request('business_type') || request('plan_id'))
                     <div class="col-auto">
-                        <a href="{{ route('admin.salons.index') }}" class="btn-reset-filter">Clear</a>
+                        <a href="{{ route('admin.salons.index') }}" class="btn-reset-filter"><i class="fas fa-undo me-1"></i> Clear</a>
                     </div>
                 @endif
             </form>
@@ -447,8 +497,9 @@
                     <thead>
                         <tr>
                             <th class="ps-3">Salon</th>
+                            <th>Business Type</th>
                             <th>Owner</th>
-                            <th>Plan</th>
+                            <th>Plan &amp; Tier</th>
                             <th>Status</th>
                             <th>Registered</th>
                             <th class="text-end pe-3">Actions</th>
@@ -479,23 +530,86 @@
                                     </div>
                                 </td>
 
+                                {{-- Business Type --}}
+                                <td>
+                                    @php
+                                        $bType = strtolower($salon->business_type ?? 'salon');
+                                        $bBadge = match($bType) {
+                                            'barber' => ['class' => 'sa-badge-barber', 'icon' => 'fas fa-scissors', 'label' => 'Barbershop'],
+                                            'salon'  => ['class' => 'sa-badge-salon', 'icon' => 'fas fa-spa', 'label' => 'Hair Salon'],
+                                            'spa'    => ['class' => 'sa-badge-spa', 'icon' => 'fas fa-hot-tub', 'label' => 'Spa & Wellness'],
+                                            default  => ['class' => 'sa-badge-business', 'icon' => 'fas fa-store', 'label' => ucfirst($bType)]
+                                        };
+                                    @endphp
+                                    <span class="sa-badge {{ $bBadge['class'] }}">
+                                        <i class="{{ $bBadge['icon'] }}"></i>
+                                        {{ $bBadge['label'] }}
+                                    </span>
+                                </td>
+
                                 {{-- Owner --}}
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="owner-initials">
                                             {{ strtoupper(substr($salon->owner->name ?? 'N', 0, 2)) }}
                                         </div>
-                                        <span class="owner-name">{{ $salon->owner->name ?? '—' }}</span>
+                                        <div>
+                                            <span class="owner-name d-block">{{ $salon->owner->name ?? '—' }}</span>
+                                            @if($salon->owner?->email)
+                                                <span class="text-muted" style="font-size:0.72rem;">{{ $salon->owner->email }}</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
 
-                                {{-- Plan --}}
+                                {{-- Plan & Tier --}}
                                 <td>
-                                    @if($salon->activeSubscription)
-                                        <span class="sa-badge sa-badge-plan">
-                                            <i class="fas fa-gem" style="font-size:0.65rem;"></i>
-                                            {{ $salon->activeSubscription->plan->name }}
-                                        </span>
+                                    @if($salon->activeSubscription && $salon->activeSubscription->plan)
+                                        @php
+                                            $subPlan = $salon->activeSubscription->plan;
+                                            $daysRemaining = $salon->activeSubscription->daysUntilExpiration();
+                                        @endphp
+                                        <div>
+                                            <div class="d-flex align-items-center gap-1 mb-1 flex-wrap">
+                                                <span class="sa-badge sa-badge-plan">
+                                                    <i class="fas fa-gem" style="font-size:0.65rem;"></i>
+                                                    {{ $subPlan->name }}
+                                                </span>
+                                                <span class="badge bg-light text-secondary border rounded-pill" style="font-size:0.65rem;">
+                                                    {{ ucfirst($subPlan->business_type ?? 'All') }}
+                                                </span>
+                                            </div>
+                                            <div class="text-muted small d-flex align-items-center gap-1" style="font-size:0.72rem;">
+                                                <i class="fas fa-clock text-muted"></i>
+                                                @if($daysRemaining !== null)
+                                                    @if($daysRemaining > 0)
+                                                        <span>{{ $daysRemaining }}d remaining</span>
+                                                    @elseif($daysRemaining == 0)
+                                                        <span class="text-warning fw-bold">Expires today</span>
+                                                    @else
+                                                        <span class="text-danger fw-bold">Expired</span>
+                                                    @endif
+                                                @else
+                                                    <span>{{ $subPlan->duration_in_days }}d cycle</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @elseif($salon->trial_ends_at)
+                                        @php
+                                            $trialDays = now()->diffInDays($salon->trial_ends_at, false);
+                                        @endphp
+                                        <div>
+                                            <span class="sa-badge sa-badge-trial mb-1">
+                                                <i class="fas fa-gift text-info" style="font-size:0.65rem;"></i> Free Trial
+                                            </span>
+                                            <div class="text-muted small" style="font-size:0.72rem;">
+                                                @if($trialDays > 0)
+                                                    <span>{{ $trialDays }}d remaining</span>
+                                                @else
+                                                    <span class="text-danger fw-semibold">Trial ended</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     @else
                                         <span class="sa-badge sa-badge-no-plan">No Plan</span>
                                     @endif

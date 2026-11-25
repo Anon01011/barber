@@ -897,9 +897,23 @@
                                                         <span class="badge bg-secondary-subtle text-secondary">Auto-generates Table of Contents</span>
                                                     </div>
 
+                                                    <input type="hidden" name="terms_sections_present" value="1">
+
                                                     @php
                                                         $landingCtrl = app(\App\Http\Controllers\LandingPageController::class);
-                                                        $currentTermsSections = $landingCtrl->getTermsSections($settings['app_name'] ?? '', $settings['contact_email'] ?? '');
+                                                        if (old('terms_sections_present') !== null) {
+                                                            $currentTermsSections = [];
+                                                            $oldTitles = old('terms_section_titles', []);
+                                                            $oldContents = old('terms_section_contents', []);
+                                                            foreach ($oldTitles as $idx => $t) {
+                                                                $currentTermsSections[] = [
+                                                                    'title' => $t,
+                                                                    'content' => $oldContents[$idx] ?? '',
+                                                                ];
+                                                            }
+                                                        } else {
+                                                            $currentTermsSections = $landingCtrl->getTermsSections('', '', false);
+                                                        }
                                                     @endphp
 
                                                     <div id="terms-sections-container">
@@ -986,8 +1000,22 @@
                                                         <span class="badge bg-secondary-subtle text-secondary">Auto-generates Table of Contents</span>
                                                     </div>
 
+                                                    <input type="hidden" name="privacy_sections_present" value="1">
+
                                                     @php
-                                                        $currentPrivacySections = $landingCtrl->getPrivacySections($settings['app_name'] ?? '', $settings['contact_email'] ?? '');
+                                                        if (old('privacy_sections_present') !== null) {
+                                                            $currentPrivacySections = [];
+                                                            $oldTitles = old('privacy_section_titles', []);
+                                                            $oldContents = old('privacy_section_contents', []);
+                                                            foreach ($oldTitles as $idx => $t) {
+                                                                $currentPrivacySections[] = [
+                                                                    'title' => $t,
+                                                                    'content' => $oldContents[$idx] ?? '',
+                                                                ];
+                                                            }
+                                                        } else {
+                                                            $currentPrivacySections = $landingCtrl->getPrivacySections('', '', false);
+                                                        }
                                                     @endphp
 
                                                     <div id="privacy-sections-container">
@@ -1060,8 +1088,28 @@
                                                         <span class="badge bg-secondary-subtle text-secondary">Shown dynamically on Landing Page</span>
                                                     </div>
 
+                                                    <input type="hidden" name="reviews_present" value="1">
+
                                                     @php
-                                                        $currentReviews = $landingCtrl->getReviewsItems();
+                                                        if (old('reviews_present') !== null) {
+                                                            $currentReviews = [];
+                                                            $oldNames = old('review_names', []);
+                                                            $oldRoles = old('review_roles', []);
+                                                            $oldRatings = old('review_ratings', []);
+                                                            $oldTexts = old('review_texts', []);
+                                                            $oldAvatars = old('review_avatars', []);
+                                                            foreach ($oldNames as $idx => $name) {
+                                                                $currentReviews[] = [
+                                                                    'name' => $name,
+                                                                    'role' => $oldRoles[$idx] ?? '',
+                                                                    'rating' => (int)($oldRatings[$idx] ?? 5),
+                                                                    'text' => $oldTexts[$idx] ?? '',
+                                                                    'avatar' => $oldAvatars[$idx] ?? '',
+                                                                ];
+                                                            }
+                                                        } else {
+                                                            $currentReviews = $landingCtrl->getReviewsItems();
+                                                        }
                                                     @endphp
 
                                                     <div id="review-rows-container">
@@ -1091,6 +1139,8 @@
                                                                                 <option value="5" {{ ($rev['rating'] ?? 5) == 5 ? 'selected' : '' }}>★★★★★ 5</option>
                                                                                 <option value="4" {{ ($rev['rating'] ?? 5) == 4 ? 'selected' : '' }}>★★★★☆ 4</option>
                                                                                 <option value="3" {{ ($rev['rating'] ?? 5) == 3 ? 'selected' : '' }}>★★★☆☆ 3</option>
+                                                                                <option value="2" {{ ($rev['rating'] ?? 5) == 2 ? 'selected' : '' }}>★★☆☆☆ 2</option>
+                                                                                <option value="1" {{ ($rev['rating'] ?? 5) == 1 ? 'selected' : '' }}>★☆☆☆☆ 1</option>
                                                                             </select>
                                                                         </div>
                                                                         <div class="col-md-2">
@@ -1142,24 +1192,21 @@
                                                         <span class="badge bg-secondary-subtle text-secondary">Shown dynamically on Landing Page</span>
                                                     </div>
 
+                                                    <input type="hidden" name="faq_present" value="1">
+
                                                     @php
-                                                        $currentFaqs = [];
-                                                        $rawFaq = $settings['faq_items'] ?? null;
-                                                        if (is_array($rawFaq)) {
-                                                            $currentFaqs = $rawFaq;
-                                                        } elseif (is_string($rawFaq) && !empty($rawFaq)) {
-                                                            $decoded = json_decode($rawFaq, true);
-                                                            if (is_array($decoded)) $currentFaqs = $decoded;
-                                                        }
-                                                        if (empty($currentFaqs)) {
-                                                            $currentFaqs = [
-                                                                ['question' => 'How does the 14-day free trial work?', 'answer' => 'You get complete, unrestricted access to all salon management features for 14 days without entering credit card details. You can set up your services, add staff members, test online appointments, and start selling via POS immediately.'],
-                                                                ['question' => 'Can I use this software for both a barbershop and a beauty salon?', 'answer' => 'Yes! The platform is purpose-built with dual operational modes. Barbershops enjoy rapid walk-in rotations, chair dispatching, and 5-second POS checkouts, while hair and beauty salons benefit from multi-service appointment chaining, client color formulation cards, and VIP beauty packages.'],
-                                                                ['question' => 'Can we migrate our existing customer data and appointment history?', 'answer' => 'Absolutely. You can import your client contacts, inventory items, and price catalogs via Excel or CSV with one click. Our onboarding team is also on standby 24/7 to assist with automated data migration from legacy platforms.'],
-                                                                ['question' => 'Does the platform support multi-branch salon chains?', 'answer' => 'Yes. Our centralized HQ architecture allows multi-location brands to manage staff schedules, monitor consolidated cross-branch revenues, transfer inventory between branches, and share VIP customer profiles seamlessly.'],
-                                                                ['question' => 'What hardware do we need for the POS register?', 'answer' => 'Our cloud POS works smoothly on any device with a modern browser—including iPads, Android tablets, touchscreen POS terminals, Windows PCs, and Macs. It integrates with standard thermal receipt printers, barcode scanners, and wireless card terminals.'],
-                                                                ['question' => 'Can I cancel or change my plan anytime?', 'answer' => 'Yes, there are no long-term lock-in contracts. You can upgrade, downgrade, or cancel your subscription anytime directly from your Super Admin / SaaS billing portal.']
-                                                            ];
+                                                        if (old('faq_present') !== null) {
+                                                            $currentFaqs = [];
+                                                            $oldQuestions = old('faq_questions', []);
+                                                            $oldAnswers = old('faq_answers', []);
+                                                            foreach ($oldQuestions as $idx => $q) {
+                                                                $currentFaqs[] = [
+                                                                    'question' => $q,
+                                                                    'answer' => $oldAnswers[$idx] ?? '',
+                                                                ];
+                                                            }
+                                                        } else {
+                                                            $currentFaqs = $landingCtrl->getFaqItems();
                                                         }
                                                     @endphp
 
@@ -1464,6 +1511,8 @@
                                 <option value="5" selected>★★★★★ 5</option>
                                 <option value="4">★★★★☆ 4</option>
                                 <option value="3">★★★☆☆ 3</option>
+                                <option value="2">★★☆☆☆ 2</option>
+                                <option value="1">★☆☆☆☆ 1</option>
                             </select>
                         </div>
                         <div class="col-md-2">

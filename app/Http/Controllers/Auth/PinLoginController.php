@@ -236,11 +236,12 @@ class PinLoginController extends Controller
         }
 
         $deviceInfo = $this->deviceService->parseDeviceDetails($request);
+        $deviceName = $deviceInfo['default_name'] ?? 'This Device';
         $settingsService = app(SettingsService::class);
         $appName = $user->salon?->name ?? $settingsService->get('app_name', config('app.name'));
         $appLogo = $user->salon?->logo ? asset('storage/' . $user->salon->logo) : $settingsService->getLogoUrl();
 
-        return view('auth.pin-setup-prompt', compact('user', 'deviceInfo', 'appName', 'appLogo'));
+        return view('auth.pin-setup-prompt', compact('user', 'deviceInfo', 'deviceName', 'appName', 'appLogo'));
     }
 
     /**

@@ -1,8 +1,8 @@
 <style>
     #viewCustomerModal .modal-header {
-        border-bottom: none;
+        border-bottom: 1px solid rgba(197, 168, 128, 0.25) !important;
         padding: 1rem 1.5rem;
-        background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%);
         position: relative;
         overflow: hidden;
     }
@@ -44,8 +44,8 @@
     {{-- Header Section --}}
     <div class="d-flex align-items-center border-bottom pb-4 mb-4">
         <div class="avatar me-4 flex-shrink-0">
-            <div class="avatar-title rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm overflow-hidden"
-                style="width:90px; height:90px; min-width:90px; border-radius: 50% !important; font-size: 2.5rem;">
+            <div class="avatar-title rounded-circle d-flex align-items-center justify-content-center shadow-sm overflow-hidden"
+                style="width:80px; height:80px; min-width:80px; border-radius: 50% !important; font-size: 2.2rem; background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); color: #c5a880; border: 2px solid rgba(197, 168, 128, 0.4);">
                 <i class="fas fa-user"></i>
             </div>
         </div>

@@ -23,7 +23,12 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        $settings = app(\App\Services\SettingsService::class);
+        $appName = $settings->get('app_name', config('app.name', 'SalonPro'));
+        $appLogo = $settings->getLogoUrl();
+        $faviconUrl = $settings->getFaviconUrl();
+
+        return view('auth.register', compact('settings', 'appName', 'appLogo', 'faviconUrl'));
     }
 
     /**

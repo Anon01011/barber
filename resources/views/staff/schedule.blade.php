@@ -50,7 +50,7 @@
                                                         <div class="mt-1">
                                                             <span
                                                                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                                                style="background-color: #f3e8ff !important; color: #7c3aed !important; font-size: 0.7em;">
+                                                                style="background-color: rgba(197, 168, 128, 0.15) !important; color: #b38e5d !important; font-size: 0.7em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                                 <i class="fas fa-box mr-1"></i>{{ $appointment->package->name }}
                                                             </span>
                                                         </div>
@@ -131,7 +131,7 @@
                                                         <div class="mt-1">
                                                             <span
                                                                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                                                style="background-color: #f3e8ff !important; color: #7c3aed !important; font-size: 0.7em;">
+                                                                style="background-color: rgba(197, 168, 128, 0.15) !important; color: #b38e5d !important; font-size: 0.7em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                                 <i class="fas fa-box mr-1"></i>{{ $appointment->package->name }}
                                                             </span>
                                                         </div>
@@ -190,7 +190,7 @@
                         const bookingId = this.getAttribute('data-id');
                         const salonSlug = getSalonSlug();
                         if (!salonSlug) {
-                            alert('Error: Could not determine salon URL. Please refresh the page.');
+                            window.showModalAlert('Error: Could not determine salon URL. Please refresh the page.', 'error');
                             return;
                         }
                         fetch(`/${salonSlug}/employee/appointments/${bookingId}/accept`, {
@@ -203,14 +203,13 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    alert('Appointment accepted successfully.');
-                                    location.reload();
+                                    window.showModalAlert('Appointment accepted successfully.', 'success', 'Accepted', () => location.reload());
                                 } else {
-                                    alert('Failed to accept appointment: ' + data.message);
+                                    window.showModalAlert('Failed to accept appointment: ' + (data.message || 'Unknown error'), 'error');
                                 }
                             })
                             .catch(error => {
-                                alert('Error accepting appointment.');
+                                window.showModalAlert('Error accepting appointment.', 'error');
                             });
                     });
                 });
@@ -220,7 +219,7 @@
                         const bookingId = this.getAttribute('data-id');
                         const salonSlug = getSalonSlug();
                         if (!salonSlug) {
-                            alert('Error: Could not determine salon URL. Please refresh the page.');
+                            window.showModalAlert('Error: Could not determine salon URL. Please refresh the page.', 'error');
                             return;
                         }
                         fetch(`/${salonSlug}/employee/appointments/${bookingId}/reject`, {
@@ -233,14 +232,13 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    alert('Appointment rejected successfully.');
-                                    location.reload();
+                                    window.showModalAlert('Appointment rejected successfully.', 'success', 'Rejected', () => location.reload());
                                 } else {
-                                    alert('Failed to reject appointment: ' + data.message);
+                                    window.showModalAlert('Failed to reject appointment: ' + (data.message || 'Unknown error'), 'error');
                                 }
                             })
                             .catch(error => {
-                                alert('Error rejecting appointment.');
+                                window.showModalAlert('Error rejecting appointment.', 'error');
                             });
                     });
                 });
@@ -252,7 +250,7 @@
                         const bookingId = this.getAttribute('data-id');
                         const salonSlug = getSalonSlug();
                         if (!salonSlug) {
-                            alert('Error: Could not determine salon URL. Please refresh the page.');
+                            window.showModalAlert('Error: Could not determine salon URL. Please refresh the page.', 'error');
                             return;
                         }
 
@@ -270,15 +268,13 @@
                                     // Show payment modal
                                     showPaymentModal(bookingId, data.amount || 0);
                                 } else if (data.success) {
-                                    alert('Appointment completed successfully.');
-                                    location.reload();
+                                    window.showModalAlert('Appointment completed successfully.', 'success', 'Completed', () => location.reload());
                                 } else {
-                                    alert('Failed to complete appointment: ' + data.message);
+                                    window.showModalAlert('Failed to complete appointment: ' + (data.message || 'Unknown error'), 'error');
                                 }
                             })
                             .catch(error => {
-
-                                alert('Error completing appointment.');
+                                window.showModalAlert('Error completing appointment.', 'error');
                             });
                     });
                 });

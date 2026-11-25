@@ -20,7 +20,7 @@
 
         <!-- Invoice Card -->
         <div class="card border-0 shadow-sm" id="invoice">
-            <div class="card-body p-5">
+            <div class="card-body p-3 p-md-5">
                 <!-- Invoice Header -->
                 <div class="row mb-5">
                     <div class="col-md-6">

@@ -29,14 +29,14 @@
             <i class="fas fa-palette text-purple me-2"></i>Accent Theme color
         </label>
         <div class="color-radio-group">
-            @foreach(['pink', 'blue', 'purple', 'green', 'barber'] as $color)
-                <div class="color-option" title="{{ $color === 'barber' ? 'Barber Shop' : ucfirst($color) }}">
+            @foreach(['luxury', 'barber', 'purple', 'blue', 'pink', 'green'] as $color)
+                <div class="color-option" title="{{ $color === 'luxury' ? 'Luxury Obsidian & Gold' : ($color === 'barber' ? 'Barber Amber' : ucfirst($color)) }}">
                     <input type="radio" name="theme_color" value="{{ $color }}" {{ app(\App\Services\SettingsService::class)->getThemeColor() == $color ? 'checked' : '' }}>
                     <div class="color-check bg-{{ $color }}"></div>
                 </div>
             @endforeach
         </div>
-        <small class="text-muted mt-2 d-block">This color will be used for your sidebar and primary UI elements.</small>
+        <small class="text-muted mt-2 d-block">This color will be used for your sidebar and primary UI elements. "Luxury" uses Haute Obsidian &amp; Champagne Gold.</small>
     </div>
     <div class="settings-field-group mt-3">
         <label class="form-label fw-semibold small text-uppercase text-secondary d-block mb-2">

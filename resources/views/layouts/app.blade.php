@@ -48,6 +48,9 @@
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
+    <!-- ApexCharts CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.css">
+
     <!-- Custom CSS -->
     @vite([
         'resources/css/layout.css',
@@ -340,16 +343,128 @@
         <noscript><img height="1" width="1" style="display:none"
                 src="https://www.facebook.com/tr?id={{ $facebookPixelId }}&ev=PageView&noscript=1" /></noscript>
     @endif
-    <!-- Anti-flicker Theme Script -->
+    <!-- Anti-flicker Theme Script & Dynamic Theme Variables -->
+    @php
+        $activePalette = app(\App\Services\SettingsService::class)->getThemePalette();
+    @endphp
+    <style id="theme-dynamic-root">
+        :root {
+            --theme-primary: {{ $activePalette['primary'] }};
+            --theme-accent: {{ $activePalette['accent'] }};
+            --theme-accent-hover: {{ $activePalette['accent_hover'] }};
+            --theme-accent-light: {{ $activePalette['accent_light'] }};
+            --theme-sidebar: {{ $activePalette['sidebar'] }};
+            --theme-surface: {{ $activePalette['surface'] }};
+            --theme-border: {{ $activePalette['border'] }};
+        }
+
+        /* Dynamic Luxury Button Engine */
+        .btn-primary,
+        .btn-luxury {
+            background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, var(--theme-accent-hover, #b38e5d) 100%) !important;
+            border: 1px solid var(--theme-accent, #c5a880) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 4px rgba(197, 168, 128, 0.2);
+            font-weight: 500;
+        }
+        .btn-primary:hover,
+        .btn-primary:focus,
+        .btn-luxury:hover,
+        .btn-luxury:focus {
+            background: linear-gradient(135deg, var(--theme-accent-hover, #b38e5d) 0%, #9e7a4b 100%) !important;
+            border-color: var(--theme-accent-hover, #b38e5d) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(197, 168, 128, 0.35);
+            transform: translateY(-1px);
+        }
+        .btn-outline-primary,
+        .btn-luxury-outline {
+            background: transparent !important;
+            border: 1.5px solid var(--theme-accent, #c5a880) !important;
+            color: var(--theme-accent, #c5a880) !important;
+            font-weight: 500;
+        }
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus,
+        .btn-luxury-outline:hover,
+        .btn-luxury-outline:focus {
+            background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, var(--theme-accent-hover, #b38e5d) 100%) !important;
+            border-color: var(--theme-accent, #c5a880) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 10px rgba(197, 168, 128, 0.25);
+            transform: translateY(-1px);
+        }
+        .btn-luxury-dark {
+            background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%) !important;
+            border: 1px solid rgba(197, 168, 128, 0.35) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            font-weight: 500;
+        }
+        .btn-luxury-dark:hover,
+        .btn-luxury-dark:focus {
+            background: linear-gradient(135deg, #141b27 0%, #243045 100%) !important;
+            border-color: var(--theme-accent, #c5a880) !important;
+            color: var(--theme-accent, #c5a880) !important;
+            transform: translateY(-1px);
+        }
+        .btn-luxury-ghost {
+            background: rgba(197, 168, 128, 0.12) !important;
+            border: 1px solid transparent !important;
+            color: var(--theme-accent, #c5a880) !important;
+            font-weight: 500;
+        }
+        .btn-luxury-ghost:hover,
+        .btn-luxury-ghost:focus {
+            background: rgba(197, 168, 128, 0.22) !important;
+            color: var(--theme-accent-hover, #b38e5d) !important;
+            border-color: rgba(197, 168, 128, 0.3) !important;
+        }
+        .btn-outline-secondary,
+        .btn-secondary,
+        .btn-luxury-secondary {
+            background: #ffffff !important;
+            border: 1.5px solid #d1d5db !important;
+            color: #374151 !important;
+            font-weight: 500 !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:focus,
+        .btn-secondary:hover,
+        .btn-secondary:focus,
+        .btn-luxury-secondary:hover,
+        .btn-luxury-secondary:focus {
+            background: #f8fafc !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+        .form-check-input:checked {
+            background-color: var(--theme-accent, #c5a880) !important;
+            border-color: var(--theme-accent, #c5a880) !important;
+        }
+        .form-check-input:focus {
+            border-color: var(--theme-accent, #c5a880) !important;
+            box-shadow: 0 0 0 0.2rem rgba(197, 168, 128, 0.25) !important;
+        }
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--theme-accent, #c5a880) !important;
+            box-shadow: 0 0 0 0.2rem rgba(197, 168, 128, 0.2) !important;
+        }
+    </style>
     <script>
         (function () {
             try {
                 const colorMap = {
+                    'luxury': '#0b0f17',
+                    'barber': '#B45309',
                     'pink': '#e83e8c',
                     'blue': '#0d6efd',
                     'purple': '#6f42c1',
-                    'green': '#198754',
-                    'barber': '#B45309'
+                    'green': '#198754'
                 };
 
                 // Server-side default
@@ -358,7 +473,7 @@
                 // Client-side override
                 const savedColor = localStorage.getItem('salon_theme_color') || serverColor;
 
-                const colorHex = colorMap[savedColor] || colorMap['blue'];
+                const colorHex = colorMap[savedColor] || colorMap['luxury'];
 
                 // Inject style immediately to prevent FOUC
                 const style = document.createElement('style');
@@ -374,929 +489,39 @@
         })();
     </script>
 </head>
-
 <body class="{{ session()->has('impersonator_id') ? 'has-impersonation-banner' : '' }}" {{ $isRtl ? 'dir=rtl' : '' }}>
+    @php
+        $authUser = auth()->user();
+        if (request()->routeIs('customer.*')) {
+            $portalContext = 'customer';
+        } elseif (request()->routeIs('employee.*')) {
+            $portalContext = 'employee';
+        } elseif ($authUser && $authUser->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            $portalContext = 'admin';
+        } elseif ($authUser && $authUser->hasRole('customer') && !$authUser->hasRole('employee')) {
+            $portalContext = 'customer';
+        } elseif ($authUser && $authUser->hasRole('customer') && $authUser->customer()->exists() && !$authUser->employee()->exists()) {
+            $portalContext = 'customer';
+        } elseif ($authUser && $authUser->hasRole('employee')) {
+            $portalContext = 'employee';
+        } elseif ($authUser && $authUser->hasRole('customer')) {
+            $portalContext = 'customer';
+        } else {
+            $portalContext = 'admin';
+        }
+
+        $salonSlug = request()->route('salon_slug') 
+            ?? optional(auth()->user()?->salon)->slug 
+            ?? (auth()->user()?->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null)
+            ?? (app()->bound('current_salon') ? optional(app('current_salon'))->slug : null)
+            ?? session('current_salon_slug');
+    @endphp
+
     @auth
-        @php
-            $salonSlug = request()->route('salon_slug') 
-                ?? optional(auth()->user()->salon)->slug 
-                ?? (auth()->user()->salon_id ? optional(\App\Models\Salon::find(auth()->user()->salon_id))->slug : null)
-                ?? (app()->bound('current_salon') ? optional(app('current_salon'))->slug : null)
-                ?? session('current_salon_slug');
-        @endphp
-        @inject('settings', 'App\Services\SettingsService')
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-brand">
-                    <img src="{{ $settings->getLogoUrl() }}" alt="Logo" class="sidebar-brand-icon"
-                        style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
-                    <span class="sidebar-brand-text">
-                        {{ $settings->get('business_name') === 'My Business' ? (optional(auth()->user()->salon)->name ?? $settings->get('business_name')) : ($settings->get('business_name') ?? optional(auth()->user()->salon)->name ?? 'Salon CMS') }}
-                    </span>
-                </div>
-            </div>
-            <div class="sidebar-menu">
-                <!-- Common Menu Items -->
-                @role('employee')
-                <a href="{{ route('employee.dashboard', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                    class="sidebar-item {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
-                    <i class="fas fa-home sidebar-icon"></i>
-                    <span class="sidebar-text">Dashboard</span>
-                </a>
-    @else
-                        @php
-                            $dashRoute = auth()->user()->hasRole('super_admin') 
-                                ? route('admin.super.dashboard') 
-                                : ($salonSlug ? route('dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard'));
-                        @endphp
-                        <a href="{{ $dashRoute }}"
-                            class="sidebar-item {{ request()->routeIs('dashboard') || request()->routeIs('admin.super.dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
-                            <i class="fas fa-home sidebar-icon"></i>
-                            <span class="sidebar-text">Dashboard</span>
-                        </a>
-                        @endrole
+        <x-layout.desktop-sidebar :salon-slug="$salonSlug" :portal-context="$portalContext" />
+    @endauth
 
-                        {{-- <a href="{{ route('booking.guest') }}"
-                            class="sidebar-item {{ request()->routeIs('booking.guest') ? 'active' : '' }}">
-                            <i class="fas fa-calendar-plus sidebar-icon"></i>
-                            <span class="sidebar-text">Book Appointment</span>
-                        </a> --}}
-
-                        <!-- Customer Menu Items -->
-                        @role('customer')
-                        <a href="{{ route('customer.appointments.create', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}"
-                            class="sidebar-item {{ request()->routeIs('customer.appointments.create') ? 'active' : '' }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right" title="Book Appointment">
-                            <i class="fas fa-plus-circle sidebar-icon"></i>
-                            <span class="sidebar-text">Book Appointment</span>
-                        </a>
-                        <a href="{{ route('customer.appointments.index', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}"
-                            class="sidebar-item {{ request()->routeIs('customer.appointments.index') || request()->routeIs('customer.appointments.show') ? 'active' : '' }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right" title="My Appointments">
-                            <i class="fas fa-calendar-alt sidebar-icon"></i>
-                            <span class="sidebar-text">My Appointments</span>
-                        </a>
-                        <a href="{{ route('profile.edit') }}"
-                            class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}" data-bs-toggle="tooltip"
-                            data-bs-placement="right" title="Profile">
-                            <i class="fas fa-user sidebar-icon"></i>
-                            <span class="sidebar-text">Profile</span>
-                        </a>
-                        @endrole
-
-                        <!-- Admin/Manager Menu Items -->
-                        @if(!auth()->user()->hasRole('employee') && !auth()->user()->hasRole('customer'))
-
-                        <!-- Bookings Section -->
-                        @can('bookings.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Booking System') && \App\Helpers\ModuleHelper::appointmentsEnabled())
-                                <div class="sidebar-section">
-                                    <a href="#" class="sidebar-item {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}"
-                                        data-bs-toggle="collapse" data-bs-target="#bookingsSubmenu"
-                                        aria-expanded="{{ request()->routeIs('admin.bookings.*') ? 'true' : 'false' }}"
-                                        data-bs-placement="right" title="Bookings">
-                                        <i class="fas fa-calendar-alt sidebar-icon"></i>
-                                        <span class="sidebar-text">Bookings</span>
-                                        <i
-                                            class="fas fa-chevron-{{ request()->routeIs('admin.bookings.*') ? 'up' : 'down' }} ms-auto chevron"></i>
-                                    </a>
-                                    <div class="collapse {{ request()->routeIs('admin.bookings.*') ? 'show' : '' }}" id="bookingsSubmenu">
-                                        <div class="px-4 py-1">
-                                            <a href="{{ route('admin.bookings.index', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.bookings.index') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="All Bookings">
-                                                <i class="fas fa-list-ul sidebar-icon"></i>
-                                                <span class="sidebar-text">All Bookings</span>
-                                            </a>
-
-                                        </div>
-                                        @can('bookings.view_stats')
-                                            <div class="px-4 py-1">
-                                                <a href="{{ route('admin.bookings.stats', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.bookings.stats') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Booking Stats">
-                                                    <i class="fas fa-chart-bar sidebar-icon"></i>
-                                                    <span class="sidebar-text">Booking Stats</span>
-                                                </a>
-                                            </div>
-                                        @endcan
-                                    </div>
-                                </div>
-
-                                <a href="{{ route('admin.guest-booking.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.guest-booking.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Guest Booking">
-                                    <i class="fas fa-link sidebar-icon"></i>
-                                    <span class="sidebar-text">Guest Booking</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        <!-- POS Section -->
-                        @can('pos.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('POS System') && \App\Helpers\ModuleHelper::posEnabled())
-                                @php $posBusinessType = optional(auth()->user()->salon)->business_type; @endphp
-                                {{-- Standalone Quick Sale --}}
-                                <a href="{{ route('admin.bookings.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.bookings.index') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Quick Sale">
-                                    <i class="fas fa-bolt sidebar-icon text-warning"></i>
-                                    <span class="sidebar-text">Quick Sale</span>
-                                </a>
-
-                                <div class="sidebar-section">
-                                    <a href="#" class="sidebar-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}"
-                                        data-bs-toggle="collapse" data-bs-target="#posSubmenu"
-                                        aria-expanded="{{ request()->routeIs('admin.pos.*') ? 'true' : 'false' }}" data-bs-placement="right"
-                                        title="{{ $posBusinessType === 'barber' ? 'Barber POS' : ($posBusinessType === 'both' ? 'Salon & Barber POS' : 'POS Management') }}">
-                                        <i class="fas {{ $posBusinessType === 'barber' ? 'fa-scissors text-warning' : ($posBusinessType === 'both' ? 'fa-store text-warning' : 'fa-cash-register') }} sidebar-icon"></i>
-                                        <span class="sidebar-text">{{ $posBusinessType === 'barber' ? 'Barber POS' : ($posBusinessType === 'both' ? 'Salon & Barber POS' : 'POS Management') }}</span>
-                                        <i
-                                            class="fas fa-chevron-{{ request()->routeIs('admin.pos.*') ? 'up' : 'down' }} ms-auto chevron"></i>
-                                    </a>
-                                    <div class="collapse {{ request()->routeIs('admin.pos.*') ? 'show' : '' }}" id="posSubmenu">
-                                        <div class="px-4 py-1">
-                                            @if($posBusinessType === 'both')
-                                                {{-- Both: Show Salon Terminal and Barber Terminal separately --}}
-                                                <a href="{{ route('admin.pos.index', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.pos.index') && !request()->query('view') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Salon Terminal">
-                                                    <i class="fas fa-shopping-cart sidebar-icon"></i>
-                                                    <span class="sidebar-text">Salon Terminal</span>
-                                                </a>
-                                                <a href="{{ route('admin.pos.index', ['salon_slug' => $salonSlug]) }}?view=barber"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.pos.index') && request()->query('view') === 'barber' ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Barber Terminal">
-                                                    <i class="fas fa-scissors sidebar-icon text-warning"></i>
-                                                    <span class="sidebar-text">Barber Terminal</span>
-                                                </a>
-                                            @else
-                                                {{-- Single terminal for barber or salon only --}}
-                                                <a href="{{ route('admin.pos.index', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.pos.index') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="{{ $posBusinessType === 'barber' ? 'Barber Terminal' : 'POS Terminal' }}">
-                                                    <i class="fas {{ $posBusinessType === 'barber' ? 'fa-scissors' : 'fa-shopping-cart' }} sidebar-icon"></i>
-                                                    <span class="sidebar-text">{{ $posBusinessType === 'barber' ? 'Barber Terminal' : 'POS Terminal' }}</span>
-                                                </a>
-                                            @endif
-                                            <a href="{{ route('admin.pos.sales.index', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.pos.sales.*') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Sales History">
-                                                <i class="fas fa-receipt sidebar-icon"></i>
-                                                <span class="sidebar-text">Sales History</span>
-                                            </a>
-                                            <a href="{{ route('admin.pos.analytics.index', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.pos.analytics.*') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Analytics">
-                                                <i class="fas fa-chart-line sidebar-icon"></i>
-                                                <span class="sidebar-text">Analytics</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-
-                        @endcan
-
-                        <!-- Customers -->
-                        @can('customers.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Customer Management') && \App\Helpers\ModuleHelper::customersEnabled())
-                                <a href="{{ route('admin.customers.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Customers">
-                                    <i class="fas fa-users sidebar-icon"></i>
-                                    <span class="sidebar-text">Customers</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        <!-- Staff & Commissions -->
-                        @can('staff.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Staff Management') && \App\Helpers\ModuleHelper::staffEnabled() && !auth()->user()->hasRole('employee'))
-                                <a href="{{ route('admin.staff.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}" data-bs-toggle="tooltip"
-                                    data-bs-placement="right" title="Staff">
-                                    <i class="fas fa-users sidebar-icon"></i>
-                                    <span class="sidebar-text">Staff</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        @can('commissions.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Commission Management') && \App\Helpers\ModuleHelper::isEnabled('commissions'))
-                                <a href="{{ route('admin.commissions.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.commissions.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Commissions">
-                                    <i class="fas fa-percent sidebar-icon"></i>
-                                    <span class="sidebar-text">Commissions</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        <!-- Catalog (Services, Packages, Memberships, Inventory) -->
-                        @can('services.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Booking System') && \App\Helpers\ModuleHelper::servicesEnabled())
-                                <a href="{{ route('admin.services.categories.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.services.categories.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Categories">
-                                    <i class="fas fa-tags sidebar-icon"></i>
-                                    <span class="sidebar-text">Categories</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        @can('packages.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Packages') && \App\Helpers\ModuleHelper::packagesEnabled())
-                                <a href="{{ route('admin.packages.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Packages">
-                                    <i class="fas fa-gift sidebar-icon"></i>
-                                    <span class="sidebar-text">Packages</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        @can('memberships.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Memberships') && \App\Helpers\ModuleHelper::membershipsEnabled())
-                                <a href="{{ route('admin.memberships.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.memberships.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Memberships">
-                                    <i class="fas fa-id-card sidebar-icon"></i>
-                                    <span class="sidebar-text">Memberships</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        @can('inventory.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Inventory Management') && \App\Helpers\ModuleHelper::inventoryEnabled())
-                                <a href="{{ route('admin.inventory.index', ['salon_slug' => $salonSlug]) }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Inventory">
-                                    <i class="fas fa-boxes sidebar-icon"></i>
-                                    <span class="sidebar-text">Inventory</span>
-                                </a>
-                            @endif
-                        @endcan
-
-                        <!-- AI Copilot & Automations -->
-                        @if(optional(auth()->user()->salon)->canUseFeature('AI Insights & Automation') && \App\Helpers\ModuleHelper::aiEnabled())
-                            <a href="{{ route('admin.ai.hub', ['salon_slug' => $salonSlug]) }}"
-                                class="sidebar-item {{ request()->routeIs('admin.ai.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="AI Copilot & Automations">
-                                <i class="fas fa-robot sidebar-icon text-warning"></i>
-                                <span class="sidebar-text fw-bold">AI Copilot</span>
-                                <span class="badge bg-purple text-white ms-auto" style="font-size: 0.65rem;">PRO AI</span>
-                            </a>
-                        @endif
-
-                        <!-- Reports -->
-                        @can('reports.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Analytics & Reports') && \App\Helpers\ModuleHelper::reportsEnabled())
-                                <div class="sidebar-section">
-                                    <a href="#" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
-                                        data-bs-toggle="collapse" data-bs-target="#reportsSubmenu"
-                                        aria-expanded="{{ request()->routeIs('admin.reports.*') ? 'true' : 'false' }}"
-                                        data-bs-placement="right" title="Reports">
-                                        <i class="fas fa-chart-pie sidebar-icon"></i>
-                                        <span class="sidebar-text">Reports</span>
-                                        <i
-                                            class="fas fa-chevron-{{ request()->routeIs('admin.reports.*') ? 'up' : 'down' }} ms-auto chevron"></i>
-                                    </a>
-                                    <div class="collapse {{ request()->routeIs('admin.reports.*') ? 'show' : '' }}" id="reportsSubmenu">
-                                        <div class="px-4 py-1">
-                                            @if(optional(auth()->user()->salon)->canUseFeature('AI Insights & Automation') && \App\Helpers\ModuleHelper::aiEnabled())
-                                                <a href="{{ route('admin.reports.ai-insights', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.ai-insights') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Smart AI Insights">
-                                                    <i class="fas fa-brain sidebar-icon text-warning"></i>
-                                                    <span class="sidebar-text fw-bold">Smart AI Insights</span>
-                                                    <span class="badge bg-purple text-white ms-auto" style="font-size: 0.65rem;">AI</span>
-                                                </a>
-                                            @endif
-                                            <a href="{{ route('admin.reports.sales', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.sales') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Sales Reports">
-                                                <i class="fas fa-chart-line sidebar-icon"></i>
-                                                <span class="sidebar-text">Sales Reports</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.appointments', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.appointments') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Appointment Reports">
-                                                <i class="fas fa-calendar-alt sidebar-icon"></i>
-                                                <span class="sidebar-text">Appointment Reports</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.staff', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.staff') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Performance">
-                                                <i class="fas fa-users sidebar-icon"></i>
-                                                <span class="sidebar-text">Staff Performance</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.customers', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.customers') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Customer Insights">
-                                                <i class="fas fa-user-friends sidebar-icon"></i>
-                                                <span class="sidebar-text">Customer Insights</span>
-                                            </a>
-                                            @if(optional(auth()->user()->salon)->canUseFeature('Commission Management'))
-                                                <a href="{{ route('admin.commissions.reports', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.commissions.reports') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Commissions">
-                                                    <i class="fas fa-hand-holding-usd sidebar-icon"></i>
-                                                    <span class="sidebar-text">Commissions</span>
-                                                </a>
-                                                <a href="{{ route('admin.reports.commissions.payouts', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.commissions.payouts') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Payouts">
-                                                    <i class="fas fa-wallet sidebar-icon"></i>
-                                                    <span class="sidebar-text">Payouts</span>
-                                                </a>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                        @endcan
-
-                        <!-- Salon Management -->
-                        @canany(['salon.manage_settings', 'salon.manage_branches'])
-                            <div class="sidebar-section">
-                                <div class="sidebar-section-header">
-                                    <i class="fas fa-store sidebar-icon"></i>
-                                    <span class="sidebar-text">Salon Management</span>
-                                </div>
-
-                                {{-- Salon Settings removed - using SaaS Settings instead to avoid duplication --}}
-
-                                {{-- Salon Settings for Salon Owners --}}
-                                @if(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
-                                    <a href="{{ route('admin.saas.settings.mail', ['salon_slug' => $salonSlug]) }}"
-                                        class="sidebar-item {{ request()->routeIs('admin.saas.settings.*') ? 'active' : '' }}"
-                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Salon Settings">
-                                        <i class="fas fa-cogs sidebar-icon"></i>
-                                        <span class="sidebar-text">Salon Settings</span>
-                                    </a>
-                                @endif
-
-                                @can('salon.manage_branches')
-                                    @if(optional(auth()->user()->salon)->canUseFeature('Multi-Branch Support') && \App\Helpers\ModuleHelper::branchesEnabled())
-                                        <a href="{{ route('admin.branches.index', ['salon_slug' => $salonSlug]) }}"
-                                            class="sidebar-item {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}"
-                                            data-bs-toggle="tooltip" data-bs-placement="right" title="Branches">
-                                            <i class="fas fa-building sidebar-icon"></i>
-                                            <span class="sidebar-text">Branches</span>
-                                        </a>
-                                    @endif
-                                @endcan
-
-                                {{-- Roles & Permissions for Salon Admin --}}
-                                @if(auth()->user()->hasRole('salon_admin') && optional(auth()->user()->salon)->canUseFeature('Role Management') && \App\Helpers\ModuleHelper::isEnabled('roles'))
-                                    <a href="{{ route('admin.roles.index', ['salon_slug' => $salonSlug]) }}"
-                                        class="sidebar-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}"
-                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Roles & Permissions">
-                                        <i class="fas fa-user-shield sidebar-icon"></i>
-                                        <span class="sidebar-text">Roles & Permissions</span>
-                                    </a>
-                                @endif
-                            </div>
-                        @endcanany
-                        @endif
-
-                        <!-- Employee Menu Items -->
-                        @role('employee')
-                        @can('pos.view')
-                            <a href="{{ route('admin.pos.index', ['salon_slug' => optional(auth()->user()->salon)->slug, 'view' => 'barber']) }}"
-                                class="sidebar-item {{ request()->routeIs('admin.pos.index') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="POS">
-                                <i class="fas fa-cash-register sidebar-icon"></i>
-                                <span class="sidebar-text">POS</span>
-                            </a>
-                            <a href="{{ route('admin.pos.sales.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('admin.pos.sales.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Sales History">
-                                <i class="fas fa-receipt sidebar-icon"></i>
-                                <span class="sidebar-text">Sales History</span>
-                            </a>
-                        @endcan
-                        @can('bookings.view')
-                            <a href="{{ route('employee.appointments.index', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="My Appointments">
-                                <i class="fas fa-calendar-check sidebar-icon"></i>
-                                <span class="sidebar-text">My Appointments</span>
-                            </a>
-                            <a href="{{ route('employee.appointments.today', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('employee.appointments.today') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Today's Appointments">
-                                <i class="fas fa-calendar-day sidebar-icon"></i>
-                                <span class="sidebar-text">Today's Appointments</span>
-                            </a>
-                            <a href="{{ route('employee.appointments.upcoming', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('employee.appointments.upcoming') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Upcoming">
-                                <i class="fas fa-calendar-week sidebar-icon"></i>
-                                <span class="sidebar-text">Upcoming</span>
-                            </a>
-                            <a href="{{ route('employee.appointments.completed', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('employee.appointments.completed') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Completed">
-                                <i class="fas fa-check-double sidebar-icon"></i>
-                                <span class="sidebar-text">Completed</span>
-                            </a>
-                            <a href="{{ route('employee.earnings', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                class="sidebar-item {{ request()->routeIs('employee.earnings') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="My Earnings">
-                                <i class="fas fa-dollar-sign sidebar-icon"></i>
-                                <span class="sidebar-text">My Earnings</span>
-                            </a>
-                        @endcan
-                        <a href="{{ route('profile.edit') }}"
-                            class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}" data-bs-toggle="tooltip"
-                            data-bs-placement="right" title="Profile">
-                            <i class="fas fa-user sidebar-icon"></i>
-                            <span class="sidebar-text">Profile</span>
-                        </a>
-                        @endrole
-
-                        <!-- System Management Section - Only for Super Admin -->
-                        @role('super_admin')
-                        <div class="sidebar-section">
-                            <div class="sidebar-section-header">
-                                <i class="fas fa-cogs sidebar-icon"></i>
-                                <span class="sidebar-text">System Management</span>
-                            </div>
-
-                            <!-- Salons Management -->
-                            <a href="{{ route('admin.salons.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.salons.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Salons">
-                                <i class="fas fa-store sidebar-icon"></i>
-                                <span class="sidebar-text">Salons</span>
-                            </a>
-
-                            <!-- Plans Management -->
-                            <a href="{{ route('admin.plans.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Plans">
-                                <i class="fas fa-tags sidebar-icon"></i>
-                                <span class="sidebar-text">Plans</span>
-                            </a>
-
-                            <!-- Subscriptions Management -->
-                            <a href="{{ route('admin.subscriptions.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Subscriptions">
-                                <i class="fas fa-crown sidebar-icon"></i>
-                                <span class="sidebar-text">Subscriptions</span>
-                            </a>
-
-                            <!-- Payments Management -->
-                            <a href="{{ route('admin.payments.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Payments">
-                                <i class="fas fa-credit-card sidebar-icon"></i>
-                                <span class="sidebar-text">Payments</span>
-                            </a>
-
-                            <!-- Reports -->
-                            <a href="{{ route('admin.saas.reports.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.saas.reports.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
-                                <i class="fas fa-chart-bar sidebar-icon"></i>
-                                <span class="sidebar-text">Reports</span>
-                            </a>
-
-                            <!-- Modules Management -->
-                            <a href="{{ route('admin.modules.index') }}"
-                                class="sidebar-item {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}"
-                                data-bs-toggle="tooltip" data-bs-placement="right" title="Modules">
-                                <i class="fas fa-puzzle-piece sidebar-icon"></i>
-                                <span class="sidebar-text">Modules</span>
-                            </a>
-
-                            @can('system.manage_roles')
-                                <a href="{{ route('admin.super.roles.index') }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.super.roles.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Roles & Permissions">
-                                    <i class="fas fa-user-shield sidebar-icon"></i>
-                                    <span class="sidebar-text">Roles & Permissions</span>
-                                </a>
-                            @endcan
-                            @can('system.manage_settings')
-                                <a href="{{ route('admin.system-settings.index') }}"
-                                    class="sidebar-item {{ request()->routeIs('admin.system-settings.*') ? 'active' : '' }}"
-                                    data-bs-toggle="tooltip" data-bs-placement="right" title="System Settings">
-                                    <i class="fas fa-cog sidebar-icon"></i>
-                                    <span class="sidebar-text">System Settings</span>
-                                </a>
-                            @endcan
-                        </div>
-                        @endrole
-                    </div>
-                </div>
-            @endauth
-        <!-- Mobile Sidebar Backdrop -->
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-    {{-- ═══════════════════════════════════════════════════════════════════
-         SECURITY: Impersonation Banner
-         Shown ABOVE the header when Super Admin is impersonating a salon owner.
-         Provides mandatory "Return to Platform Admin" exit mechanism.
-         ═══════════════════════════════════════════════════════════════════ --}}
-    @if(session()->has('impersonator_id'))
-        @php
-            $impersonatedSalonName = session('impersonated_salon_name', 'a Salon');
-            $impersonatorName      = session('impersonator_name', 'Super Admin');
-        @endphp
-        <div id="impersonationBanner" class="impersonation-banner-top">
-            <div class="impersonation-banner-inner">
-                <div class="impersonation-left">
-                    <span class="impersonation-badge">
-                        <i class="fas fa-shield-alt"></i> Impersonation Mode Active
-                    </span>
-                    <span class="impersonation-text">
-                        Acting as owner of <strong>{{ e($impersonatedSalonName) }}</strong>
-                        <span class="impersonation-audit-note">&bull; Logged as <em>{{ e($impersonatorName) }}</em></span>
-                    </span>
-                </div>
-                <div class="impersonation-right">
-                    <form method="POST" action="{{ route('admin.salons.stop-impersonate') }}" class="m-0 p-0">
-                        @csrf
-                        <button type="submit" id="stopImpersonateBtn" class="btn-return-admin">
-                            <i class="fas fa-arrow-left"></i>
-                            <span>Return to Platform Admin</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    <!-- Header -->
-    <div class="header" id="header">
-        <div class="header-content">
-            <div class="d-flex align-items-center">
-                <button class="toggle-sidebar" id="toggleSidebar">
-                    <i class="fas fa-bars"></i>
-                </button>
-                @auth
-                    @if(\App\Helpers\ModuleHelper::branchesEnabled() && session('current_branch_name') && session('current_branch_name') !== 'All Branches')
-                        <div class="ms-3">
-                            <span
-                                class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
-                                <i class="fas fa-map-marker-alt me-2"></i>
-                                {{ session('current_branch_name') }}
-                            </span>
-                        </div>
-                    @endif
-                @endauth
-            </div>
-
-            <div class="d-flex align-items-center">
-                <!-- Language Switcher -->
-                @php
-                    $showLangToggle = true; // Default to showing for guests/super admins
-                    if (auth()->check() && optional(auth()->user())->salon) {
-                        $settingsService = app(\App\Services\SettingsService::class);
-                        // Get setting with default 1 (true)
-                        // Ensure we handle string "1"/"0" correctly just in case
-                        $val = $settingsService->get('enable_language_toggle', 1);
-                        $showLangToggle = filter_var($val, FILTER_VALIDATE_BOOLEAN) || $val === 1 || $val === '1';
-                    }
-                @endphp
-
-                @if($showLangToggle)
-                    <div class="me-3">
-                        <label class="lang-toggle-pretty">
-                            <input type="checkbox" id="languageToggle">
-                            <span class="bg-slider"></span>
-                            <div class="labels notranslate" translate="no">
-                                <span class="label-en">EN</span>
-                                <span class="label-ar">AR</span>
-                            </div>
-                        </label>
-                    </div>
-                @endif
-
-                <div id="google_translate_element" style="display:none;"></div>
-
-                <script type="text/javascript">
-                    function googleTranslateElementInit() {
-                        new google.translate.TranslateElement({
-                            pageLanguage: 'en',
-                            includedLanguages: 'en,ar',
-                            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                            autoDisplay: false
-                        }, 'google_translate_element');
-                    }
-                </script>
-                <script type="text/javascript"
-                    src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-                <script>
-                    var isToggleEnabled = @json($showLangToggle);
-
-                    function changeLanguage(lang) {
-                        // 1. Store preference in localStorage (Persistent)
-                        localStorage.setItem('app_language', lang);
-
-                        // 2. Cookie Management - Nuclear Option
-                        var domain = window.location.hostname;
-                        var parts = domain.split('.');
-
-                        // Clear cookies for current domain, and all parent domains
-                        // e.g. salon.fsterp.com, fsterp.com
-                        var d = domain;
-                        while (parts.length >= 2) {
-                            var d = parts.join('.');
-                            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + d;
-                            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=." + d;
-                            parts.shift();
-                        }
-
-                        // 3. Set new cookie
-                        var cookieValue = '/en/' + lang;
-
-                        // Set strictly on the current domain/host to ensure it takes precedence
-                        document.cookie = "googtrans=" + cookieValue + "; path=/";
-                        document.cookie = "googtrans=" + cookieValue + "; path=/; domain=" + domain;
-
-                        // 4. Reload
-                        location.reload();
-                    }
-
-                    document.addEventListener('DOMContentLoaded', function () {
-
-                        // Safety: Check if we are in a reload loop
-                        function isLooping() {
-                            var lastFix = sessionStorage.getItem('lang_fix_timestamp');
-                            if (lastFix) {
-                                var diff = Date.now() - parseInt(lastFix);
-                                // If we tried to fix less than 3 seconds ago, assume loop
-                                if (diff < 3000) {
-
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-
-                        function autoFixLanguage(targetLang) {
-                            if (isLooping()) return;
-
-                            sessionStorage.setItem('lang_fix_timestamp', Date.now());
-
-                            changeLanguage(targetLang);
-                        }
-
-                        // -- FORCE ENGLISH IF TOGGLE DISABLED --
-                        if (!isToggleEnabled) {
-                            var currentStored = localStorage.getItem('app_language');
-                            // If user is currently stuck in Arabic, force revert to English
-                            if (currentStored === 'ar') {
-                                autoFixLanguage('en');
-                                return;
-                            }
-                        }
-
-                        // -- PERSISTENCE CHECK --
-
-                        // 1. Get stored preference
-                        var storedLang = localStorage.getItem('app_language');
-
-                        // 2. If we have a stored preference, enforce it
-                        if (storedLang) {
-                            var currentCookie = document.cookie.match('(^|;)\\s*googtrans\\s*=\\s*([^;]+)');
-                            var cookieValue = currentCookie ? currentCookie.pop() : '';
-
-                            // If cookie is missing or doesn't match our stored preference
-                            var expectedCookieEnd = '/' + storedLang;
-
-                            // Relaxed check: just ensure the cookie contains the target language
-                            // This helps if Google modifies the cookie format slightly (e.g. /auto/ar)
-                            var matches = cookieValue && (cookieValue.endsWith(expectedCookieEnd) || cookieValue.includes('/' + storedLang));
-
-                            if (!matches) {
-                                // Double check: if we want 'en' and cookie is empty/missing, that's usually fine implies default
-                                // But if stored is 'ar' and cookie is missing, we must fix
-                                if (storedLang === 'ar' || (storedLang === 'en' && cookieValue.includes('/ar'))) {
-                                    autoFixLanguage(storedLang);
-                                    return;
-                                }
-                            }
-                        }
-
-
-                        // -- UI UPDATES --
-
-                        // Determine current effective language
-                        var lang = storedLang || 'en';
-
-                        // Update Toggle Switch State (Only if it exists)
-                        var toggle = document.getElementById('languageToggle');
-                        if (toggle) {
-                            toggle.checked = (lang === 'ar');
-
-                            // Add event listener for change
-                            toggle.addEventListener('change', function () {
-                                if (this.checked) {
-                                    changeLanguage('ar');
-                                } else {
-                                    changeLanguage('en');
-                                }
-                            });
-                        }
-
-                        // Apply RTL if Arabic
-                        if (lang === 'ar') {
-                            document.body.classList.add('rtl');
-                            document.documentElement.setAttribute('dir', 'rtl');
-                            document.documentElement.setAttribute('lang', 'ar');
-                        }
-
-                        // Force hide banner (JS backup for CSS)
-                        function hideBanner() {
-                            var frame = document.querySelector('.goog-te-banner-frame');
-                            if (frame) {
-                                frame.style.setProperty('display', 'none', 'important');
-                                frame.remove(); // Nuke it
-                            }
-                            document.body.style.setProperty('top', '0px', 'important');
-                            document.body.style.setProperty('position', 'static', 'important');
-                        }
-
-                        // 1. Initial Hide
-                        hideBanner();
-                        setTimeout(hideBanner, 0);
-                        setTimeout(hideBanner, 500);
-
-                        // 2. MutationObserver (Nuclear Option)
-                        var observer = new MutationObserver(function (mutations) {
-                            hideBanner();
-                        });
-
-                        observer.observe(document.body, {
-                            attributes: true,
-                            childList: true,
-                            subtree: false // We only care about direct children (like the iframe) or body attributes
-                        });
-
-                        // 3. Interval check just in case
-                        setInterval(hideBanner, 1000);
-                    });
-                </script>
-                @auth
-                        <!-- Subscription Expiration Warning -->
-                        @if(!env('SINGLE_SALON_MODE', false) && auth()->user()->hasRole('salon_admin') && auth()->user()->salon)
-                            @php
-                                $subscription = auth()->user()->salon->subscription;
-                                $daysRemaining = $subscription ? $subscription->daysUntilExpiration() : null;
-                                $showWarning = $daysRemaining !== null && $daysRemaining > 0 && $daysRemaining <= 30;
-                            @endphp
-
-                            @if($showWarning)
-                                <div class="me-2 me-md-3">
-                                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}"
-                                        class="text-decoration-none" title="Plan expires in {{ $daysRemaining }} {{ Str::plural('day', $daysRemaining) }}">
-                                        <div class="alert alert-warning mb-0 py-1 py-md-2 px-2 px-md-3 d-flex align-items-center text-nowrap"
-                                            style="font-size: 0.82rem; border-radius: 8px; white-space: nowrap;">
-                                            <i class="fas fa-exclamation-triangle me-1 me-md-2 text-warning-emphasis"></i>
-                                            <span class="fw-semibold">
-                                                <span class="d-none d-md-inline">Plan expires in </span>
-                                                <span class="badge bg-warning text-dark">{{ $daysRemaining }}<span class="d-none d-md-inline"> {{ Str::plural('day', $daysRemaining) }}</span><span class="d-inline d-md-none">d</span></span>
-                                            </span>
-                                        </div>
-                                    </a>
-                                </div>
-                            @endif
-                        @endif
-
-
-                        <!-- Notification Bell -->
-                        @if(isset($system_notifications))
-                            <div class="notification-dropdown dropdown me-2 me-md-3">
-                                <a href="#" class="text-dark position-relative" id="notificationDropdown" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <i class="fas fa-bell fa-lg"></i>
-                                    @if(count($system_notifications) > 0)
-                                        <span id="notificationBadge"
-                                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            {{ count($system_notifications) }}
-                                            <span class="visually-hidden">unread messages</span>
-                                        </span>
-                                    @endif
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in border-0 shadow-lg"
-                                    aria-labelledby="notificationDropdown"
-                                    style="width: 320px; max-height: 400px; overflow-y: auto;">
-                                    <li class="dropdown-header bg-white py-3 px-3 border-bottom">
-                                        <h6 class="m-0 font-weight-bold text-primary">Notifications</h6>
-                                    </li>
-                                    @if(count($system_notifications) > 0)
-                                        @foreach($system_notifications as $notification)
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-start px-3 py-2 border-bottom" href="#"
-                                                    onclick='event.preventDefault(); showNotificationDetail(@json($notification));'>
-                                                    <div class="me-2 flex-shrink-0">
-                                                        <div class="rounded-circle bg-{{ $notification->type }} bg-opacity-10 text-{{ $notification->type }} d-flex align-items-center justify-content-center"
-                                                            style="width: 32px; height: 32px;">
-                                                            <i
-                                                                class="fas fa-{{ $notification->type == 'info' ? 'info' : ($notification->type == 'success' ? 'check' : ($notification->type == 'warning' ? 'exclamation' : 'exclamation-triangle')) }} fa-sm"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="font-weight-bold text-dark text-wrap small"
-                                                                style="line-height: 1.2;">{{ $notification->title }}</span>
-                                                            <small class="text-muted"
-                                                                style="font-size: 0.7rem;">{{ $notification->created_at->diffForHumans(null, true, true) }}</small>
-                                                        </div>
-                                                        <div class="small text-secondary text-truncate"
-                                                            style="max-width: 200px; font-size: 0.75rem;">
-                                                            {{ Str::limit(strip_tags($notification->message), 50) }}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                    @else
-                                        <li>
-                                            <div class="dropdown-item text-center small text-muted py-4">No new notifications</div>
-                                        </li>
-                                    @endif
-                                    @if(count($system_notifications) > 0)
-                                        <li class="dropdown-divider"></li>
-                                        <li>
-                                            <button class="dropdown-item text-center small text-primary fw-bold py-2"
-                                                id="markAllReadBtn">
-                                                <i class="fas fa-check-double me-1"></i> Mark All as Read
-                                            </button>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </div>
-                        @endif
-
-                        <div class="user-dropdown">
-                            <div class="user-dropdown-toggle p-1 p-md-2" id="userDropdownToggle">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
-                                    alt="{{ auth()->user()->name }}" class="rounded-circle me-1 me-md-2"
-                                    style="width: 32px; height: 32px; min-width: 32px;">
-                                <span class="me-2 d-none d-md-inline text-truncate" style="max-width: 140px;">{{ auth()->user()->name }}</span>
-                                <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
-                            </div>
-                            <div class="user-dropdown-menu" id="userDropdownMenu">
-                                <a href="{{ route('profile.edit') }}" class="user-dropdown-item">
-                                    <i class="fas fa-user"></i>
-                                    Profile
-                                </a>
-                                @if(!env('SINGLE_SALON_MODE', false) && auth()->user()->hasRole('salon_admin'))
-                                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}"
-                                        class="user-dropdown-item">
-                                        <i class="fas fa-crown"></i>
-                                        My Plan
-                                    </a>
-                                    <a href="{{ route('admin.saas.subscription.history', ['salon_slug' => $salonSlug]) }}"
-                                        class="user-dropdown-item">
-                                        <i class="fas fa-history"></i>
-                                        Subscription History
-                                    </a>
-                                @endif
-                                <a href="{{ route('profile.edit') }}" class="user-dropdown-item">
-                                    <i class="fas fa-cog"></i>
-                                    Settings
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a href="{{ route('logout') }}"
-                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                    class="user-dropdown-item text-danger">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    Logout
-                                </a>
-                                <a href="#"
-                                    onclick="event.preventDefault(); if(confirm('Log out and remove this device from trusted devices? You will need your password to log in next time.')) { document.getElementById('forget-device-input').value = '1'; document.getElementById('logout-form').submit(); }"
-                                    class="user-dropdown-item text-muted" style="font-size: 11.5px; opacity: 0.85;">
-                                    <i class="fas fa-ban"></i>
-                                    Logout & Forget Device
-                                </a>
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                    @csrf
-                                    <input type="hidden" name="forget_device" id="forget-device-input" value="0">
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                <div class="guest-nav">
-                    <a href="{{ route('login') }}" class="btn btn-sm btn-outline-primary me-2">Login</a>
-                    <a href="{{ route('register') }}" class="btn btn-sm btn-primary">Register</a>
-                </div>
-            @endauth
-        </div>
-    </div>
+    <x-layout.top-header :salon-slug="$salonSlug" :portal-context="$portalContext" />
 
     <!-- Global Notification Container -->
     <div id="notificationContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
@@ -1308,8 +533,6 @@
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <div class="container-fluid px-4">
-
-
             @if($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
@@ -1324,700 +547,18 @@
             @endif
         </div>
 
-
-
         @yield('content')
     </div>
 
-    <!-- Mobile Bottom Navigation Bar (Visible on mobile/tablet screens) -->
-    @auth
-        <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
-            @if(auth()->user()->hasRole('super_admin'))
-                <a href="{{ route('admin.super.dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.super.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ route('admin.salons.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.salons.*') ? 'active' : '' }}">
-                    <i class="fas fa-store"></i>
-                    <span>Salons</span>
-                </a>
-                <a href="{{ route('admin.plans.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
-                    <i class="fas fa-tags"></i>
-                    <span>Plans</span>
-                </a>
-                <a href="{{ route('admin.subscriptions.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
-                    <i class="fas fa-crown"></i>
-                    <span>Subs</span>
-                </a>
-                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                    <span>Menu</span>
-                </a>
-            @elseif(auth()->user()->hasAnyRole(['salon_admin', 'manager']))
-                @php
-                    $mobileDashRoute = $salonSlug ? route('dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard');
-                @endphp
-                <a href="{{ $mobileDashRoute }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->routeIs('home.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                @can('pos.view')
-                    <a href="{{ $salonSlug ? route('admin.pos.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
-                        <i class="fas fa-cash-register"></i>
-                        <span>Terminal</span>
-                    </a>
-                @endcan
-                @can('bookings.view')
-                    <a href="{{ $salonSlug ? route('admin.bookings.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Bookings</span>
-                    </a>
-                @endcan
-                @can('customers.view')
-                    <a href="{{ $salonSlug ? route('admin.customers.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                        <i class="fas fa-users"></i>
-                        <span>Clients</span>
-                    </a>
-                @endcan
-                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                    <span>Menu</span>
-                </a>
-            @elseif(auth()->user()->hasRole('employee'))
-                @can('pos.view')
-                    <a href="{{ $salonSlug ? route('admin.pos.index', ['salon_slug' => $salonSlug, 'view' => 'barber']) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
-                        <i class="fas fa-cash-register"></i>
-                        <span>POS</span>
-                    </a>
-                @endcan
-                <a href="{{ $salonSlug ? route('employee.dashboard', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ $salonSlug ? route('employee.appointments.index', ['salon_slug' => $salonSlug]) : '#' }}" class="mobile-bottom-nav-item {{ request()->routeIs('employee.appointments.*') ? 'active' : '' }}">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Appts</span>
-                </a>
-                <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="fas fa-user"></i>
-                    <span>Profile</span>
-                </a>
-                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                    <span>Menu</span>
-                </a>
-            @elseif(auth()->user()->hasRole('customer'))
-                <a href="{{ route('customer.appointments.index', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('customer.appointments.index') ? 'active' : '' }}">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>My Appts</span>
-                </a>
-                <a href="{{ route('customer.appointments.create', ['salon_slug' => request()->current_salon->slug ?? 'demo-salon']) }}" class="mobile-bottom-nav-item {{ request()->routeIs('customer.appointments.create') ? 'active' : '' }}">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Book</span>
-                </a>
-                <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="fas fa-user"></i>
-                    <span>Profile</span>
-                </a>
-                <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                    <span>Menu</span>
-                </a>
-            @endif
-        </nav>
-    @endauth
+    <!-- Mobile Bottom Navigation Bar -->
+    <x-layout.mobile-bottom-nav :salon-slug="$salonSlug" :portal-context="$portalContext" />
+
+    <!-- ApexCharts JS -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.js"></script>
 
     <!-- Scripts -->
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script>window.jQuery || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>')</script>
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- DataTables JS -->
-    <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script>
-        // Responsive Sidebar & Drawer Logic
-        const sidebar = document.getElementById('sidebar');
-        const header = document.getElementById('header');
-        const mainContent = document.getElementById('mainContent');
-        const toggleSidebar = document.getElementById('toggleSidebar');
-        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-
-        function isMobile() {
-            return window.innerWidth < 992;
-        }
-
-        function openMobileSidebar() {
-            if (sidebar) sidebar.classList.add('mobile-show');
-            if (sidebarBackdrop) sidebarBackdrop.classList.add('show');
-            document.body.classList.add('mobile-drawer-open');
-        }
-
-        function closeMobileSidebar() {
-            if (sidebar) sidebar.classList.remove('mobile-show');
-            if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
-            document.body.classList.remove('mobile-drawer-open');
-        }
-
-        // Check if sidebar was previously collapsed on desktop
-        if (!isMobile() && localStorage.getItem('sidebarCollapsed') === 'true') {
-            if (sidebar) sidebar.classList.add('collapsed');
-            if (header) header.classList.add('collapsed');
-            if (mainContent) mainContent.classList.add('expanded');
-        }
-
-        if (toggleSidebar) {
-            toggleSidebar.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isMobile()) {
-                    if (sidebar && sidebar.classList.contains('mobile-show')) {
-                        closeMobileSidebar();
-                    } else {
-                        openMobileSidebar();
-                    }
-                } else {
-                    if (sidebar) sidebar.classList.toggle('collapsed');
-                    if (header) header.classList.toggle('collapsed');
-                    if (mainContent) mainContent.classList.toggle('expanded');
-
-                    localStorage.setItem('sidebarCollapsed', sidebar ? sidebar.classList.contains('collapsed') : 'false');
-                    toggleTooltips();
-                }
-            });
-        }
-
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                openMobileSidebar();
-            });
-        }
-
-        if (sidebarBackdrop) {
-            sidebarBackdrop.addEventListener('click', closeMobileSidebar);
-        }
-
-        // Close mobile drawer when clicking a non-collapsible link
-        if (sidebar) {
-            sidebar.querySelectorAll('.sidebar-item:not([data-bs-toggle="collapse"])').forEach(item => {
-                item.addEventListener('click', () => {
-                    if (isMobile()) closeMobileSidebar();
-                });
-            });
-        }
-
-        // Responsive resize listener
-        window.addEventListener('resize', () => {
-            if (!isMobile() && sidebar && sidebar.classList.contains('mobile-show')) {
-                closeMobileSidebar();
-            }
-        });
-
-        // Initialize Bootstrap tooltips
-        function initTooltips() {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            return tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        }
-
-        // Toggle tooltips based on sidebar state
-        function toggleTooltips() {
-            if (!sidebar) return;
-            const tooltipTriggerList = document.querySelectorAll('.sidebar-item[data-bs-toggle="tooltip"]');
-            tooltipTriggerList.forEach(function (element) {
-                const tooltip = bootstrap.Tooltip.getInstance(element);
-                if (sidebar.classList.contains('collapsed') && !isMobile()) {
-                    if (!tooltip) {
-                        new bootstrap.Tooltip(element);
-                    } else {
-                        tooltip.enable();
-                    }
-                } else {
-                    if (tooltip) {
-                        tooltip.disable();
-                    }
-                }
-            });
-        }
-
-        // Initialize tooltips on page load
-        initTooltips();
-        toggleTooltips();
-
-        // User Dropdown
-        const userDropdownToggle = document.getElementById('userDropdownToggle');
-        const userDropdownMenu = document.getElementById('userDropdownMenu');
-
-        if (userDropdownToggle && userDropdownMenu) {
-            userDropdownToggle.addEventListener('click', () => {
-                userDropdownMenu.classList.toggle('show');
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!userDropdownToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-                    userDropdownMenu.classList.remove('show');
-                }
-            });
-        }
-
-        // Set role-specific background as default
-        @auth
-                                                                                                                                                                        const userRole = '{{ auth()->user()->roles->first()->name ?? "" }}';
-            if (userRole) {
-                sidebar.classList.add(`bg-${userRole.replace('_', '-')}`);
-            }
-        @endauth
-
-        // Apply saved theme color from localStorage (overrides role-based color)
-        // Theme color has priority because it's user-selected
-        const savedThemeColor = localStorage.getItem('salon_theme_color');
-        if (savedThemeColor) {
-            const themeColorMap = {
-                'pink': '#e83e8c',
-                'blue': '#0d6efd',
-                'purple': '#6f42c1',
-                'green': '#198754',
-                'barber': '#B45309'
-            };
-
-            if (sidebar && themeColorMap[savedThemeColor]) {
-                // Use inline style with !important to override CSS class and gradients
-                sidebar.style.setProperty('background', themeColorMap[savedThemeColor], 'important');
-                sidebar.style.setProperty('background-color', themeColorMap[savedThemeColor], 'important');
-            }
-        }
-
-        // Notification Detail Modal Logic
-        function showNotificationDetail(notification) {
-            // Populate modal content
-            const headerEl = document.getElementById('detailModalHeader');
-            const closeBtnEl = document.getElementById('detailModalCloseBtn');
-            const titleEl = document.getElementById('detailModalHeading');
-            const timeEl = document.getElementById('detailModalTime');
-            const messageEl = document.getElementById('detailModalMessage');
-            const iconEl = document.getElementById('detailModalIcon');
-            const actionBtnEl = document.getElementById('detailModalActionBtn');
-
-            if (titleEl) titleEl.innerText = notification.title;
-
-            // Format date
-            if (timeEl) {
-                const date = new Date(notification.created_at);
-                timeEl.innerText = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            }
-
-            // Use innerHTML for rich text content
-            if (messageEl) messageEl.innerHTML = notification.message;
-
-            // Color Map
-            const colorMap = {
-                'info': { bg: 'bg-info', text: 'text-white', icon: 'info-circle' },
-                'success': { bg: 'bg-success', text: 'text-white', icon: 'check-circle' },
-                'warning': { bg: 'bg-warning', text: 'text-dark', icon: 'exclamation-triangle' },
-                'danger': { bg: 'bg-danger', text: 'text-white', icon: 'exclamation-circle' }
-            };
-            const style = colorMap[notification.type] || colorMap['info'];
-
-            // Apply Header Styles
-            if (headerEl) {
-                headerEl.className = `modal-header border-bottom-0 py-3 ${style.bg} ${style.text}`;
-            }
-
-            // Apply Text Styles
-            if (titleEl) titleEl.className = `modal-title fw-bold mb-0 ${style.text}`;
-            if (timeEl) timeEl.className = `small ${style.text === 'text-white' ? 'text-white-50' : 'text-muted'}`;
-
-            // Apply Close Button Style
-            if (closeBtnEl) {
-                if (style.text === 'text-white') {
-                    closeBtnEl.classList.add('btn-close-white');
-                } else {
-                    closeBtnEl.classList.remove('btn-close-white');
-                }
-            }
-
-            // Set icon
-            if (iconEl) {
-                const iconHtml = `<div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-25 ${style.text}" style="width: 40px; height: 40px;">
-                        <i class="fas fa-${style.icon} fa-lg"></i>
-                    </div>`;
-                iconEl.innerHTML = iconHtml;
-            }
-
-            // Handle Action Button
-            if (actionBtnEl) {
-                if (notification.link) {
-                    actionBtnEl.href = notification.link;
-                    actionBtnEl.style.display = 'inline-block';
-                    actionBtnEl.className = `btn btn-${notification.type === 'warning' ? 'warning' : 'primary'}`;
-                } else {
-                    actionBtnEl.style.display = 'none';
-                }
-            }
-
-            // Show modal
-            const modalElement = document.getElementById('notificationDetailModal');
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            }
-
-            // Mark as read in localStorage (client-side only for now)
-            let readNotifications = JSON.parse(localStorage.getItem('read_notifications') || '[]');
-            if (!readNotifications.includes(notification.id)) {
-                readNotifications.push(notification.id);
-                localStorage.setItem('read_notifications', JSON.stringify(readNotifications));
-
-                // Update badge
-                const badge = document.getElementById('notificationBadge');
-                if (badge) {
-                    const currentCount = parseInt(badge.innerText.trim());
-                    if (!isNaN(currentCount) && currentCount > 1) {
-                        badge.innerText = currentCount - 1;
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-            }
-
-            // Update last seen for auto-popup logic
-            localStorage.setItem('last_seen_notification_id', notification.id);
-        }
-
-        // Mark All as Read functionality
-        const markAllReadBtn = document.getElementById('markAllReadBtn');
-        if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                fetch('{{ route("notifications.mark-all-read") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Clear all notifications from localStorage
-                            localStorage.setItem('read_notifications', JSON.stringify([]));
-
-                            // Hide badge
-                            const badge = document.getElementById('notificationBadge');
-                            if (badge) {
-                                badge.style.display = 'none';
-                            }
-
-                            // Reload page to refresh notification list
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-
-                    });
-            });
-        }
-    </script>
-
-    <!-- Notification Detail Modal -->
-    <div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg overflow-hidden">
-                <div id="detailModalHeader" class="modal-header border-bottom-0 py-3">
-                    <h5 class="modal-title fw-bold mb-0" id="detailModalHeading">Notification</h5>
-                    <button type="button" class="btn-close" id="detailModalCloseBtn" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4 text-center">
-
-                    <div id="detailModalMessage" class="mb-4"></div>
-                    <a href="#" id="detailModalActionBtn" class="btn btn-primary px-4" style="display: none;">View
-                        Details</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Components -->
-    @include('components.notifications')
-    @stack('components')
-
-    <!-- International Tel Input JS -->
-    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/intlTelInput.min.js"></script>
-
-    <!-- Customer Phone Handler -->
-    <script src="{{ asset('js/customer-phone-handler.js') }}?v={{ time() }}"></script>
-
-    <!-- Global Helpers -->
-    <script>
-        function getSalonSlug() {
-            // 1. Try meta tag (most reliable)
-            const meta = document.querySelector('meta[name="salon-slug"]');
-            if (meta && meta.getAttribute('content')) return meta.getAttribute('content');
-
-            // 2. Try PHP variable injected by controller/middleware
-            // Note: Use optional to avoid errors if object is missing
-            const phpSlug = "{{ app()->bound('current_salon') ? app('current_salon')->slug : '' }}";
-            if (phpSlug) return phpSlug;
-
-            // 3. Fallback: Parse from URL
-            const segments = window.location.pathname.split('/').filter(s => s);
-            if (segments.length > 0) {
-                // If the first segment is an admin/customer/staff prefix, it's not the slug
-                const commonPrefixes = ['admin', 'customer', 'staff', 'employee', 'pos'];
-                if (commonPrefixes.includes(segments[0])) return '';
-                return segments[0];
-            }
-            return '';
-        }
-    </script>
-
-    <!-- Scripts -->
+    <x-layout.app-scripts />
     @stack('scripts')
-    <!-- Floating AI Copilot Assistant Widget -->
-    @if(auth()->check() && auth()->user()->salon && optional(auth()->user()->salon)->canUseFeature('AI Insights & Automation') && \App\Helpers\ModuleHelper::aiEnabled() && app(\App\Services\SettingsService::class)->get('enable_ai_floating_widget', true, auth()->user()->salon_id))
-        <style>
-            #floatingAiInput::placeholder {
-                color: #94a3b8 !important;
-                opacity: 1 !important;
-            }
-            .floating-action-pill {
-                background: rgba(99, 102, 241, 0.18);
-                color: #c7d2fe;
-                border: 1px solid rgba(99, 102, 241, 0.35);
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-size: 0.76rem;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            .floating-action-pill:hover {
-                background: #4f46e5;
-                color: #ffffff;
-                border-color: #4f46e5;
-            }
-            @media (max-width: 991.98px) {
-                #floatingAiBtn {
-                    bottom: calc(58px + 16px + env(safe-area-inset-bottom, 0px)) !important;
-                    left: 20px !important;
-                    right: auto !important;
-                }
-                #floatingAiModal {
-                    bottom: calc(58px + 80px + env(safe-area-inset-bottom, 0px)) !important;
-                    left: 12px !important;
-                    right: 12px !important;
-                    width: calc(100vw - 24px) !important;
-                    max-width: 420px !important;
-                }
-            }
-        </style>
-        <button id="floatingAiBtn" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; z-index: 9999; border: 2px solid #818cf8; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: transform 0.2s ease;" onclick="toggleFloatingAiModal()">
-            <i class="fas fa-brain fa-lg text-white"></i>
-        </button>
-
-        <div id="floatingAiModal" class="card shadow-lg border-0 rounded-4 overflow-hidden" style="position: fixed; bottom: 90px; right: 24px; width: 420px; max-width: 92vw; height: 540px; z-index: 9999; display: none; background: #0f172a; color: #ffffff; border: 1px solid #334155; box-shadow: 0 20px 40px rgba(0,0,0,0.5)!important;">
-            <div class="card-header bg-transparent border-bottom border-slate-700 py-3 px-4 d-flex justify-content-between align-items-center" style="background: #1e293b!important;">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-brain text-indigo-400 me-2 fa-lg" style="color: #818cf8;"></i>
-                    <h6 class="fw-bold mb-0 text-white" style="font-size: 0.95rem;">Salon AI Copilot</h6>
-                </div>
-                <button type="button" class="btn-close btn-close-white" onclick="toggleFloatingAiModal()"></button>
-            </div>
-            <div class="card-body p-3 d-flex flex-column" style="height: calc(100% - 60px);">
-                <div id="floatingChatBox" class="flex-grow-1 mb-3 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; overflow-y: auto; max-height: 400px;">
-                    <div class="mb-2 p-3 rounded-3" style="background: #1e293b; border: 1px solid #334155; font-size: 0.88rem; color: #f8fafc;">
-                        <div class="fw-bold text-white mb-1" style="color: #818cf8!important;"><i class="fas fa-microchip me-1"></i> Copilot Assistant</div>
-                        <div>Ask anything about revenue, top staff, stock warnings, or customer retention:</div>
-                    </div>
-                </div>
-                <form id="floatingAiForm" onsubmit="return handleFloatingAiSubmit(event)">
-                    <div class="input-group">
-                        <input type="text" id="floatingAiInput" class="form-control text-white" placeholder="Ask AI Copilot a question..." autocomplete="off" onkeydown="if(event.key==='Enter'||event.keyCode===13){handleFloatingAiSubmit(event);}" style="background-color: #1e293b !important; color: #ffffff !important; border: 1px solid #334155 !important; font-size: 0.9rem;">
-                        <button type="submit" class="btn px-3" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; font-weight: 600;">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <script>
-            if (typeof escapeHtml !== 'function') {
-                function escapeHtml(text) {
-                    return text ? String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-                }
-            }
-
-            if (typeof escapeJsString !== 'function') {
-                function escapeJsString(text) {
-                    return text ? String(text).replace(/\\/g, '\\\\').replace(/'/g, "\\'") : '';
-                }
-            }
-
-            if (typeof formatResponseText !== 'function') {
-                function formatResponseText(text) {
-                    if (!text) return '';
-                    return text
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/\n/g, '<br>');
-                }
-            }
-
-            function toggleFloatingAiModal() {
-                const modal = document.getElementById('floatingAiModal');
-                if (modal.style.display === 'none' || !modal.style.display) {
-                    modal.style.display = 'block';
-                    setTimeout(() => {
-                        const input = document.getElementById('floatingAiInput');
-                        if (input) input.focus();
-                    }, 100);
-                } else {
-                    modal.style.display = 'none';
-                }
-            }
-
-            function handleFloatingAiSubmit(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                const input = document.getElementById('floatingAiInput');
-                if (!input) return false;
-
-                const msg = input.value.trim();
-                if (!msg) return false;
-
-                const chatBox = document.getElementById('floatingChatBox');
-                if (!chatBox) return false;
-
-                chatBox.innerHTML += `<div class="mb-2 p-2 px-3 rounded-3 text-end" style="background: linear-gradient(135deg, #4f46e5, #6366f1); color:#fff; font-size:0.85rem; margin-left:auto; max-width:85%; box-shadow: 0 4px 10px rgba(79,70,229,0.3);"><strong>You:</strong> ${escapeHtml(msg)}</div>`;
-                
-                const loaderId = 'loader_' + Date.now();
-                chatBox.innerHTML += `<div id="${loaderId}" class="mb-2 p-2 px-3 rounded-3 text-slate-400 small" style="background:#1e293b; border:1px solid #334155;"><i class="fas fa-spinner fa-spin me-2 text-indigo-400"></i>AI Copilot is thinking...</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                
-                input.value = '';
-
-                const salonSlug = "{{ optional(auth()->user()->salon)->slug }}";
-                const routeUrl = salonSlug ? `/${salonSlug}/admin/ai/copilot` : "{{ route('admin.ai.copilot', ['salon_slug' => optional(auth()->user()->salon)->slug ?? 'default']) }}";
-
-                fetch(routeUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                    },
-                    body: JSON.stringify({ message: msg })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    const loader = document.getElementById(loaderId);
-                    if (loader) loader.remove();
-
-                    const responseText = data.response || "No response received.";
-                    let respHtml = `<div class="mb-2 p-3 rounded-3" style="background:#1e293b; border:1px solid #334155; font-size:0.88rem; color:#f8fafc;"><div class="fw-bold mb-1" style="color:#818cf8!important;"><i class="fas fa-brain me-1"></i> Copilot Intelligence</div><div>${formatResponseText(responseText)}</div>`;
-                    
-                    if (data.suggested_actions && data.suggested_actions.length > 0) {
-                        respHtml += `<div class="mt-2 d-flex flex-wrap gap-1">` + data.suggested_actions.map(act => 
-                            `<button type="button" class="floating-action-pill" onclick="handleSuggestedAction('${act.action}', '${escapeJsString(act.label)}')"><i class="fas fa-bolt me-1"></i>${escapeHtml(act.label)}</button>`
-                        ).join('') + `</div>`;
-                    }
-
-                    respHtml += `</div>`;
-                    chatBox.innerHTML += respHtml;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                })
-                .catch(err => {
-                    const loader = document.getElementById(loaderId);
-                    if (loader) loader.remove();
-
-                    chatBox.innerHTML += `<div class="mb-2 p-2 rounded-3 text-danger small" style="background:#1e293b; border:1px solid #ef4444;"><i class="fas fa-exclamation-circle me-1"></i> Error querying AI Copilot. Please try again.</div>`;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                });
-
-                return false;
-            }
-
-            if (typeof handleSuggestedAction !== 'function') {
-                function handleSuggestedAction(actionName, labelText) {
-                    const salonSlug = "{{ optional(auth()->user()->salon)->slug }}";
-                    const navRoutes = {
-                        'view_customers': `/${salonSlug}/admin/customers`,
-                        'manage_services': `/${salonSlug}/admin/services/categories`,
-                        'view_staff': `/${salonSlug}/admin/bookings`,
-                        'view_staff_schedule': `/${salonSlug}/admin/bookings`,
-                        'open_pos': `/${salonSlug}/admin/pos`,
-                        'view_appointments': `/${salonSlug}/admin/bookings`
-                    };
-
-                    if (navRoutes[actionName]) {
-                        window.location.href = navRoutes[actionName];
-                        return;
-                    }
-
-                    if (actionName === 'top_staff' || actionName === 'revenue') {
-                        const input = document.getElementById('floatingAiInput');
-                        if (input) {
-                            input.value = labelText || actionName;
-                            handleFloatingAiSubmit();
-                        }
-                        return;
-                    }
-
-                    triggerAutomation(actionName);
-                }
-            }
-
-            if (typeof triggerAutomation !== 'function') {
-                function triggerAutomation(actionName) {
-                    const salonSlug = "{{ optional(auth()->user()->salon)->slug }}";
-                    const routeUrl = salonSlug ? `/${salonSlug}/admin/ai/automation` : "{{ route('admin.ai.automation', ['salon_slug' => optional(auth()->user()->salon)->slug ?? 'default']) }}";
-
-                    const chatBox = document.getElementById('floatingChatBox');
-                    if (chatBox) {
-                        chatBox.innerHTML += `<div class="mb-2 p-2 rounded-3 text-indigo-300 small" style="background:#1e293b; border:1px solid #4f46e5;"><i class="fas fa-cog fa-spin me-1"></i> Executing AI Automation: ${escapeHtml(actionName)}...</div>`;
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-
-                    fetch(routeUrl, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                        },
-                        body: JSON.stringify({ action: actionName })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (chatBox) {
-                            const msg = (data.result && data.result.message) ? data.result.message : 'Workflow executed successfully.';
-                            chatBox.innerHTML += `<div class="mb-2 p-2 px-3 rounded-3 text-success small" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fas fa-check-circle me-1"></i> AI Automation Completed: ${escapeHtml(msg)}</div>`;
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                        }
-                    })
-                    .catch(err => {
-                        if (chatBox) {
-                            chatBox.innerHTML += `<div class="mb-2 p-2 px-3 rounded-3 text-info small" style="background:#1e293b; border:1px solid #334155;"><i class="fas fa-info-circle me-1"></i> Automation request completed.</div>`;
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                        }
-                    });
-                }
-            }
-        </script>
-    @endif
-    </body>
+</body>
 
 </html>

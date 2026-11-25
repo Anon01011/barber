@@ -418,7 +418,7 @@
                                 <button type="submit" class="btn btn-primary w-100 py-3 fw-bold mb-2 shadow-sm">
                                     <i class="fas fa-save me-2"></i> Save Changes
                                 </button>
-                                <a href="{{ route('admin.pos.sales.show', $sale->id) }}"
+                                <a href="{{ route('admin.pos.sales.show', $sale->invoice_number ?? $sale->id) }}"
                                     class="btn btn-outline-secondary w-100 py-2 fw-bold">
                                     <i class="fas fa-times me-2"></i> Discard Changes
                                 </a>
@@ -678,7 +678,7 @@
                     e.preventDefault();
 
                     const excess = parseFloat((paid - total).toFixed(2));
-                    const sym = typeof currencySymbol !== 'undefined' ? currencySymbol : '$';
+                    const sym = typeof currencySymbol !== 'undefined' ? currencySymbol : '{{ currency_symbol() }}';
 
                     $('#tip-modal-total-amount').text(sym + ' ' + formatNumber(total));
                     $('#tip-modal-paid-amount').text(sym + ' ' + formatNumber(paid));

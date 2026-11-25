@@ -105,6 +105,14 @@ class PosSale extends Model
     }
 
     /**
+     * Get the service consumables logged for this sale.
+     */
+    public function consumables(): HasMany
+    {
+        return $this->hasMany(PosSaleItemConsumable::class, 'pos_sale_id');
+    }
+
+    /**
      * Scope a query to only include paid sales.
      */
     public function scopePaid($query)
@@ -175,5 +183,46 @@ class PosSale extends Model
     public function getFormattedTotalAttribute(): string
     {
         return number_format((float) $this->total, 2) . ' ' . $this->currency;
+    }
+
+    /**
+     * Get the route key for the model (uses invoice_number in URLs).
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'invoice_number';
+    }
+
+    /**
+     * Retrieve the model for a bound value (supports both invoice_number and ID).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $query = $this->newQuery();
+        $user = auth()->user();
+
+        if ($user && $user->salon_id && !$user->hasRole('super_admin')) {
+            $query->where('salon_id', $user->salon_id);
+        }
+
+        if ($field) {
+            return $query->where($field, $value)->firstOrFail();
+        }
+
+        return $query->where(function ($q) use ($value) {
+            $q->where('invoice_number', $value)
+              ->orWhere('id', $value);
+        })->firstOrFail();
+    }
+
+    /**
+     * Scope query to find by ID or Invoice Number.
+     */
+    public function scopeByIdOrInvoice($query, $value)
+    {
+        return $query->where(function ($q) use ($value) {
+            $q->where('invoice_number', $value)
+              ->orWhere('id', $value);
+        });
     }
 }

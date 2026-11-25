@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Password Reset Request</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+@php
+    $palette = app(\App\Services\SettingsService::class)->getThemePalette();
+    $headerBg = $palette['primary'] ?? '#0b0f17';
+    $accentColor = $palette['accent'] ?? '#c5a880';
+    $accentHover = $palette['accent_hover'] ?? '#b38e5d';
+@endphp
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -27,15 +33,17 @@
         border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        border: 1px solid #e8dccb;
     }
 
     /* ── Header ── */
     .header {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        background: {{ $headerBg }};
         padding: 36px 40px 32px;
         text-align: center;
         position: relative;
         overflow: hidden;
+        border-bottom: 3px solid {{ $accentColor }};
     }
     .header::before {
         content: '';
@@ -91,9 +99,10 @@
     .salon-avatar {
         width: 40px; height: 40px;
         border-radius: 10px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        background: {{ $headerBg }};
+        border: 1px solid {{ $accentColor }};
         display: flex; align-items: center; justify-content: center;
-        color: white; font-weight: 700; font-size: 15px;
+        color: {{ $accentColor }}; font-weight: 700; font-size: 15px;
         flex-shrink: 0;
     }
     .salon-info { flex: 1; }
@@ -137,21 +146,21 @@
     .cta-btn {
         display: inline-block;
         padding: 14px 36px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: #ffffff !important;
+        background: linear-gradient(135deg, {{ $accentColor }} 0%, {{ $accentHover }} 100%);
+        color: #0b0f17 !important;
         text-decoration: none;
         border-radius: 10px;
         font-size: 15px;
         font-weight: 700;
         letter-spacing: 0.2px;
-        box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+        box-shadow: 0 4px 16px rgba(197, 168, 128, 0.35);
     }
 
     /* ── Info Box ── */
     .info-box {
         background: #fafafa;
         border: 1px solid #e2e8f0;
-        border-left: 4px solid #4f46e5;
+        border-left: 4px solid {{ $accentColor }};
         border-radius: 8px;
         padding: 14px 16px;
         margin-bottom: 20px;
@@ -251,7 +260,7 @@
 
     {{-- ── BODY ── --}}
     <div class="body">
-        <div class="greeting">Hi {{ $userName }} 👋</div>
+        <div class="greeting">Hi {{ $userName }},</div>
 
         <p>We received a request to reset the password for your account associated with <strong>{{ $userEmail }}</strong>.</p>
 
@@ -263,14 +272,14 @@
 
         <div class="info-box">
             <p>
-                🔒 <strong>Security tip:</strong> This link will expire in 60 minutes.
-                After resetting, you'll be redirected to the login page.
+                <strong>Security reminder:</strong> This link will expire in 60 minutes.
+                After resetting, you will be redirected to the login page.
             </p>
         </div>
 
         <div class="warning-box">
             <p>
-                ⚠️ <strong>Didn't request this?</strong> If you didn't request a password reset, you can safely ignore this email.
+                <strong>Did not request this?</strong> If you did not request a password reset, you can safely ignore this email.
                 Your password will remain unchanged and no action is needed.
             </p>
         </div>

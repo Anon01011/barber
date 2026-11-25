@@ -115,19 +115,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const dots = document.querySelectorAll('.pub-carousel-dot');
     if (plansTrack && dots.length > 0) {
         plansTrack.addEventListener('scroll', function () {
+            const cards = plansTrack.querySelectorAll('.pub-plan-card');
+            if (cards.length === 0) return;
             const scrollLeft = plansTrack.scrollLeft;
-            const cardWidth = (plansTrack.querySelector('.pub-plan-card')?.offsetWidth || 340) + 32;
-            const activeIndex = Math.min(Math.round(scrollLeft / cardWidth), dots.length - 1);
+            const maxScroll = plansTrack.scrollWidth - plansTrack.clientWidth;
+            let activeIndex = 0;
+            if (maxScroll > 0 && scrollLeft >= maxScroll - 10) {
+                activeIndex = cards.length - 1;
+            } else {
+                let minDistance = Infinity;
+                cards.forEach(function (card, idx) {
+                    const cardOffset = card.offsetLeft - plansTrack.offsetLeft;
+                    const distance = Math.abs(cardOffset - scrollLeft);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        activeIndex = idx;
+                    }
+                });
+            }
+            activeIndex = Math.max(0, Math.min(activeIndex, dots.length - 1));
             dots.forEach(function (dot, idx) {
-                if (idx === activeIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
+                dot.classList.toggle('active', idx === activeIndex);
             });
         }, { passive: true });
     }
 });
+
+// Window resize listener to recalculate maxHeight for active FAQ answers
+window.addEventListener('resize', function () {
+    document.querySelectorAll('.pub-faq-item.active .pub-faq-answer').forEach(function (ans) {
+        ans.style.maxHeight = (ans.scrollHeight + 40) + 'px';
+    });
+}, { passive: true });
 
 // Global FAQ Accordion Toggle
 window.toggleFaq = function (index) {

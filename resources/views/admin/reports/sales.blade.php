@@ -474,6 +474,55 @@
                     </div>
                 </div>
             </div>
+
+            @if($inventoryEnabled ?? false)
+            <!-- Material Cost / COGS -->
+            <div class="col-xl col-md-4" style="min-width: 180px;">
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-danger">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase x-small fw-bold text-danger mb-1">Material COGS</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">
+                                    {{ currency_symbol() }}{{ number_format($totalCogs ?? 0, 2) }}
+                                </div>
+                                <div class="x-small text-muted mt-1 d-flex flex-wrap gap-2">
+                                    <span title="Backbar Recipe Consumables"><i class="fas fa-flask text-primary"></i> {{ currency_symbol() }}{{ number_format($totalConsumablesCost ?? 0, 2) }}</span>
+                                    <span title="Retail Products Cost"><i class="fas fa-boxes text-success"></i> {{ currency_symbol() }}{{ number_format($totalRetailCost ?? 0, 2) }}</span>
+                                </div>
+                            </div>
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-2">
+                                <i class="fas fa-flask fa-lg text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Net Earnings / Gross Profit -->
+            <div class="col-xl col-md-4" style="min-width: 180px;">
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase x-small fw-bold text-success mb-1">Net Earnings</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">
+                                    {{ currency_symbol() }}{{ number_format($grossProfit ?? 0, 2) }}
+                                </div>
+                                <div class="x-small text-muted mt-1">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5">
+                                        {{ $profitMargin ?? 0 }}% margin
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                                <i class="fas fa-hand-holding-usd fa-lg text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Detailed Transactions Table -->

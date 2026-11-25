@@ -5,6 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Summary Report</title>
+    @php
+        $settingsService = app(\App\Services\SettingsService::class);
+        $palette = $settingsService->getThemePalette();
+        $headerColor = $palette['primary'] ?? '#0b0f17';
+        $accentColor = $palette['accent'] ?? '#c5a880';
+        $appLogo     = $settingsService->getLogoUrl();
+        $appName     = $settingsService->get('app_name', config('app.name', 'SalonPro'));
+    @endphp
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,7 +20,7 @@
             color: #333;
             margin: 0;
             padding: 0;
-            background-color: #f8f9fc;
+            background-color: #f0ece6;
         }
 
         .container {
@@ -21,26 +29,30 @@
             background: #ffffff;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8dccb;
         }
 
         .header {
-            background-color: #4e73df;
+            background-color: {{ $headerColor }};
             color: #ffffff;
             padding: 30px;
             text-align: center;
+            border-bottom: 3px solid {{ $accentColor }};
         }
 
         .header h1 {
             margin: 0;
             font-size: 24px;
             font-weight: 700;
+            color: {{ $accentColor }};
         }
 
         .header p {
-            margin: 10px 0 0;
+            margin: 8px 0 0;
             opacity: 0.9;
-            font-size: 16px;
+            font-size: 14px;
+            color: #cbd5e1;
         }
 
         .content {
@@ -55,25 +67,26 @@
         }
 
         .stat-card {
-            background: #fdfdfd;
-            border: 1px solid #e3e6f0;
+            background: #fdfcfa;
+            border: 1px solid #e8dccb;
             border-radius: 8px;
             padding: 20px;
             text-align: center;
         }
 
         .stat-card .label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             font-weight: 700;
             color: #858796;
             margin-bottom: 5px;
+            letter-spacing: 0.5px;
         }
 
         .stat-card .value {
             font-size: 20px;
             font-weight: 700;
-            color: #4e73df;
+            color: #0b0f17;
         }
 
         .section-title {

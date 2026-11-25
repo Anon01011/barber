@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ServiceController extends Controller
 {
@@ -24,7 +25,7 @@ class ServiceController extends Controller
 
     public function create()
     {
-        $categories = ServiceCategory::orderBy('name')->where('status', 'active')->get();
+        $categories = ServiceCategory::where('salon_id', auth()->user()->salon_id)->orderBy('name')->where('status', 'active')->get();
         return view('admin.services.create', compact('categories'));
     }
 
@@ -36,7 +37,10 @@ class ServiceController extends Controller
             'description' => 'nullable|string',
             'duration' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:service_categories,id',
+            'category_id' => [
+                'required',
+                Rule::exists('service_categories', 'id')->where('salon_id', auth()->user()->salon_id),
+            ],
             'status' => 'required|in:active,inactive',
         ]);
 

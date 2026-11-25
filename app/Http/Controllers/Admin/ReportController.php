@@ -358,6 +358,10 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$startDateTime, $endDateTime])
             ->where('status', '!=', 'voided');
 
+        if (!$paymentStatus) {
+            $posQuery->where('payment_status', '!=', 'pending');
+        }
+
         // Apply Filters
         if ($branchId) {
             $bookingQuery->where('branch_id', $branchId);
@@ -436,6 +440,30 @@ class ReportController extends Controller
         // Tax
         // POS Tax is explicit
         $posTax = ($source === 'all' || $source === 'pos') ? $posQuery->sum('tax') : 0;
+        if (($source === 'all' || $source === 'pos') && $posTax > 0) {
+            try {
+                $refundTaxQuery = DB::table('pos_refunds')
+                    ->join('pos_sales', 'pos_refunds.sale_id', '=', 'pos_sales.id')
+                    ->where('pos_refunds.salon_id', $salonId)
+                    ->whereBetween('pos_refunds.processed_at', [$startDateTime, $endDateTime])
+                    ->where('pos_sales.total', '>', 0);
+
+                if ($branchId) {
+                    $refundTaxQuery->where('pos_sales.branch_id', $branchId);
+                }
+                if ($staffId || $cashierId) {
+                    $refundTaxQuery->where('pos_sales.employee_id', $staffId ?: $cashierId);
+                }
+                if ($customerId) {
+                    $refundTaxQuery->where('pos_sales.customer_id', $customerId);
+                }
+
+                $refundedTax = (float) $refundTaxQuery->selectRaw('SUM(pos_refunds.net_refund_amount / pos_sales.total * pos_sales.tax) as refunded_tax')->value('refunded_tax');
+                $posTax = max(0, $posTax - $refundedTax);
+            } catch (\Exception $e) {
+                // Table doesn't exist or query failed, skip refund tax adjustment
+            }
+        }
 
         // Booking Tax is implicit in 'amount'. We estimate it based on current settings if enabled.
         $bookingTax = 0;
@@ -546,6 +574,58 @@ class ReportController extends Controller
         $totalUnpaid = $bookingUnpaid + $posUnpaid;
         $totalRefunded = $posRefunded; // Bookings don't have separate refund column yet, captured via status logic manually if needed, but for now only POS refunds derived from DB column
 
+        // COGS and Earnings calculation (if inventory module enabled)
+        $salon = auth()->user()->salon;
+        $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+            && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+        $totalConsumablesCost = 0;
+        $totalRetailCost = 0;
+        $totalCogs = 0;
+        $grossProfit = 0;
+        $profitMargin = 0;
+
+        if ($inventoryEnabled && $source !== 'bookings') {
+            // 1. Backbar Consumables Cost (service recipes)
+            $consumablesQuery = DB::table('pos_sale_item_consumables')
+                ->join('pos_sales', 'pos_sale_item_consumables.pos_sale_id', '=', 'pos_sales.id')
+                ->where('pos_sale_item_consumables.salon_id', $salonId)
+                ->where('pos_sales.status', '!=', 'voided')
+                ->whereBetween('pos_sales.created_at', [$startDateTime, $endDateTime])
+                ->when($branchId, fn($q) => $q->where('pos_sales.branch_id', $branchId))
+                ->when($staffId, fn($q) => $q->where('pos_sales.employee_id', $staffId))
+                ->when($cashierId, fn($q) => $q->where('pos_sales.employee_id', $cashierId))
+                ->when($customerId, fn($q) => $q->where('pos_sales.customer_id', $customerId))
+                ->when($paymentMethod, fn($q) => $q->where('pos_sales.payment_method', $paymentMethod))
+                ->when($paymentStatus, fn($q) => $q->where('pos_sales.payment_status', $paymentStatus));
+
+            $totalConsumablesCost = (float) $consumablesQuery->sum('pos_sale_item_consumables.total_cost');
+
+            // 2. Retail Products Wholesale Purchase Cost
+            $retailQuery = DB::table('pos_sale_items')
+                ->join('pos_sales', 'pos_sale_items.sale_id', '=', 'pos_sales.id')
+                ->join('inventory_items', 'pos_sale_items.item_id', '=', 'inventory_items.id')
+                ->where('pos_sales.salon_id', $salonId)
+                ->where('pos_sales.status', '!=', 'voided')
+                ->where('pos_sale_items.item_type', 'like', '%InventoryItem%')
+                ->whereBetween('pos_sales.created_at', [$startDateTime, $endDateTime])
+                ->when($branchId, fn($q) => $q->where('pos_sales.branch_id', $branchId))
+                ->when($staffId, fn($q) => $q->where('pos_sales.employee_id', $staffId))
+                ->when($cashierId, fn($q) => $q->where('pos_sales.employee_id', $cashierId))
+                ->when($customerId, fn($q) => $q->where('pos_sales.customer_id', $customerId))
+                ->when($paymentMethod, fn($q) => $q->where('pos_sales.payment_method', $paymentMethod))
+                ->when($paymentStatus, fn($q) => $q->where('pos_sales.payment_status', $paymentStatus));
+
+            $totalRetailCost = (float) $retailQuery->sum(DB::raw('pos_sale_items.quantity * COALESCE(inventory_items.purchase_price, 0)'));
+
+            $totalCogs = round($totalConsumablesCost + $totalRetailCost, 2);
+            $grossProfit = round($netRevenue - $totalCogs - $totalCommission, 2);
+            $profitMargin = $netRevenue > 0 ? round(($grossProfit / $netRevenue) * 100, 1) : 0;
+        } else {
+            $grossProfit = round($netRevenue - $totalCommission, 2);
+            $profitMargin = $netRevenue > 0 ? round(($grossProfit / $netRevenue) * 100, 1) : 0;
+        }
+
         // 2. Efficient Pagination using Union
         $perPage = 10;
         $currentPage = $request->get('page', 1);
@@ -595,11 +675,14 @@ class ReportController extends Controller
             $bookingsSub->groupBy(DB::raw('COALESCE(booking_group_id, CAST(id AS CHAR))'));
 
             $posSub = DB::table('pos_sales')
-                ->select('id', 'sale_date as date', DB::raw("'pos' as type"), 'subtotal as amount', 'tip', DB::raw('NULL as booking_group_id'))
+                ->select('id', 'created_at as date', DB::raw("'pos' as type"), 'subtotal as amount', 'tip', DB::raw('NULL as booking_group_id'))
                 ->where('salon_id', $salonId)
-                ->whereBetween('sale_date', [$startDateTime, $endDateTime])
-                ->where('payment_status', '!=', 'pending')
+                ->whereBetween('created_at', [$startDateTime, $endDateTime])
                 ->where('status', '!=', 'voided');
+
+            if (!$paymentStatus) {
+                $posSub->where('payment_status', '!=', 'pending');
+            }
 
             // Apply Filters to POS
             if ($branchId)
@@ -1068,6 +1151,18 @@ class ReportController extends Controller
         // 5. Hourly Traffic
         $hourlyTraffic = array_fill(0, 24, 0);
 
+        $tzName = function_exists('salon_timezone') ? salon_timezone() : 'UTC';
+        try {
+            $tz = new \DateTimeZone($tzName);
+            $offsetSeconds = $tz->getOffset(new \DateTime('now', new \DateTimeZone('UTC')));
+            $offsetHours = intval($offsetSeconds / 3600);
+            $offsetMinutes = abs(intval(($offsetSeconds % 3600) / 60));
+            $offsetSign = $offsetSeconds >= 0 ? '+' : '-';
+            $offsetStr = sprintf('%s%02d:%02d', $offsetSign, abs($offsetHours), $offsetMinutes);
+        } catch (\Exception $e) {
+            $offsetStr = '+00:00';
+        }
+
         if ($source !== 'pos') {
             $bookingHours = Booking::where('salon_id', $salonId)
                 ->whereBetween('start_time', [$startDateTime, $endDateTime])
@@ -1076,7 +1171,7 @@ class ReportController extends Controller
                         ->orWhere('payment_status', 'refunded');
                 })
                 ->whereDoesntHave('posSaleItem')
-                ->selectRaw('HOUR(start_time) as hour, COUNT(*) as count')
+                ->selectRaw("HOUR(CONVERT_TZ(start_time, '+00:00', '{$offsetStr}')) as hour, COUNT(*) as count")
                 ->groupBy('hour')
                 ->pluck('count', 'hour');
 
@@ -1090,7 +1185,7 @@ class ReportController extends Controller
                 ->whereBetween('created_at', [$startDateTime, $endDateTime])
                 ->where('status', '!=', 'voided')
                 ->where('payment_status', 'paid')
-                ->selectRaw('HOUR(created_at) as hour, COUNT(*) as count')
+                ->selectRaw("HOUR(CONVERT_TZ(created_at, '+00:00', '{$offsetStr}')) as hour, COUNT(*) as count")
                 ->groupBy('hour')
                 ->pluck('count', 'hour');
 
@@ -1231,12 +1326,15 @@ class ReportController extends Controller
             'paymentMethod',
             'paymentStatus',
             'cashierId',
-            'paymentStatus',
-            'cashierId',
-            'totalUnpaid',
             'totalUnpaid',
             'totalRefunded',
-            'posRefundFees'
+            'posRefundFees',
+            'totalCogs',
+            'totalConsumablesCost',
+            'totalRetailCost',
+            'grossProfit',
+            'profitMargin',
+            'inventoryEnabled'
         ));
     }
 
@@ -2725,16 +2823,16 @@ class ReportController extends Controller
 
         // 3. Category Breakdown (Optimized)
         $categoryBreakdown = DB::table('inventory_items')
-            ->leftJoin('categories', 'inventory_items.category_id', '=', 'categories.id')
+            ->leftJoin('inventory_categories', 'inventory_items.category_id', '=', 'inventory_categories.id')
             ->where('inventory_items.salon_id', $salonId)
             ->whereNull('inventory_items.deleted_at')
             ->select(
-                'categories.name as category_name',
+                'inventory_categories.name as category_name',
                 DB::raw('COUNT(inventory_items.id) as items_count'),
                 DB::raw('SUM(inventory_items.quantity_in_stock) as total_stock'),
                 DB::raw('SUM(inventory_items.purchase_price * inventory_items.quantity_in_stock) as total_value')
             )
-            ->groupBy('categories.id', 'categories.name')
+            ->groupBy('inventory_categories.id', 'inventory_categories.name')
             ->get();
 
         // 4. Daily trends
@@ -2744,20 +2842,19 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$startDateTime, $endDateTime])
             ->select(
                 DB::raw('DATE(created_at) as date'),
-                 DB::raw('sum(case when transaction_type = "purchase" then quantity else 0 end) as purchase_in'),
-                 DB::raw('sum(case when transaction_type = "return" then quantity else 0 end) as return_in'),
-                 DB::raw('sum(case when transaction_type in ("adjustment", "damaged", "lost") then quantity else 0 end) as out_qty')
-             )
-             ->groupBy('date')
-             ->orderBy('date')
-             ->get()
-             ->keyBy('date')
-             ->map(function ($trend) {
-                 return [
-                     'in' => $trend->purchase_in + $trend->return_in,
-                     'out' => $trend->out_qty
-                 ];
-             });
+                DB::raw('sum(case when quantity > 0 then quantity else 0 end) as in_qty'),
+                DB::raw('sum(case when quantity < 0 then ABS(quantity) else 0 end) as out_qty')
+            )
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date')
+            ->map(function ($trend) {
+                return [
+                    'in' => (float) $trend->in_qty,
+                    'out' => (float) $trend->out_qty
+                ];
+            });
  
          // 5. Top moving items (Optimized)
          $topMovingItems = \App\Models\InventoryTransaction::whereHas('item', function ($query) use ($salonId) {
@@ -2779,19 +2876,7 @@ class ReportController extends Controller
 
         $branch = app()->has('current_branch') ? app('current_branch') : null;
 
-        return view('admin.reports.inventory', compact(
-            'totalItems',
-            'lowStockItems',
-            'outOfStockItems',
-            'totalValue',
-            'transactions',
-            'categoryBreakdown',
-            'dailyTrends',
-            'topMovingItems',
-            'startDate',
-            'endDate',
-            'branch'
-        ));
+        return redirect()->route('admin.inventory.reports.index');
     }
 
     private function getItemTypeLabel($itemType)
@@ -4413,52 +4498,199 @@ class ReportController extends Controller
     }
 
     /**
-     * Export inventory report to CSV
+     * Export inventory report to styled XLSX using PhpSpreadsheet
      */
     public function exportInventory(Request $request)
     {
         $salonId = $this->getSalonId();
+        $salon = $this->getSalon();
+        $salonName = $salon?->name ?? 'Salon';
+        $currSym = currency_symbol();
 
-        $filename = 'inventory_report_' . date('Y-m-d') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Inventory Report');
+
+        $headers = ['Item Name', 'SKU', 'Category', 'Quantity in Stock', 'Minimum Quantity', 'Purchase Price', 'Selling Price', 'Total Value', 'Status'];
+        $totalCols = count($headers);
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols);
+
+        // Row 1 - Salon Name
+        $row = 1;
+        $sheet->setCellValue('A' . $row, strtoupper($salonName));
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle("A{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F172A');
+        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension($row)->setRowHeight(30);
+
+        // Row 2 - Report Title
+        $row++;
+        $sheet->setCellValue('A' . $row, 'INVENTORY SUMMARY REPORT');
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(13)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle("A{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1E40AF');
+        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension($row)->setRowHeight(24);
+
+        // Row 3 - Metadata
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Generated On: ' . now()->format('d M Y H:i:s') . '  |  Currency: ' . $currSym);
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->getStyle("A{$row}")->getFont()->setItalic(true)->setSize(10);
+        $sheet->getRowDimension($row)->setRowHeight(18);
+
+        // Row 4 - Spacer
+        $row++;
+        $sheet->getRowDimension($row)->setRowHeight(8);
+
+        // Row 5 - Column Headers
+        $row++;
+        foreach ($headers as $index => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+            $sheet->setCellValue("{$col}{$row}", $header);
+            $sheet->getStyle("{$col}{$row}")->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle("{$col}{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1E40AF');
+            $sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        }
+        $sheet->getRowDimension($row)->setRowHeight(20);
+
+        $totQty = 0;
+        $totValue = 0;
+        $lowStockCount = 0;
+        $outOfStockCount = 0;
+        $inStockCount = 0;
+        $totalItemsCount = 0;
+        $alternate = false;
+
+        $items = \App\Models\InventoryItem::where('salon_id', $salonId)->with('category')->get();
+
+        $row++;
+        foreach ($items as $item) {
+            $totalItemsCount++;
+            $qty = (float) $item->quantity_in_stock;
+            $minQty = (float) ($item->minimum_quantity ?? $item->reorder_level ?? 0);
+            $purPrice = (float) $item->purchase_price;
+            $selPrice = (float) $item->selling_price;
+            $itemValue = $qty * $purPrice;
+
+            $totQty += $qty;
+            $totValue += $itemValue;
+
+            $status = 'In Stock';
+            $statusColor = '15803D'; // green
+            if ($qty <= 0) {
+                $status = 'Out of Stock';
+                $statusColor = 'B91C1C'; // red
+                $outOfStockCount++;
+            } elseif ($qty <= $minQty) {
+                $status = 'Low Stock';
+                $statusColor = 'C2410C'; // orange
+                $lowStockCount++;
+            } else {
+                $inStockCount++;
+            }
+
+            $sheet->setCellValue("A{$row}", $item->name);
+            $sheet->setCellValue("B{$row}", $item->sku ?? 'N/A');
+            $sheet->setCellValue("C{$row}", $item->category ? $item->category->name : 'Uncategorized');
+            $sheet->setCellValue("D{$row}", $qty);
+            $sheet->setCellValue("E{$row}", $minQty);
+            $sheet->setCellValue("F{$row}", $purPrice);
+            $sheet->setCellValue("G{$row}", $selPrice);
+            $sheet->setCellValue("H{$row}", $itemValue);
+            $sheet->setCellValue("I{$row}", $status);
+
+            // Alignment and format
+            $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            foreach (['F', 'G', 'H'] as $c) {
+                $sheet->getStyle("{$c}{$row}")->getNumberFormat()->setFormatCode('"' . $currSym . '"#,##0.00');
+                $sheet->getStyle("{$c}{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            }
+
+            // Status color and alignment
+            $sheet->getStyle("I{$row}")->getFont()->setBold(true)->getColor()->setRGB($statusColor);
+            $sheet->getStyle("I{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            if ($alternate) {
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('F8FAFC');
+            }
+            $alternate = !$alternate;
+            $row++;
+        }
+
+        // Totals Row
+        $sheet->setCellValue("A{$row}", 'TOTALS');
+        $sheet->setCellValue("D{$row}", $totQty);
+        $sheet->setCellValue("H{$row}", $totValue);
+        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('1E40AF');
+        $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("H{$row}")->getNumberFormat()->setFormatCode('"' . $currSym . '"#,##0.00');
+        $sheet->getStyle("H{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $row++;
+
+        // Summary Box
+        $row++;
+        $sheet->setCellValue("A{$row}", 'INVENTORY SUMMARY');
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(12)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle("A{$row}")->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('1E40AF');
+        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $row++;
+
+        $summaryData = [
+            ['label' => 'Total Inventory Items',  'value' => $totalItemsCount, 'format' => '#,##0',                           'color' => ''],
+            ['label' => 'Total Units in Stock',    'value' => $totQty,          'format' => '#,##0.##',                        'color' => '1E40AF'],
+            ['label' => 'Total Stock Value (Cost)','value' => $totValue,        'format' => '"' . $currSym . '"#,##0.00',      'color' => '15803D'],
+            ['label' => 'Healthy In-Stock Items',  'value' => $inStockCount,    'format' => '#,##0',                           'color' => '15803D'],
+            ['label' => 'Low Stock Items',         'value' => $lowStockCount,   'format' => '#,##0',                           'color' => 'C2410C'],
+            ['label' => 'Out of Stock Items',      'value' => $outOfStockCount, 'format' => '#,##0',                           'color' => 'B91C1C'],
         ];
 
-        $callback = function () use ($salonId) {
-            $file = fopen('php://output', 'w');
+        foreach ($summaryData as $item) {
+            $sheet->setCellValue("A{$row}", $item['label']);
+            $sheet->setCellValue("B{$row}", $item['value']);
+            $sheet->getStyle("A{$row}")->getFont()->setBold(true);
+            if (!empty($item['format'])) {
+                $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode($item['format']);
+            }
+            if (!empty($item['color'])) {
+                $sheet->getStyle("B{$row}")->getFont()->getColor()->setRGB($item['color']);
+            }
+            $row++;
+        }
 
-            fputcsv($file, ['Item Name', 'SKU', 'Category', 'Quantity in Stock', 'Minimum Quantity', 'Purchase Price', 'Selling Price', 'Total Value', 'Status']);
+        // Footer
+        $row++;
+        $sheet->setCellValue("A{$row}", 'Report exported from ' . $salonName . ' on ' . now()->format('d M Y H:i:s'));
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->getStyle("A{$row}")->getFont()->setItalic(true)->setSize(9)->getColor()->setRGB('888888');
+        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-            \App\Models\InventoryItem::where('salon_id', $salonId)
-                ->with('category')
-                ->chunk(100, function ($items) use ($file) {
-                    foreach ($items as $item) {
-                        $status = 'In Stock';
-                        if ($item->quantity_in_stock <= 0) {
-                            $status = 'Out of Stock';
-                        } elseif ($item->quantity_in_stock <= $item->minimum_quantity) {
-                            $status = 'Low Stock';
-                        }
+        // Auto-size columns
+        foreach (range(1, $totalCols) as $i) {
+            $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setAutoSize(true);
+        }
 
-                        fputcsv($file, [
-                            $item->name,
-                            $item->sku ?? 'N/A',
-                            $item->category ? $item->category->name : 'Uncategorized',
-                            $item->quantity_in_stock,
-                            $item->minimum_quantity,
-                            number_format((float) $item->purchase_price, 2),
-                            number_format((float) $item->selling_price, 2),
-                            number_format((float) $item->purchase_price * $item->quantity_in_stock, 2),
-                            $status
-                        ]);
-                    }
-                });
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'Inventory_Report_' . date('Y-m-d_His') . '.xlsx';
 
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        if (ob_get_level()) { ob_end_clean(); }
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0, must-revalidate',
+            'Pragma' => 'public',
+        ]);
     }
 
     /**

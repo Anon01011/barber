@@ -32,19 +32,19 @@
 
                 <div style="margin-bottom: 2rem;">
                     <div class="feature-item">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon"><i class="fas fa-check" style="color: #c5a880; font-size: 11px;"></i></div>
                         <span>Unlimited Appointments</span>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon"><i class="fas fa-check" style="color: #c5a880; font-size: 11px;"></i></div>
                         <span>Advanced Reporting</span>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon"><i class="fas fa-check" style="color: #c5a880; font-size: 11px;"></i></div>
                         <span>Customer Management</span>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon"><i class="fas fa-check" style="color: #c5a880; font-size: 11px;"></i></div>
                         <span>Staff Scheduling</span>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
             <div class="auth-card">
                 <div style="text-align: center; margin-bottom: 1.5rem;">
                     <div
-                        style="width: 80px; height: 80px; background-color: #e0e7ff; color: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem;">
+                        style="width: 80px; height: 80px; background: rgba(197, 168, 128, 0.15); color: #c5a880; border: 2px solid rgba(197, 168, 128, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem;">
                         <i class="fas fa-receipt"></i>
                     </div>
                     <h2 class="auth-header">No Active Plan</h2>

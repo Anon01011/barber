@@ -26,6 +26,8 @@
                                     class="fas fa-file-excel text-info me-2"></i>Appointments</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.reports.staff.export') }}"><i
                                     class="fas fa-file-excel text-warning me-2"></i>Staff Performance</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.reports.inventory.export') }}"><i
+                                    class="fas fa-file-excel text-primary me-2"></i>Inventory Report</a></li>
                     </ul>
                 </div>
             </div>
@@ -235,7 +237,7 @@
                                     <i class="fas fa-chevron-right small text-muted"></i>
                                 </div>
                             </a>
-                            <a href="{{ route('admin.reports.inventory') }}"
+                            <a href="{{ route('admin.inventory.reports.index') }}"
                                 class="list-group-item list-group-item-action py-3">
                                 <div class="d-flex w-100 justify-content-between align-items-center">
                                     <div>

@@ -91,6 +91,14 @@ class PosSaleItem extends Model
     }
 
     /**
+     * Get the consumables consumed for this sale item.
+     */
+    public function consumables(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PosSaleItemConsumable::class, 'pos_sale_item_id');
+    }
+
+    /**
      * Get the booking associated with this sale item.
      */
     public function booking(): BelongsTo

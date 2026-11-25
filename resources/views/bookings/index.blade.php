@@ -816,14 +816,14 @@
 
     <!-- Create Appointment Modal -->
     <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-                <!-- Premium Gradient Header -->
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                <!-- Premium Luxury Header -->
                 <div class="modal-header border-0 text-white py-3 px-3"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <h5 class="modal-title d-flex align-items-center gap-2 mb-0 fw-semibold" id="bookingModalLabel">
-                        <div class="icon-circle-create">
-                            <i class="fas fa-plus" id="bookingModalIcon"></i>
+                    style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-bottom: 1px solid rgba(197, 168, 128, 0.25) !important;">
+                    <h5 class="modal-title d-flex align-items-center gap-2 mb-0 fw-semibold text-white" id="bookingModalLabel">
+                        <div class="icon-circle-create" style="background: rgba(197, 168, 128, 0.2); color: #c5a880;">
+                            <i class="fas fa-plus" id="bookingModalIcon" style="color: #c5a880;"></i>
                         </div>
                         <span id="bookingModalTitleText" style="font-size: 1.1rem;">Create New Appointment</span>
                     </h5>

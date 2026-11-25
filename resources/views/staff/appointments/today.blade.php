@@ -84,7 +84,7 @@
                                                         <span class="fw-semibold text-dark">{{ $appointment->service->name }}</span>
                                                         @if($appointment->package)
                                                             <span class="badge bg-purple-subtle text-purple-emphasis rounded-pill mt-1 w-auto align-self-start"
-                                                                style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.7em;">
+                                                                style="background-color: rgba(197, 168, 128, 0.15); color: #b38e5d; font-size: 0.7em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                                 <i class="fas fa-box me-1"></i>{{ $appointment->package->name }}
                                                             </span>
                                                         @endif
@@ -170,8 +170,8 @@
                 transform: translateY(-1px);
             }
             .text-xs { font-size: 0.75rem; }
-            .bg-purple-subtle { background-color: #f3e8ff !important; }
-            .text-purple-emphasis { color: #7c3aed !important; }
+            .bg-purple-subtle { background-color: rgba(197, 168, 128, 0.15) !important; border: 1px solid rgba(197, 168, 128, 0.3) !important; }
+            .text-purple-emphasis { color: #b38e5d !important; }
         </style>
     @endpush
 

@@ -97,7 +97,7 @@
                                                         @if($appointment->package)
                                                             <span
                                                                 class="badge bg-purple-subtle text-purple-emphasis rounded-pill mt-1 w-auto align-self-start"
-                                                                style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.7em;">
+                                                                style="background-color: rgba(197, 168, 128, 0.15); color: #b38e5d; font-size: 0.7em; border: 1px solid rgba(197, 168, 128, 0.3);">
                                                                 <i class="fas fa-box me-1"></i>{{ $appointment->package->name }}
                                                             </span>
                                                         @endif
@@ -183,11 +183,12 @@
             }
 
             .bg-purple-subtle {
-                background-color: #f3e8ff !important;
+                background-color: rgba(197, 168, 128, 0.15) !important;
+                border: 1px solid rgba(197, 168, 128, 0.3) !important;
             }
 
             .text-purple-emphasis {
-                color: #7c3aed !important;
+                color: #b38e5d !important;
             }
         </style>
     @endpush

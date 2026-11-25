@@ -15,9 +15,47 @@ class ServiceCategoryController extends Controller
         $this->middleware(['auth', 'role:super_admin|salon_admin|manager']);
     }
 
+    /**
+     * Resolve current salon ID safely.
+     */
+    protected function getSalonId(): ?int
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon')->id;
+        }
+        $salonId = auth()->user()?->salon_id ?? session('current_salon_id');
+        if (!$salonId && request()->route('salon_slug')) {
+            $salon = \App\Models\Salon::where('slug', request()->route('salon_slug'))->first();
+            $salonId = $salon?->id;
+        }
+        return $salonId ? (int) $salonId : null;
+    }
+
+    /**
+     * Resolve current salon model safely.
+     */
+    protected function getSalon(): ?\App\Models\Salon
+    {
+        if (app()->bound('current_salon') && app('current_salon')) {
+            return app('current_salon');
+        }
+        $salon = auth()->user()?->salon;
+        if ($salon) {
+            return $salon;
+        }
+        $salonId = $this->getSalonId();
+        if ($salonId) {
+            return \App\Models\Salon::find($salonId);
+        }
+        return null;
+    }
+
     public function index()
     {
-        $categories = ServiceCategory::withCount('services')
+        $salonId = $this->getSalonId();
+
+        $categories = ServiceCategory::when($salonId, fn($q) => $q->where('salon_id', $salonId))
+            ->withCount('services')
             ->with([
                 'services' => function ($query) {
                     $query->select('id', 'name', 'price', 'category_id', 'status', 'duration')
@@ -27,8 +65,23 @@ class ServiceCategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        $staff = User::role('employee')->where('salon_id', auth()->user()->salon_id)->orderBy('name')->get();
-        return view('admin.services.categories.index', compact('categories', 'staff'));
+        $staff = User::role('employee')
+            ->when($salonId, fn($q) => $q->where('salon_id', $salonId))
+            ->orderBy('name')
+            ->get();
+
+        $salon = $this->getSalon();
+        $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+            && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+        $consumableProducts = $inventoryEnabled
+            ? \App\Models\InventoryItem::when($salonId, fn($q) => $q->where('salon_id', $salonId))
+                ->active()
+                ->orderBy('name')
+                ->get(['id', 'name', 'unit_type', 'purchase_price', 'selling_price', 'pack_capacity', 'base_unit', 'product_type'])
+            : collect();
+
+        return view('admin.services.categories.index', compact('categories', 'staff', 'consumableProducts', 'inventoryEnabled'));
     }
 
     public function create()
@@ -45,7 +98,7 @@ class ServiceCategoryController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
-        $salon = app()->bound('current_salon') ? app('current_salon') : null;
+        $salon = $this->getSalon();
 
         if (!$salon) {
             abort(500, 'Salon context not available');
@@ -55,7 +108,7 @@ class ServiceCategoryController extends Controller
                 ->with('error', 'You have reached the maximum number of service categories allowed for your plan.');
         }
 
-        ServiceCategory::create($validated);
+        ServiceCategory::create(array_merge($validated, ['salon_id' => $salon->id]));
 
         return redirect()->route('admin.services.categories.index')
             ->with('success', 'Category created successfully.');
@@ -116,7 +169,7 @@ class ServiceCategoryController extends Controller
 
     public function storeService(Request $request, ServiceCategory $category)
     {
-        $salon = app()->bound('current_salon') ? app('current_salon') : null;
+        $salon = $this->getSalon() ?? $category->salon;
 
         if (!$salon) {
             abort(500, 'Salon context not available');
@@ -135,22 +188,55 @@ class ServiceCategoryController extends Controller
             'price' => 'required|numeric|min:0',
             'duration' => 'required|integer|min:1',
             'is_active' => 'boolean',
-            'available_for_online_booking' => 'boolean'
+            'available_for_online_booking' => 'boolean',
+            'consumables' => 'nullable|array',
+            'consumables.*.inventory_item_id' => [
+                'required_with:consumables',
+                \Illuminate\Validation\Rule::exists('inventory_items', 'id')->where('salon_id', $salon->id)->whereNull('deleted_at'),
+            ],
+            'consumables.*.quantity' => 'required_with:consumables|numeric|gt:0',
+            'consumables.*.unit' => 'nullable|string|max:20',
+            'consumables.*.is_billable_extra' => 'nullable|boolean',
+            'consumables.*.extra_price_per_unit' => 'nullable|numeric|min:0',
         ]);
 
-        $service = $category->services()->create([
-            'name' => $validated['name'],
-            'name_ar' => $validated['name_ar'] ?? null,
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'duration' => $validated['duration'],
-            'status' => $validated['is_active'] ? 'active' : 'inactive',
-            'available_for_online_booking' => $validated['available_for_online_booking'] ?? true
-        ]);
+        $service = \DB::transaction(function () use ($category, $validated, $request, $salon) {
+            $service = $category->services()->create([
+                'name' => $validated['name'],
+                'name_ar' => $validated['name_ar'] ?? null,
+                'description' => $validated['description'],
+                'price' => $validated['price'],
+                'duration' => $validated['duration'],
+                'status' => ($validated['is_active'] ?? true) ? 'active' : 'inactive',
+                'available_for_online_booking' => $validated['available_for_online_booking'] ?? true
+            ]);
 
-        if ($request->has('staff_ids')) {
-            $service->staff()->sync($request->staff_ids);
-        }
+            if ($request->has('staff_ids')) {
+                $service->staff()->sync($request->staff_ids);
+            }
+
+            // Sync Recipe Consumables (only if inventory module is enabled)
+            $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+                && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+            if ($inventoryEnabled && $request->has('consumables') && is_array($request->consumables)) {
+                foreach ($request->consumables as $c) {
+                    if (!empty($c['inventory_item_id']) && isset($c['quantity']) && (float)$c['quantity'] > 0) {
+                        $service->recipeItems()->create([
+                            'salon_id' => $service->salon_id,
+                            'inventory_item_id' => $c['inventory_item_id'],
+                            'quantity' => (float) $c['quantity'],
+                            'unit' => $c['unit'] ?? 'pcs',
+                            'is_optional' => !empty($c['is_optional']),
+                            'is_billable_extra' => !empty($c['is_billable_extra']),
+                            'extra_price_per_unit' => (float) ($c['extra_price_per_unit'] ?? 0),
+                        ]);
+                    }
+                }
+            }
+
+            return $service;
+        });
 
         return response()->json([
             'success' => true,
@@ -161,6 +247,12 @@ class ServiceCategoryController extends Controller
 
     public function showService(Service $service)
     {
+        $salon = $this->getSalon() ?? $service->salon;
+        $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+            && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+        $service->load(['recipeItems.inventoryItem', 'staff']);
+
         return response()->json([
             'id' => $service->id,
             'name' => $service->name,
@@ -171,11 +263,30 @@ class ServiceCategoryController extends Controller
             'status' => $service->status,
             'available_for_online_booking' => (bool) $service->available_for_online_booking,
             'staff_ids' => $service->staff->pluck('id'),
+            'inventory_enabled' => $inventoryEnabled,
+            'consumables' => $inventoryEnabled ? $service->recipeItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'inventory_item_id' => $item->inventory_item_id,
+                    'item_name' => $item->inventoryItem->name ?? 'Unknown',
+                    'quantity' => (float) $item->quantity,
+                    'unit' => $item->unit,
+                    'is_optional' => (bool) $item->is_optional,
+                    'is_billable_extra' => (bool) $item->is_billable_extra,
+                    'extra_price_per_unit' => (float) $item->extra_price_per_unit,
+                    'cost_per_unit' => (float) ($item->inventoryItem->cost_per_unit ?? 0),
+                    'total_cost' => (float) $item->estimated_cost,
+                ];
+            }) : [],
+            'estimated_cogs' => $inventoryEnabled ? $service->calculateEstimatedCogs() : 0,
         ]);
     }
 
     public function updateService(Request $request, Service $service)
     {
+        $salon = $this->getSalon() ?? $service->salon;
+        $salonId = $salon?->id ?? $service->salon_id;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
@@ -183,16 +294,58 @@ class ServiceCategoryController extends Controller
             'price' => 'required|numeric|min:0',
             'duration' => 'required|integer|min:1',
             'status' => 'required|in:active,inactive',
-            'available_for_online_booking' => 'boolean'
+            'available_for_online_booking' => 'boolean',
+            'consumables' => 'nullable|array',
+            'consumables.*.inventory_item_id' => [
+                'required_with:consumables',
+                \Illuminate\Validation\Rule::exists('inventory_items', 'id')->where('salon_id', $salonId)->whereNull('deleted_at'),
+            ],
+            'consumables.*.quantity' => 'required_with:consumables|numeric|gt:0',
+            'consumables.*.unit' => 'nullable|string|max:20',
+            'consumables.*.is_billable_extra' => 'nullable|boolean',
+            'consumables.*.extra_price_per_unit' => 'nullable|numeric|min:0',
         ]);
 
-        $service->update($validated);
+        \DB::transaction(function () use ($service, $validated, $request, $salon) {
+            $service->update([
+                'name' => $validated['name'],
+                'name_ar' => $validated['name_ar'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'price' => $validated['price'],
+                'duration' => $validated['duration'],
+                'status' => $validated['status'],
+                'available_for_online_booking' => $validated['available_for_online_booking'] ?? $service->available_for_online_booking,
+            ]);
 
-        if ($request->has('staff_ids')) {
-            $service->staff()->sync($request->staff_ids);
-        } else {
-            $service->staff()->detach();
-        }
+            if ($request->has('staff_ids')) {
+                $service->staff()->sync($request->staff_ids);
+            } else {
+                $service->staff()->detach();
+            }
+
+            // Re-sync Recipe Consumables atomically (only if inventory module enabled)
+            $inventoryEnabled = \App\Helpers\ModuleHelper::inventoryEnabled()
+                && (!$salon || $salon->canUseFeature('Inventory Management'));
+
+            if ($inventoryEnabled && $request->has('consumables')) {
+                $service->recipeItems()->delete();
+                if (is_array($request->consumables)) {
+                    foreach ($request->consumables as $c) {
+                        if (!empty($c['inventory_item_id']) && isset($c['quantity']) && (float)$c['quantity'] > 0) {
+                            $service->recipeItems()->create([
+                                'salon_id' => $service->salon_id,
+                                'inventory_item_id' => $c['inventory_item_id'],
+                                'quantity' => (float) $c['quantity'],
+                                'unit' => $c['unit'] ?? 'pcs',
+                                'is_optional' => !empty($c['is_optional']),
+                                'is_billable_extra' => !empty($c['is_billable_extra']),
+                                'extra_price_per_unit' => (float) ($c['extra_price_per_unit'] ?? 0),
+                            ]);
+                        }
+                    }
+                }
+            }
+        });
 
         return response()->json([
             'success' => true,

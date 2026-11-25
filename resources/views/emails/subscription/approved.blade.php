@@ -1,5 +1,5 @@
 @component('mail::message')
-# 🎉 Congratulations! Your Salon Has Been Approved
+# Congratulations! Your Salon Has Been Approved
 
 Hello **{{ $salon_name }}**,
 
@@ -8,7 +8,7 @@ Great news! Your manual payment has been verified and your salon account has bee
 ## Your Subscription Details
 
 - **Plan**: {{ $plan_name }}
-- **Status**: Active ✅
+- **Status**: Active
 - **Dashboard**: [Access Your Dashboard]({{ $dashboard_url }})
 
 You can now access all the features of your subscription plan and start managing your salon operations.

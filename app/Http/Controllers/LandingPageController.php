@@ -239,15 +239,12 @@ class LandingPageController extends Controller
     /**
      * Retrieve and decode dynamic FAQ items safely
      */
-    protected function getFaqItems(): array
+    public function getFaqItems(): array
     {
-        $raw = $this->settingsService->get('faq_items', '');
-        if (is_array($raw)) {
-            return $raw;
-        }
-        if (is_string($raw) && !empty($raw)) {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) && !empty($decoded)) {
+        $raw = $this->settingsService->get('faq_items', null);
+        if ($raw !== null && $raw !== '') {
+            $decoded = is_array($raw) ? $raw : json_decode($raw, true);
+            if (is_array($decoded)) {
                 return $decoded;
             }
         }
@@ -283,71 +280,70 @@ class LandingPageController extends Controller
     /**
      * Retrieve and decode dynamic Terms & Conditions sections safely
      */
-    public function getTermsSections(string $appName = '', string $contactEmail = ''): array
+    public function getTermsSections(string $appName = '', string $contactEmail = '', bool $substitutePlaceholders = true): array
     {
         $appName = $appName ?: $this->settingsService->get('app_name', config('app.name', 'FST Salon & Barber'));
         $contactEmail = $contactEmail ?: $this->settingsService->get('contact_email', 'info@fsqatar.com');
 
-        $sections = [];
-        $raw = $this->settingsService->get('terms_sections', '');
-        if (is_array($raw)) {
-            $sections = $raw;
-        } elseif (is_string($raw) && !empty($raw)) {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) && !empty($decoded)) {
+        $raw = $this->settingsService->get('terms_sections', null);
+        if ($raw !== null && $raw !== '') {
+            $decoded = is_array($raw) ? $raw : json_decode($raw, true);
+            if (is_array($decoded)) {
                 $sections = $decoded;
             }
         }
 
-        if (empty($sections)) {
+        if (!isset($sections)) {
             $legacy = $this->settingsService->get('terms_content', '');
             if (!empty($legacy)) {
-                return [
+                $sections = [
                     [
                         'title' => 'Terms & Conditions',
                         'content' => $legacy,
                     ]
                 ];
+            } else {
+                $sections = [
+                    [
+                        'title' => 'Acceptance & Master Subscription Agreement',
+                        'content' => "This Master Subscription Agreement (\"Agreement\") is entered into by and between **{app_name}** (\"Platform\", \"we\", \"us\", or \"our\") and the salon, barbershop, beauty spa, or enterprise organization (\"Subscriber\", \"Salon Partner\", or \"You\") subscribing to or utilizing our software-as-a-service application.\n\nBy registering an account, beginning a 14-day free trial, or accessing our cloud booking and POS platform, you acknowledge that you have read, understood, and agree to be legally bound by this Agreement."
+                    ],
+                    [
+                        'title' => 'Salon Partner Accounts & Multi-Branch Access',
+                        'content' => "As a Salon Partner, you are granted a non-exclusive, worldwide, revocable license to access and use {app_name} in accordance with your chosen subscription tier. You are solely responsible for:\n\n- Maintaining the confidentiality of your administrative credentials and employee login tokens.\n- Assigning appropriate role-based permissions (Super Admin, Salon Owner, Stylist, Front-Desk Cashier) to authorized team members.\n- Ensuring that staff PINs and trusted device authentications are promptly revoked when an employee departs."
+                    ],
+                    [
+                        'title' => 'Online Booking Engine & Tenant Isolation',
+                        'content' => "{app_name} operates on an enterprise multi-tenant cloud architecture. Each Salon Partner maintains a strictly isolated tenant database partition containing its own client profiles, appointments, services, color formulations, and inventory records.\n\n> **Individual Salon Booking Disclaimers:** While our platform provides the online reservation infrastructure, each individual Salon Partner establishes its own internal service policies, appointment cancellation rules, deposit requirements, and hygiene standards for its guest clients. {app_name} is not liable for disputes arising between individual salons and their end customers."
+                    ],
+                    [
+                        'title' => 'Subscription Plans, Billing, Invoicing & Free Trial',
+                        'content' => "**14-Day Free Trial:** Eligible new Salon Partners may access the full platform without upfront billing for fourteen (14) calendar days. No automated charges will occur until you confirm a paid subscription tier.\n\n**Billing Cycle & Renewals:** Subscriptions are billed in advance on a recurring monthly or annual basis. Invoices and VAT tax receipts are generated automatically inside your SaaS Admin portal. You may upgrade, downgrade, or cancel your subscription plan at any time through your dashboard settings."
+                    ],
+                    [
+                        'title' => 'Salon Business & Customer Data Ownership',
+                        'content' => "**You Own Your Data:** You retain complete and exclusive ownership of all customer contacts, booking histories, sales reports, stylist commission logs, and chemical notes entered into your account. {app_name} will never sell, lease, or monetize your salon records to any third party.\n\n**Data Portability:** You may export your full client database, inventory catalogs, and financial transaction records to standard CSV or Excel spreadsheets at any time directly from your administrative panel."
+                    ],
+                    [
+                        'title' => 'Service Level Agreement (SLA) & 99.9% Cloud Availability',
+                        'content' => "We engineer {app_name} for mission-critical reliability with a **99.9% uptime service level commitment**. Our cloud infrastructure features redundant database clustering, automated encrypted daily backups, and real-time failover routing.\n\nScheduled system updates and maintenance windows will be communicated via your dashboard with at least 48 hours advance notice and performed during off-peak business hours."
+                    ],
+                    [
+                        'title' => 'Acceptable Use, Security & Account Termination',
+                        'content' => "You agree not to reverse-engineer, decompile, or launch automated scraping against {app_name}. Both parties reserve the right to terminate this Agreement at any time. Upon account termination, your data remains accessible for export for thirty (30) days, after which it will be permanently purged in accordance with our strict data retention protocol."
+                    ],
+                ];
             }
-
-            $sections = [
-                [
-                    'title' => 'Acceptance & Master Subscription Agreement',
-                    'content' => "This Master Subscription Agreement (\"Agreement\") is entered into by and between **{app_name}** (\"Platform\", \"we\", \"us\", or \"our\") and the salon, barbershop, beauty spa, or enterprise organization (\"Subscriber\", \"Salon Partner\", or \"You\") subscribing to or utilizing our software-as-a-service application.\n\nBy registering an account, beginning a 14-day free trial, or accessing our cloud booking and POS platform, you acknowledge that you have read, understood, and agree to be legally bound by this Agreement."
-                ],
-                [
-                    'title' => 'Salon Partner Accounts & Multi-Branch Access',
-                    'content' => "As a Salon Partner, you are granted a non-exclusive, worldwide, revocable license to access and use {app_name} in accordance with your chosen subscription tier. You are solely responsible for:\n\n- Maintaining the confidentiality of your administrative credentials and employee login tokens.\n- Assigning appropriate role-based permissions (Super Admin, Salon Owner, Stylist, Front-Desk Cashier) to authorized team members.\n- Ensuring that staff PINs and trusted device authentications are promptly revoked when an employee departs."
-                ],
-                [
-                    'title' => 'Online Booking Engine & Tenant Isolation',
-                    'content' => "{app_name} operates on an enterprise multi-tenant cloud architecture. Each Salon Partner maintains a strictly isolated tenant database partition containing its own client profiles, appointments, services, color formulations, and inventory records.\n\n> **Individual Salon Booking Disclaimers:** While our platform provides the online reservation infrastructure, each individual Salon Partner establishes its own internal service policies, appointment cancellation rules, deposit requirements, and hygiene standards for its guest clients. {app_name} is not liable for disputes arising between individual salons and their end customers."
-                ],
-                [
-                    'title' => 'Subscription Plans, Billing, Invoicing & Free Trial',
-                    'content' => "**14-Day Free Trial:** Eligible new Salon Partners may access the full platform without upfront billing for fourteen (14) calendar days. No automated charges will occur until you confirm a paid subscription tier.\n\n**Billing Cycle & Renewals:** Subscriptions are billed in advance on a recurring monthly or annual basis. Invoices and VAT tax receipts are generated automatically inside your SaaS Admin portal. You may upgrade, downgrade, or cancel your subscription plan at any time through your dashboard settings."
-                ],
-                [
-                    'title' => 'Salon Business & Customer Data Ownership',
-                    'content' => "**You Own Your Data:** You retain complete and exclusive ownership of all customer contacts, booking histories, sales reports, stylist commission logs, and chemical notes entered into your account. {app_name} will never sell, lease, or monetize your salon records to any third party.\n\n**Data Portability:** You may export your full client database, inventory catalogs, and financial transaction records to standard CSV or Excel spreadsheets at any time directly from your administrative panel."
-                ],
-                [
-                    'title' => 'Service Level Agreement (SLA) & 99.9% Cloud Availability',
-                    'content' => "We engineer {app_name} for mission-critical reliability with a **99.9% uptime service level commitment**. Our cloud infrastructure features redundant database clustering, automated encrypted daily backups, and real-time failover routing.\n\nScheduled system updates and maintenance windows will be communicated via your dashboard with at least 48 hours advance notice and performed during off-peak business hours."
-                ],
-                [
-                    'title' => 'Acceptable Use, Security & Account Termination',
-                    'content' => "You agree not to reverse-engineer, decompile, or launch automated scraping against {app_name}. Both parties reserve the right to terminate this Agreement at any time. Upon account termination, your data remains accessible for export for thirty (30) days, after which it will be permanently purged in accordance with our strict data retention protocol."
-                ],
-            ];
         }
 
-        foreach ($sections as &$sec) {
-            $sec['content'] = str_replace(
-                ['{app_name}', '{contact_email}'],
-                [$appName, $contactEmail],
-                $sec['content'] ?? ''
-            );
+        if ($substitutePlaceholders) {
+            foreach ($sections as &$sec) {
+                $sec['content'] = str_replace(
+                    ['{app_name}', '{contact_email}'],
+                    [$appName, $contactEmail],
+                    $sec['content'] ?? ''
+                );
+            }
         }
 
         return $sections;
@@ -356,72 +352,71 @@ class LandingPageController extends Controller
     /**
      * Retrieve and decode dynamic Privacy Policy sections safely
      */
-    public function getPrivacySections(string $appName = '', string $contactEmail = ''): array
+    public function getPrivacySections(string $appName = '', string $contactEmail = '', bool $substitutePlaceholders = true): array
     {
         $appName = $appName ?: $this->settingsService->get('app_name', config('app.name', 'FST Salon & Barber'));
         $contactEmail = $contactEmail ?: $this->settingsService->get('contact_email', 'info@fsqatar.com');
         $contactUrl = route('contact');
 
-        $sections = [];
-        $raw = $this->settingsService->get('privacy_sections', '');
-        if (is_array($raw)) {
-            $sections = $raw;
-        } elseif (is_string($raw) && !empty($raw)) {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) && !empty($decoded)) {
+        $raw = $this->settingsService->get('privacy_sections', null);
+        if ($raw !== null && $raw !== '') {
+            $decoded = is_array($raw) ? $raw : json_decode($raw, true);
+            if (is_array($decoded)) {
                 $sections = $decoded;
             }
         }
 
-        if (empty($sections)) {
+        if (!isset($sections)) {
             $legacy = $this->settingsService->get('privacy_content', '');
             if (!empty($legacy)) {
-                return [
+                $sections = [
                     [
                         'title' => 'Privacy Policy',
                         'content' => $legacy,
                     ]
                 ];
+            } else {
+                $sections = [
+                    [
+                        'title' => 'Platform Roles: Data Controller vs. Data Processor',
+                        'content' => "At **{app_name}**, we value the trust placed in us by salon owners, barbers, and their guest clientele. Under global data protection frameworks (including GDPR, CCPA, and regional digital privacy statutes):\n\n- **When We Act as Data Controller:** We are the Controller for account credentials, subscription billing records, and system telemetry collected from our direct Salon Partners and website visitors.\n- **When We Act as Data Processor:** For client appointments, customer contact cards, service histories, and treatment formulations entered into a salon's private database, the individual Salon Partner is the Data Controller, and {app_name} acts strictly as the Data Processor processing data on their instructions."
+                    ],
+                    [
+                        'title' => 'Information We Collect',
+                        'content' => "To provide an efficient and high-performance salon operating system, we process the following categories of information:\n\n- **Account & Salon Profile Data:** Salon name, business address, contact telephone, email address, owner tax identification, and staff member roster profiles.\n- **Transactional POS & Appointment Records:** Client booking times, services rendered, stylist commissions, payment timestamps, and inventory movements.\n- **Technical & Session Telemetry:** IP addresses, browser user-agent, operating system version, and trusted device tokens used for POS security verification."
+                    ],
+                    [
+                        'title' => 'Cloud Infrastructure & 256-Bit Bank Grade Encryption',
+                        'content' => "Security is embedded into every architectural layer of {app_name}:\n\n- **Encryption in Transit:** All web traffic and API calls are enforced over modern TLS 1.3 with 256-bit encryption.\n- **Encryption at Rest:** Database clusters and automated daily backups are encrypted using AES-256 standards.\n- **Strict Tenant Isolation:** Every salon operates within a sandboxed tenant boundary, preventing unauthorized cross-salon data exposure."
+                    ],
+                    [
+                        'title' => 'Anti-Monetization Commitment: We Never Sell Your Data',
+                        'content' => "We hold a firm stance on data integrity: **we will never sell, rent, license, or monetize your salon's client lists, booking records, or revenue data to third-party data brokers or advertisers**. Your customer relationships remain 100% proprietary to your business."
+                    ],
+                    [
+                        'title' => 'Integrated Payment Processing & PCI-DSS Compliance',
+                        'content' => "Credit card transactions, online reservation deposits, and subscription renewals are handled exclusively through certified PCI-DSS Level 1 payment service providers (e.g. Stripe, PayPal, or authorized bank gateways).\n\nFull primary credit card numbers (PAN) and CVV security codes are never stored on our application servers. Payment tokens and masked card representations are utilized for recurring SaaS billing and POS receipts."
+                    ],
+                    [
+                        'title' => 'GDPR & CCPA Rights: Access, Correction & Data Export',
+                        'content' => "You retain full autonomy over your personal and salon data:\n\n- **Right to Export:** Download all client lists, booking logs, and invoices in standard CSV/Excel format directly from your panel.\n- **Right to Rectification:** Update or correct salon profile details, stylist credentials, and branch settings at any time.\n- **Right to Erasure (\"Right to Be Forgotten\"):** Upon formal cancellation or account closure request, your data will be permanently wiped from our live database clusters within thirty (30) days."
+                    ],
+                    [
+                        'title' => 'Contacting the SaaS Security & Data Privacy Officer',
+                        'content' => "For any questions, data processing addendum (DPA) requests, or privacy concerns, please contact our dedicated compliance desk through our [Support & Contact Desk]({contact_url}) or email directly at **{contact_email}**."
+                    ],
+                ];
             }
-
-            $sections = [
-                [
-                    'title' => 'Platform Roles: Data Controller vs. Data Processor',
-                    'content' => "At **{app_name}**, we value the trust placed in us by salon owners, barbers, and their guest clientele. Under global data protection frameworks (including GDPR, CCPA, and regional digital privacy statutes):\n\n- **When We Act as Data Controller:** We are the Controller for account credentials, subscription billing records, and system telemetry collected from our direct Salon Partners and website visitors.\n- **When We Act as Data Processor:** For client appointments, customer contact cards, service histories, and treatment formulations entered into a salon's private database, the individual Salon Partner is the Data Controller, and {app_name} acts strictly as the Data Processor processing data on their instructions."
-                ],
-                [
-                    'title' => 'Information We Collect',
-                    'content' => "To provide an efficient and high-performance salon operating system, we process the following categories of information:\n\n- **Account & Salon Profile Data:** Salon name, business address, contact telephone, email address, owner tax identification, and staff member roster profiles.\n- **Transactional POS & Appointment Records:** Client booking times, services rendered, stylist commissions, payment timestamps, and inventory movements.\n- **Technical & Session Telemetry:** IP addresses, browser user-agent, operating system version, and trusted device tokens used for POS security verification."
-                ],
-                [
-                    'title' => 'Cloud Infrastructure & 256-Bit Bank Grade Encryption',
-                    'content' => "Security is embedded into every architectural layer of {app_name}:\n\n- **Encryption in Transit:** All web traffic and API calls are enforced over modern TLS 1.3 with 256-bit encryption.\n- **Encryption at Rest:** Database clusters and automated daily backups are encrypted using AES-256 standards.\n- **Strict Tenant Isolation:** Every salon operates within a sandboxed tenant boundary, preventing unauthorized cross-salon data exposure."
-                ],
-                [
-                    'title' => 'Anti-Monetization Commitment: We Never Sell Your Data',
-                    'content' => "We hold a firm stance on data integrity: **we will never sell, rent, license, or monetize your salon's client lists, booking records, or revenue data to third-party data brokers or advertisers**. Your customer relationships remain 100% proprietary to your business."
-                ],
-                [
-                    'title' => 'Integrated Payment Processing & PCI-DSS Compliance',
-                    'content' => "Credit card transactions, online reservation deposits, and subscription renewals are handled exclusively through certified PCI-DSS Level 1 payment service providers (e.g. Stripe, PayPal, or authorized bank gateways).\n\nFull primary credit card numbers (PAN) and CVV security codes are never stored on our application servers. Payment tokens and masked card representations are utilized for recurring SaaS billing and POS receipts."
-                ],
-                [
-                    'title' => 'GDPR & CCPA Rights: Access, Correction & Data Export',
-                    'content' => "You retain full autonomy over your personal and salon data:\n\n- **Right to Export:** Download all client lists, booking logs, and invoices in standard CSV/Excel format directly from your panel.\n- **Right to Rectification:** Update or correct salon profile details, stylist credentials, and branch settings at any time.\n- **Right to Erasure (\"Right to Be Forgotten\"):** Upon formal cancellation or account closure request, your data will be permanently wiped from our live database clusters within thirty (30) days."
-                ],
-                [
-                    'title' => 'Contacting the SaaS Security & Data Privacy Officer',
-                    'content' => "For any questions, data processing addendum (DPA) requests, or privacy concerns, please contact our dedicated compliance desk through our [Support & Contact Desk]({contact_url}) or email directly at **{contact_email}**."
-                ],
-            ];
         }
 
-        foreach ($sections as &$sec) {
-            $sec['content'] = str_replace(
-                ['{app_name}', '{contact_url}', '{contact_email}'],
-                [$appName, $contactUrl, $contactEmail],
-                $sec['content'] ?? ''
-            );
+        if ($substitutePlaceholders) {
+            foreach ($sections as &$sec) {
+                $sec['content'] = str_replace(
+                    ['{app_name}', '{contact_url}', '{contact_email}'],
+                    [$appName, $contactUrl, $contactEmail],
+                    $sec['content'] ?? ''
+                );
+            }
         }
 
         return $sections;
@@ -432,13 +427,10 @@ class LandingPageController extends Controller
      */
     public function getReviewsItems(): array
     {
-        $raw = $this->settingsService->get('reviews_items', '');
-        if (is_array($raw)) {
-            return $raw;
-        }
-        if (is_string($raw) && !empty($raw)) {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) && !empty($decoded)) {
+        $raw = $this->settingsService->get('reviews_items', null);
+        if ($raw !== null && $raw !== '') {
+            $decoded = is_array($raw) ? $raw : json_decode($raw, true);
+            if (is_array($decoded)) {
                 return $decoded;
             }
         }
@@ -470,7 +462,7 @@ class LandingPageController extends Controller
 
     /**
      * Safely format legal policy content supporting headings, bold text, links, and bullet lists.
-     * Prevents XSS by escaping user input before formatting markup.
+     * Processes content line-by-line, preserving all prose in its original order and preventing XSS.
      */
     public static function formatLegalContent(?string $content): string
     {
@@ -486,49 +478,79 @@ class LandingPageController extends Controller
             $block = trim($block);
             if ($block === '') continue;
 
-            // Check if block is a heading (## Heading)
-            if (preg_match('/^##\s+(.+)$/m', $block, $m)) {
-                $title = e(trim($m[1]));
-                $output[] = '<div class="pub-legal-section" id="section-' . $sectionIndex . '">';
-                $output[] = '  <h2 class="pub-legal-section-title"><span class="pub-legal-num">' . $sectionIndex . '</span>' . $title . '</h2>';
-                $output[] = '</div>';
-                $sectionIndex++;
-                continue;
-            }
+            $lines = preg_split('/\r\n|\n/', $block);
+            $paraLines = [];
+            $listItems = [];
 
-            // Check if block is a sub-heading (### Subheading)
-            if (preg_match('/^###\s+(.+)$/m', $block, $m)) {
-                $title = e(trim($m[1]));
-                $output[] = '<h3 class="pub-legal-subheading" style="font-size: 1.15rem; font-weight: 700; color: #0b0f17; margin: 1.5rem 0 0.5rem;">' . $title . '</h3>';
-                continue;
-            }
-
-            // Check if block is a callout blockquote (> text)
-            if (preg_match('/^>\s+(.+)$/s', $block, $m)) {
-                $text = self::formatInline(e(trim($m[1])));
-                $output[] = '<blockquote class="pub-legal-callout" style="border-left: 3px solid #c5a880; background: #fbf7f2; padding: 1rem 1.25rem; margin: 1.25rem 0; border-radius: 0 0.5rem 0.5rem 0; color: #78350f; font-size: 0.95rem;">' . $text . '</blockquote>';
-                continue;
-            }
-
-            // Check if block is a bullet list (- item)
-            if (preg_match('/^-\s+/m', $block)) {
-                $lines = preg_split('/\r\n|\n/', $block);
-                $listItems = [];
-                foreach ($lines as $line) {
-                    if (preg_match('/^-\s+(.+)$/', trim($line), $itemMatch)) {
-                        $listItems[] = '<li style="margin-bottom: 0.5rem;">' . self::formatInline(e(trim($itemMatch[1]))) . '</li>';
-                    }
-                }
+            $flushList = function () use (&$output, &$listItems) {
                 if (!empty($listItems)) {
                     $output[] = '<ul class="pub-legal-list" style="padding-left: 1.5rem; margin: 1rem 0 1.5rem; color: #334155; line-height: 1.75;">' . implode('', $listItems) . '</ul>';
+                    $listItems = [];
+                }
+            };
+
+            $flushPara = function () use (&$output, &$paraLines) {
+                if (!empty($paraLines)) {
+                    $joined = implode("\n", $paraLines);
+                    $formatted = self::formatInline(e($joined));
+                    $formatted = nl2br($formatted);
+                    $output[] = '<p class="pub-legal-text" style="color: #334155; line-height: 1.85; font-size: 1rem; margin-bottom: 1.25rem;">' . $formatted . '</p>';
+                    $paraLines = [];
+                }
+            };
+
+            foreach ($lines as $line) {
+                $trimmedLine = trim($line);
+                if ($trimmedLine === '') {
+                    $flushList();
+                    $flushPara();
                     continue;
                 }
+
+                // Check ## Heading
+                if (preg_match('/^##\s+(.+)$/', $trimmedLine, $m)) {
+                    $flushList();
+                    $flushPara();
+                    $title = e(trim($m[1]));
+                    $output[] = '<div class="pub-legal-section" id="section-' . $sectionIndex . '">';
+                    $output[] = '  <h2 class="pub-legal-section-title"><span class="pub-legal-num">' . $sectionIndex . '</span>' . $title . '</h2>';
+                    $output[] = '</div>';
+                    $sectionIndex++;
+                    continue;
+                }
+
+                // Check ### Subheading
+                if (preg_match('/^###\s+(.+)$/', $trimmedLine, $m)) {
+                    $flushList();
+                    $flushPara();
+                    $title = e(trim($m[1]));
+                    $output[] = '<h3 class="pub-legal-subheading" style="font-size: 1.15rem; font-weight: 700; color: #0b0f17; margin: 1.5rem 0 0.5rem;">' . $title . '</h3>';
+                    continue;
+                }
+
+                // Check Callout (> text)
+                if (preg_match('/^>\s*(.+)$/', $trimmedLine, $m)) {
+                    $flushList();
+                    $flushPara();
+                    $text = self::formatInline(e(trim($m[1])));
+                    $output[] = '<blockquote class="pub-legal-callout" style="border-left: 3px solid #c5a880; background: #fbf7f2; padding: 1rem 1.25rem; margin: 1.25rem 0; border-radius: 0 0.5rem 0.5rem 0; color: #78350f; font-size: 0.95rem;">' . $text . '</blockquote>';
+                    continue;
+                }
+
+                // Check Bullet (- item)
+                if (preg_match('/^-\s+(.+)$/', $trimmedLine, $m)) {
+                    $flushPara();
+                    $listItems[] = '<li style="margin-bottom: 0.5rem;">' . self::formatInline(e(trim($m[1]))) . '</li>';
+                    continue;
+                }
+
+                // Normal prose line
+                $flushList();
+                $paraLines[] = $trimmedLine;
             }
 
-            // Normal paragraph
-            $formatted = self::formatInline(e($block));
-            $formatted = nl2br($formatted);
-            $output[] = '<p class="pub-legal-text" style="color: #334155; line-height: 1.85; font-size: 1rem; margin-bottom: 1.25rem;">' . $formatted . '</p>';
+            $flushList();
+            $flushPara();
         }
 
         return implode("\n", $output);

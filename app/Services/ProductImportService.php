@@ -58,18 +58,80 @@ class ProductImportService
         $validator = Validator::make($row, [
             'name' => 'required|string|max:255',
             'sku' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             throw new Exception("Validation failed: " . implode(', ', $validator->errors()->all()));
         }
 
-        // Check for duplicate SKU in Product table
+        // Check for duplicate SKU in Product and InventoryItem tables
         $existingProduct = Product::withoutGlobalScope('branch')
             ->where('salon_id', $salonId)
             ->where('sku', $row['sku'])
             ->first();
+
+        $inventoryItem = InventoryItem::withoutGlobalScope('branch')
+            ->where('salon_id', $salonId)
+            ->where('sku', $row['sku'])
+            ->first();
+
+        $isUpdate = ($existingProduct !== null || $inventoryItem !== null);
+
+        // Parse Column Presences
+        $hasProductTypeCol = array_key_exists('product_type', $row) || array_key_exists('product type', $row);
+        $hasBaseUnitCol = array_key_exists('base_unit', $row) || array_key_exists('base unit', $row) || array_key_exists('unit', $row);
+        $hasUnitTypeCol = array_key_exists('unit_type', $row) || array_key_exists('unit type', $row);
+        $hasPackCapacityCol = array_key_exists('pack_capacity', $row) || array_key_exists('pack capacity', $row);
+        $hasPriceCol = array_key_exists('price', $row) && $row['price'] !== '' && $row['price'] !== null;
+
+        // Parse Product Classification
+        if ($isUpdate && !$hasProductTypeCol) {
+            $productType = $inventoryItem?->product_type ?? 'retail';
+        } else {
+            $rawType = strtolower(trim($row['product_type'] ?? $row['product type'] ?? 'retail'));
+            $productType = in_array($rawType, ['retail', 'consumable', 'dual', 'backbar'])
+                ? ($rawType === 'backbar' ? 'consumable' : $rawType)
+                : 'retail';
+        }
+
+        // Parse Base Unit & Unit Type
+        if ($isUpdate && !$hasBaseUnitCol) {
+            $baseUnit = $inventoryItem?->base_unit ?? 'pcs';
+        } else {
+            $baseUnit = strtolower(trim($row['base_unit'] ?? $row['base unit'] ?? $row['unit'] ?? 'pcs'));
+            if (empty($baseUnit)) $baseUnit = 'pcs';
+        }
+
+        if ($hasUnitTypeCol && !empty(trim($row['unit_type'] ?? $row['unit type'] ?? ''))) {
+            $unitType = strtolower(trim($row['unit_type'] ?? $row['unit type']));
+        } elseif ($isUpdate && $inventoryItem?->unit_type) {
+            $unitType = $inventoryItem->unit_type;
+        } else {
+            $unitType = $baseUnit;
+        }
+
+        // Parse Pack Capacity
+        if ($isUpdate && (!$hasPackCapacityCol || $row['pack_capacity'] === '' || $row['pack_capacity'] === null)) {
+            $packCapacity = (float) ($inventoryItem?->pack_capacity ?? 1);
+        } else {
+            $packCapacity = (float) ($row['pack_capacity'] ?? $row['pack capacity'] ?? 1);
+            if ($packCapacity <= 0) $packCapacity = 1;
+        }
+
+        // Validate Price Requirements
+        if (!$isUpdate && in_array($productType, ['retail', 'dual']) && !$hasPriceCol) {
+            throw new Exception("Validation failed: Price is required for new {$productType} products.");
+        }
+
+        // Determine price
+        if ($hasPriceCol && is_numeric($row['price'])) {
+            $sellingPrice = (float) $row['price'];
+        } elseif ($isUpdate) {
+            $sellingPrice = $inventoryItem?->selling_price ?? $existingProduct?->price ?? 0.00;
+        } else {
+            $sellingPrice = 0.00;
+        }
 
         // Get or create category if provided
         $categoryId = null;
@@ -91,7 +153,7 @@ class ProductImportService
             'description' => $row['description'] ?? null,
             'sku' => $row['sku'],
             'barcode' => $row['barcode'] ?? null,
-            'price' => $row['price'],
+            'price' => $sellingPrice,
             'cost_price' => $row['cost_price'] ?? 0,
             'category_id' => $categoryId,
             'brand' => $row['brand'] ?? null,
@@ -119,11 +181,6 @@ class ProductImportService
         }
 
         // Handle InventoryItem (for Inventory List)
-        $inventoryItem = InventoryItem::withoutGlobalScope('branch')
-            ->where('salon_id', $salonId)
-            ->where('sku', $row['sku'])
-            ->first();
-
         $inventoryData = [
             'salon_id' => $salonId,
             'branch_id' => $branchId,
@@ -131,7 +188,7 @@ class ProductImportService
             'description' => $row['description'] ?? null,
             'sku' => $row['sku'],
             'barcode' => $row['barcode'] ?? null,
-            'selling_price' => $row['price'],
+            'selling_price' => $sellingPrice,
             'purchase_price' => $row['cost_price'] ?? 0,
             'category_id' => $categoryId,
             'brand' => $row['brand'] ?? null,
@@ -141,23 +198,21 @@ class ProductImportService
             'is_active' => $this->parseBooleanValue($row['is_active'] ?? 'yes'),
             'tax_rate' => $row['tax_rate'] ?? 0,
             'is_taxable' => $this->parseBooleanValue($row['is_taxable'] ?? 'no'),
-            'unit_type' => 'pcs', // Default unit type
+            'unit_type' => $unitType,
+            'base_unit' => $baseUnit,
+            'product_type' => $productType,
+            'pack_capacity' => $packCapacity,
         ];
 
         try {
             if ($inventoryItem) {
                 $inventoryItem->update($inventoryData);
             } else {
-                InventoryItem::create($inventoryData);
+                $inventoryItem = InventoryItem::create($inventoryData);
             }
         } catch (\Illuminate\Database\QueryException $e) {
-            // Report inventory item errors
-            $this->results['failed']++;
-            $this->results['errors'][] = [
-                'row' => $rowNumber,
-                'message' => "Failed to sync inventory item for SKU {$row['sku']}: " . $e->getMessage()
-            ];
             \Log::error("Failed to sync inventory item for SKU {$row['sku']}: " . $e->getMessage());
+            throw new \Exception("Failed to sync inventory item for SKU {$row['sku']}: " . $e->getMessage());
         }
 
         // Handle Branch Stock if branch_id is provided

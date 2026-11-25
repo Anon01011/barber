@@ -65,13 +65,27 @@ class InventoryCategory extends Model
 
         static::creating(function ($category) {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->name);
+                $baseSlug = Str::slug($category->name) ?: 'category';
+                $slug = $baseSlug;
+                $counter = 1;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . ($category->salon_id ? $category->salon_id . '-' : '') . $counter;
+                    $counter++;
+                }
+                $category->slug = $slug;
             }
         });
 
         static::updating(function ($category) {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->name);
+                $baseSlug = Str::slug($category->name) ?: 'category';
+                $slug = $baseSlug;
+                $counter = 1;
+                while (static::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
+                    $slug = $baseSlug . '-' . ($category->salon_id ? $category->salon_id . '-' : '') . $counter;
+                    $counter++;
+                }
+                $category->slug = $slug;
             }
         });
     }
@@ -89,12 +103,20 @@ class InventoryCategory extends Model
      */
     public function resolveRouteBinding($value, $field = null)
     {
-        if (is_numeric($value)) {
-            return static::where('id', $value)->first() 
-                ?? static::where('slug', $value)->firstOrFail();
+        $query = static::query();
+        $user = auth()->user();
+        if ($user && $user->salon_id && !$user->hasRole('super_admin')) {
+            $query->where('salon_id', $user->salon_id);
         }
 
-        return static::where('slug', $value)->firstOrFail();
+        if (is_numeric($value)) {
+            $found = (clone $query)->where('id', $value)->first();
+            if ($found) {
+                return $found;
+            }
+        }
+
+        return $query->where('slug', $value)->firstOrFail();
     }
 
     /**

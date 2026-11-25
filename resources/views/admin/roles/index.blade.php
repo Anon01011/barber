@@ -206,13 +206,13 @@
 
     <!-- Add Role Modal -->
     <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <form id="addRoleForm" class="modal-content border-0 shadow-lg overflow-hidden" method="POST" action="{{ route($routePrefix . '.store') }}" autocomplete="off"
                 novalidate>
                 <!-- Modal Header -->
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title d-flex align-items-center">
-                        <i class="fas fa-plus-circle me-2"></i>
+                <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-bottom: 1px solid rgba(197, 168, 128, 0.25) !important;">
+                    <h5 class="modal-title d-flex align-items-center text-white">
+                        <i class="fas fa-plus-circle me-2" style="color: #c5a880;"></i>
                         Create New Role
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
@@ -437,13 +437,13 @@
 
     <!-- Edit Role Modal -->
     <div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <form id="editRoleForm" class="modal-content border-0 shadow-lg overflow-hidden" method="POST"
                 action="{{ route($routePrefix . '.update', ['role' => '__ROLE_ID__']) }}" novalidate>
                 <!-- Modal Header -->
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title d-flex align-items-center">
-                        <i class="fas fa-user-shield me-2"></i>
+                <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-bottom: 1px solid rgba(197, 168, 128, 0.25) !important;">
+                    <h5 class="modal-title d-flex align-items-center text-white">
+                        <i class="fas fa-user-shield me-2" style="color: #c5a880;"></i>
                         Edit Role
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"

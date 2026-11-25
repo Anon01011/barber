@@ -1,8 +1,8 @@
 /* Appointments Page Styles */
 
 :root {
-    --primary: #ec4899;
-    --secondary: #a21caf;
+    --primary: var(--theme-accent, #c5a880);
+    --secondary: var(--theme-accent-hover, #b38e5d);
     --bg-light: #f8f9fc;
 }
 
@@ -15,36 +15,14 @@ body {
     font-weight: 600;
 }
 
-.btn-primary,
-.btn-outline-primary {
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    border: none;
-}
-
-.btn-outline-primary {
-    color: var(--primary);
-    background: #fff;
-    border: 1px solid var(--primary);
-}
-
-.btn-outline-primary:hover {
-    background: var(--primary);
-    color: #fff;
-}
-
-.badge.bg-success {
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    color: #fff !important;
-}
-
 .table thead th {
     background: #f3f4f6;
-    color: var(--secondary);
+    color: #374151;
     font-weight: 600;
 }
 
 .table-hover tbody tr:hover {
-    background: #fce7f3;
+    background: rgba(197, 168, 128, 0.08);
 }
 
 .list-group-item {

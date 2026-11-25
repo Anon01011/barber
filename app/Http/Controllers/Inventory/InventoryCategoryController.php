@@ -57,8 +57,14 @@ class InventoryCategoryController extends Controller
         \Log::info('Category creation request data:', $request->all());
         
         try {
+            $salonId = auth()->user()->salon_id;
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:inventory_categories,name',
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    \Illuminate\Validation\Rule::unique('inventory_categories', 'name')->where('salon_id', $salonId),
+                ],
                 'description' => 'nullable|string',
                 'is_active' => 'sometimes|boolean',
                 'icon' => 'nullable|string|max:50',
@@ -68,23 +74,51 @@ class InventoryCategoryController extends Controller
 
             DB::beginTransaction();
             
+            $icon = trim($validated['icon'] ?? '');
+            if (empty($icon)) {
+                $icon = 'fas fa-box';
+            } elseif (!str_starts_with($icon, 'fa-') && !str_starts_with($icon, 'fas ') && !str_starts_with($icon, 'far ') && !str_starts_with($icon, 'fa-solid ')) {
+                $icon = 'fas fa-' . $icon;
+            }
+
             $category = new InventoryCategory();
+            $category->salon_id = $salonId;
             $category->name = $validated['name'];
             $category->description = $validated['description'] ?? null;
             $category->is_active = $request->boolean('is_active', true);
-            $category->icon = $validated['icon'] ?? 'fas fa-box';
+            $category->icon = $icon;
             $category->save();
             
             DB::commit();
             
             \Log::info('Category created successfully:', ['id' => $category->id]);
             
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Category created successfully.',
+                    'category' => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'icon' => $category->icon,
+                        'description' => $category->description,
+                    ],
+                ]);
+            }
+
             return redirect()
                 ->route('admin.inventory.categories.index')
                 ->with('success', 'Category created successfully.');
                 
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation error during category creation:', $e->errors());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first() ?? 'Validation failed.',
+                    'errors' => $e->errors()
+                ], 422);
+            }
             return back()->withErrors($e->errors())->withInput();
                 
         } catch (\Exception $e) {
@@ -93,6 +127,12 @@ class InventoryCategoryController extends Controller
                 'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create category: ' . $e->getMessage()
+                ], 500);
+            }
             return back()
                 ->with('error', 'Failed to create category. Please try again.')
                 ->withInput();
@@ -104,12 +144,15 @@ class InventoryCategoryController extends Controller
      */
     public function update(Request $request, InventoryCategory $category)
     {
+        $salonId = auth()->user()->salon_id;
         $validated = $request->validate([
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                \Illuminate\Validation\Rule::unique('inventory_categories', 'name')->ignore($category->id),
+                \Illuminate\Validation\Rule::unique('inventory_categories', 'name')
+                    ->where('salon_id', $salonId)
+                    ->ignore($category->id),
             ],
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:50',
@@ -120,6 +163,11 @@ class InventoryCategoryController extends Controller
         try {
             DB::beginTransaction();
             
+            $icon = trim($validated['icon'] ?? '');
+            if (!empty($icon) && !str_starts_with($icon, 'fa-') && !str_starts_with($icon, 'fas ') && !str_starts_with($icon, 'far ') && !str_starts_with($icon, 'fa-solid ')) {
+                $validated['icon'] = 'fas fa-' . $icon;
+            }
+
             $validated['is_active'] = $request->has('is_active');
             $category->update($validated);
             

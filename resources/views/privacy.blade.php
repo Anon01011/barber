@@ -103,13 +103,19 @@
                         </div>
                     @empty
                         @if(!empty($cms['privacyFormatted']))
-                            {!! $cms['privacyFormatted'] !!}
+                            @if(!str_contains($cms['privacyFormatted'], 'id="section-1"'))
+                                <div id="section-1">
+                                    {!! $cms['privacyFormatted'] !!}
+                                </div>
+                            @else
+                                {!! $cms['privacyFormatted'] !!}
+                            @endif
                         @elseif(!empty($cms['privacyContent']))
-                            <div style="color: #334155; line-height: 1.85; font-size: 1rem;">
+                            <div id="section-1" style="color: #334155; line-height: 1.85; font-size: 1rem;">
                                 {!! nl2br(e($cms['privacyContent'])) !!}
                             </div>
                         @else
-                            <div class="alert alert-info">
+                            <div class="alert alert-info" id="section-1">
                                 Privacy Policy is currently being updated.
                             </div>
                         @endif

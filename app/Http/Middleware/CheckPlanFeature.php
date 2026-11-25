@@ -20,21 +20,39 @@ class CheckPlanFeature
             return $next($request);
         }
 
-        // Check if user has salon and active subscription with a plan
-        if (!$user || !$user->salon || !$user->salon->activeSubscription || !$user->salon->activeSubscription->plan) {
-            abort(403, 'No active subscription or plan found. Please subscribe to access this feature.');
+        // Resolve salon context safely
+        $salon = app()->bound('current_salon') && app('current_salon')
+            ? app('current_salon')
+            : ($user?->salon ?? ($user?->salon_id ? \App\Models\Salon::find($user->salon_id) : null));
+
+        if (!$salon && $request->route('salon_slug')) {
+            $salon = \App\Models\Salon::where('slug', $request->route('salon_slug'))->first();
         }
 
-        $plan = $user->salon->activeSubscription->plan;
-
-        // Check if plan features configuration is empty
-        if ($plan->isEmptyFeatures()) {
-            abort(403, 'Your current plan has no features assigned. Please contact administrator or choose a valid plan.');
+        // Active trial bypasses feature restrictions to let user test capabilities
+        if ($salon && method_exists($salon, 'isOnTrial') && $salon->isOnTrial()) {
+            return $next($request);
         }
 
-        // Check if plan has the required feature
-        if (!$plan->hasFeature($feature)) {
-            abort(403, 'This feature is not available in your current plan. Please upgrade to access this feature.');
+        $subscription = $salon?->activeSubscription;
+        $plan = $subscription?->plan;
+
+        $hasFeature = $plan && !$plan->isEmptyFeatures() && $plan->hasFeature($feature);
+
+        if (!$hasFeature) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The '{$feature}' module is not available in your current plan. Please upgrade to unlock.",
+                    'upgrade_required' => true,
+                ], 403);
+            }
+
+            return response()->view('errors.feature-locked', [
+                'feature' => $feature,
+                'salon' => $salon,
+                'currentPlan' => $plan,
+            ], 403);
         }
 
         return $next($request);

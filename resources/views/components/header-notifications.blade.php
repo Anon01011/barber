@@ -20,7 +20,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">Notifications</h6>
                 @if($notifications->count() > 0)
-                    <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                    <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline">
                         @csrf
                         <button type="submit" class="btn btn-link btn-sm text-decoration-none p-0">
                             Mark all as read
@@ -63,7 +63,7 @@
                         </div>
                         @if(!$notification->read_at)
                             <div class="flex-shrink-0 ms-2">
-                                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                                <form action="{{ route('notifications.mark-read', $notification->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-link btn-sm text-decoration-none p-0">
                                         <i class="fas fa-check text-white"></i>
@@ -83,9 +83,7 @@
 
         @if($notifications->count() > 0)
             <div class="p-3 border-top text-center">
-                <a href="{{ route('notifications.index') }}" class="text-decoration-none">
-                    View all notifications
-                </a>
+                <span class="text-muted small">{{ $notifications->count() }} notification(s)</span>
             </div>
         @endif
     </div>

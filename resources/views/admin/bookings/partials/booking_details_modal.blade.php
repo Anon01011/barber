@@ -230,17 +230,17 @@
     }
 
     #bookingDetailsModal .bg-purple {
-        background-color: #d3adf7 !important;
+        background-color: var(--theme-accent, #c5a880) !important;
     }
 
     #bookingDetailsModal .btn-outline-purple {
-        color: #722ed1;
-        border-color: #d3adf7;
+        color: var(--theme-accent, #c5a880);
+        border-color: rgba(197, 168, 128, 0.45);
     }
 
     #bookingDetailsModal .btn-outline-purple:hover {
-        background-color: #f9f0ff;
-        border-color: #722ed1;
+        background-color: rgba(197, 168, 128, 0.15);
+        border-color: var(--theme-accent, #c5a880);
     }
 </style>
 

@@ -551,7 +551,7 @@
                                         <i class="fas fa-plus"></i>
                                     </span>
                                 </button>
-                                <div class="pub-faq-answer" style="{{ $faqIdx === 0 ? 'max-height: 500px; opacity: 1; padding-top: 1rem;' : 'max-height: 0; opacity: 0; padding-top: 0;' }}">
+                                <div class="pub-faq-answer" style="{{ $faqIdx === 0 ? 'max-height: none; opacity: 1; padding-top: 1rem;' : 'max-height: 0; opacity: 0; padding-top: 0;' }}">
                                     <p>{{ $faq['answer'] ?? '' }}</p>
                                 </div>
                             </div>

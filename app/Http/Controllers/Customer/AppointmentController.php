@@ -15,13 +15,88 @@ use App\Services\SettingsService;
 
 class AppointmentController extends Controller
 {
+    /**
+     * Resolve the current customer's salon_id defensively.
+     */
+    private function resolveSalonId(): ?int
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return app('current_salon')?->id;
+        }
+        return $user->customer?->salon_id
+            ?? $user->salon_id
+            ?? app('current_salon')?->id;
+    }
+
+    /**
+     * Get or link/create the Customer model associated with the authenticated user.
+     */
+    private function resolveCustomer(): ?\App\Models\Customer
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return null;
+        }
+
+        if ($user->customer) {
+            return $user->customer;
+        }
+
+        $salonId = $this->resolveSalonId();
+        if (!$salonId) {
+            return null;
+        }
+
+        // Try to find customer by user_id or email within the user's salon
+        $customer = \App\Models\Customer::where('salon_id', $salonId)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('email', $user->email);
+                if (!empty($user->phone)) {
+                    $q->orWhere('phone', $user->phone);
+                }
+            })->first();
+
+        if ($customer) {
+            if (!$customer->user_id) {
+                $customer->update(['user_id' => $user->id]);
+            }
+            return $customer;
+        }
+
+        // Auto-create a linked Customer record for the authenticated customer user
+        try {
+            $nameParts = explode(' ', trim($user->name ?? ''), 2);
+            $firstName = !empty($nameParts[0]) ? $nameParts[0] : 'Customer';
+            $lastName = $nameParts[1] ?? '';
+
+            $customer = \App\Models\Customer::create([
+                'salon_id' => $salonId,
+                'user_id' => $user->id,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'name' => $user->name ?? 'Customer',
+                'email' => $user->email,
+                'phone' => !empty($user->phone) ? $user->phone : '0000000000',
+                'status' => 'active',
+                'preferred_contact' => 'email',
+            ]);
+
+            return $customer;
+        } catch (\Exception $e) {
+            \Log::warning('Could not auto-create customer for user ' . $user->id . ': ' . $e->getMessage());
+            return null;
+        }
+    }
+
     public function index(Request $request)
     {
         try {
-            $customer = auth()->user()->customer;
+            $customer = $this->resolveCustomer();
             if (!$customer) {
-                return redirect()->route('customer.profile.create')
-                    ->with('error', 'Please complete your profile before booking appointments.');
+                return redirect()->route('customer.dashboard')
+                    ->with('error', 'Customer profile could not be located.');
             }
 
             // Get appointment statistics
@@ -62,7 +137,7 @@ class AppointmentController extends Controller
     public function apiAppointments(Request $request)
     {
         try {
-            $customer = auth()->user()->customer;
+            $customer = $this->resolveCustomer();
             if (!$customer) {
                 return response()->json(['error' => 'Customer profile incomplete'], 403);
             }
@@ -107,7 +182,7 @@ class AppointmentController extends Controller
     public function apiAppointmentDetails($id)
     {
         try {
-            $customer = auth()->user()->customer;
+            $customer = $this->resolveCustomer();
             if (!$customer) {
                 return response()->json(['error' => 'Customer profile incomplete'], 403);
             }
@@ -147,13 +222,19 @@ class AppointmentController extends Controller
 
     public function create()
     {
-        $salonId = auth()->user()->customer->salon_id;
+        $salonId = $this->resolveSalonId();
+        if (!$salonId) {
+            abort(404, 'Salon context could not be determined.');
+        }
+
+        $customer = $this->resolveCustomer();
+
         $services = Service::where('salon_id', $salonId)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        return view('customer.appointments.create', compact('services'));
+        return view('customer.appointments.create', compact('services', 'customer'));
     }
 
     /**
@@ -168,13 +249,14 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
+        $salonId = $this->resolveSalonId();
         $validated = $request->validate([
             'service_id' => [
                 'required',
                 'exists:services,id',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, $fail) use ($salonId) {
                     $service = Service::find($value);
-                    if ($service && $service->salon_id !== auth()->user()->customer->salon_id) {
+                    if ($service && $salonId && $service->salon_id !== $salonId) {
                         $fail('The selected service is not available.');
                     }
                 },
@@ -185,7 +267,7 @@ class AppointmentController extends Controller
         ]);
 
         // Defensive check for customer record
-        $customer = Auth::user()->customer;
+        $customer = $this->resolveCustomer();
         if (!$customer) {
             return response()->json([
                 'message' => 'No customer profile found. Please complete your profile before booking an appointment.'
@@ -282,7 +364,7 @@ class AppointmentController extends Controller
     public function show(Booking $booking)
     {
         // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
-        $customer = Auth::user()->customer;
+        $customer = $this->resolveCustomer();
         if (!$customer || $booking->customer_id !== $customer->id) {
             abort(403, 'Unauthorized action.');
         }
@@ -297,7 +379,7 @@ class AppointmentController extends Controller
     public function destroy(Booking $booking)
     {
         // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
-        $customer = auth()->user()->customer;
+        $customer = $this->resolveCustomer();
         if (!$customer || $booking->customer_id !== $customer->id) {
             abort(403, 'Unauthorized action.');
         }
@@ -322,15 +404,19 @@ class AppointmentController extends Controller
 
         $service = Service::findOrFail($serviceId);
 
+        $salonId = $this->resolveSalonId();
+        if (!$salonId) {
+            return response()->json(['error' => 'Salon not found'], 404);
+        }
+
         // Verify service belongs to customer's salon
-        if ($service->salon_id !== auth()->user()->customer->salon_id) {
+        if ($service->salon_id !== $salonId) {
             return response()->json(['error' => 'Service not available'], 403);
         }
 
         $duration = $service->duration;
 
         // Get salon timezone and settings
-        $salonId = auth()->user()->customer->salon_id;
         $settings = app(\App\Services\SettingsService::class);
         $timezone = $settings->get('timezone', config('app.timezone', 'UTC'), $salonId);
         $workingStart = $settings->get('working_hours_start', '08:00', $salonId);
@@ -456,7 +542,10 @@ class AppointmentController extends Controller
 
     public function getServices()
     {
-        $salonId = auth()->user()->customer->salon_id;
+        $salonId = $this->resolveSalonId();
+        if (!$salonId) {
+            return response()->json([]);
+        }
         $services = Service::where('salon_id', $salonId)
             ->where('status', 'active')
             ->availableForOnlineBooking()
@@ -468,7 +557,10 @@ class AppointmentController extends Controller
 
     public function getStaff()
     {
-        $salonId = auth()->user()->customer->salon_id;
+        $salonId = $this->resolveSalonId();
+        if (!$salonId) {
+            return response()->json([]);
+        }
         $staff = User::role('employee')
             ->where('salon_id', $salonId)
             ->where('status', 'active')
@@ -483,8 +575,14 @@ class AppointmentController extends Controller
     public function getFavoriteServices()
     {
         try {
-            $user = auth()->user();
-            $favorites = $user->customer->favoriteServices()
+            $customer = $this->resolveCustomer();
+            if (!$customer) {
+                return response()->json([
+                    'status' => 'success',
+                    'favorites' => []
+                ]);
+            }
+            $favorites = $customer->favoriteServices()
                 ->with(['category', 'staff'])
                 ->get();
 
@@ -511,7 +609,7 @@ class AppointmentController extends Controller
     public function reschedule(Request $request, Booking $booking)
     {
         // BUG-02 fix: null-safe customer check prevents fatal Error on non-customer users
-        $customer = auth()->user()->customer;
+        $customer = $this->resolveCustomer();
         if (!$customer || $booking->customer_id !== $customer->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -596,7 +694,7 @@ class AppointmentController extends Controller
 
         try {
             // Check if user has a customer profile
-            $customer = auth()->user()->customer;
+            $customer = $this->resolveCustomer();
 
             // Debug logging
             \Log::info('Rating submission attempt', [

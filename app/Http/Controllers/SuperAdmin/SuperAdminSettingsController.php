@@ -86,9 +86,9 @@ class SuperAdminSettingsController extends Controller
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string',
             'hero_primary_btn_text' => 'nullable|string|max:100',
-            'hero_primary_btn_url' => 'nullable|string|max:255',
+            'hero_primary_btn_url' => ['nullable', 'string', 'max:255', 'regex:/^(https?:\/\/[^\s]+|\/[^\s]*|#[^\s]*)$/i'],
             'hero_secondary_btn_text' => 'nullable|string|max:100',
-            'hero_secondary_btn_url' => 'nullable|string|max:255',
+            'hero_secondary_btn_url' => ['nullable', 'string', 'max:255', 'regex:/^(https?:\/\/[^\s]+|\/[^\s]*|#[^\s]*)$/i'],
             'hero_image' => 'nullable|image|max:4096',
             'hero_stat_1_val' => 'nullable|string|max:50',
             'hero_stat_1_lbl' => 'nullable|string|max:100',
@@ -113,7 +113,7 @@ class SuperAdminSettingsController extends Controller
             'cta_banner_title' => 'nullable|string|max:255',
             'cta_banner_subtitle' => 'nullable|string',
             'cta_banner_btn_text' => 'nullable|string|max:100',
-            'cta_banner_btn_url' => 'nullable|string|max:255',
+            'cta_banner_btn_url' => ['nullable', 'string', 'max:255', 'regex:/^(https?:\/\/[^\s]+|\/[^\s]*|#[^\s]*)$/i'],
 
             'contact_phone' => 'nullable|string|max:50',
             'contact_email' => 'nullable|email|max:150',
@@ -139,6 +139,7 @@ class SuperAdminSettingsController extends Controller
             'terms_page_subtitle' => 'nullable|string',
             'terms_last_updated' => 'nullable|string|max:100',
             'terms_content' => 'nullable|string',
+            'terms_sections_present' => 'nullable',
             'terms_section_titles' => 'nullable|array',
             'terms_section_titles.*' => 'nullable|string|max:255',
             'terms_section_contents' => 'nullable|array',
@@ -148,6 +149,7 @@ class SuperAdminSettingsController extends Controller
             'privacy_page_subtitle' => 'nullable|string',
             'privacy_last_updated' => 'nullable|string|max:100',
             'privacy_content' => 'nullable|string',
+            'privacy_sections_present' => 'nullable',
             'privacy_section_titles' => 'nullable|array',
             'privacy_section_titles.*' => 'nullable|string|max:255',
             'privacy_section_contents' => 'nullable|array',
@@ -156,6 +158,7 @@ class SuperAdminSettingsController extends Controller
             // Dynamic Reviews & Testimonials
             'reviews_title' => 'nullable|string|max:255',
             'reviews_subtitle' => 'nullable|string',
+            'reviews_present' => 'nullable',
             'review_names' => 'nullable|array',
             'review_names.*' => 'nullable|string|max:150',
             'review_roles' => 'nullable|array',
@@ -170,6 +173,7 @@ class SuperAdminSettingsController extends Controller
             // Dynamic FAQ
             'faq_title' => 'nullable|string|max:255',
             'faq_subtitle' => 'nullable|string',
+            'faq_present' => 'nullable',
             'faq_questions' => 'nullable|array',
             'faq_questions.*' => 'nullable|string|max:500',
             'faq_answers' => 'nullable|array',
@@ -213,16 +217,18 @@ class SuperAdminSettingsController extends Controller
         }
 
         // Handle dynamic Terms & Conditions sections
-        if ($request->has('terms_section_titles') && is_array($request->terms_section_titles)) {
+        if ($request->has('terms_sections_present')) {
             $termsList = [];
-            foreach ($request->terms_section_titles as $idx => $title) {
-                $t = trim($title ?? '');
-                $c = trim($request->terms_section_contents[$idx] ?? '');
-                if ($t !== '' || $c !== '') {
-                    $termsList[] = [
-                        'title' => $t,
-                        'content' => $c,
-                    ];
+            if ($request->has('terms_section_titles') && is_array($request->terms_section_titles)) {
+                foreach ($request->terms_section_titles as $idx => $title) {
+                    $t = trim($title ?? '');
+                    $c = trim($request->terms_section_contents[$idx] ?? '');
+                    if ($t !== '' || $c !== '') {
+                        $termsList[] = [
+                            'title' => $t,
+                            'content' => $c,
+                        ];
+                    }
                 }
             }
             $this->settingsService->set('terms_sections', json_encode($termsList));
@@ -230,16 +236,18 @@ class SuperAdminSettingsController extends Controller
         }
 
         // Handle dynamic Privacy Policy sections
-        if ($request->has('privacy_section_titles') && is_array($request->privacy_section_titles)) {
+        if ($request->has('privacy_sections_present')) {
             $privacyList = [];
-            foreach ($request->privacy_section_titles as $idx => $title) {
-                $t = trim($title ?? '');
-                $c = trim($request->privacy_section_contents[$idx] ?? '');
-                if ($t !== '' || $c !== '') {
-                    $privacyList[] = [
-                        'title' => $t,
-                        'content' => $c,
-                    ];
+            if ($request->has('privacy_section_titles') && is_array($request->privacy_section_titles)) {
+                foreach ($request->privacy_section_titles as $idx => $title) {
+                    $t = trim($title ?? '');
+                    $c = trim($request->privacy_section_contents[$idx] ?? '');
+                    if ($t !== '' || $c !== '') {
+                        $privacyList[] = [
+                            'title' => $t,
+                            'content' => $c,
+                        ];
+                    }
                 }
             }
             $this->settingsService->set('privacy_sections', json_encode($privacyList));
@@ -247,19 +255,21 @@ class SuperAdminSettingsController extends Controller
         }
 
         // Handle dynamic Reviews & Testimonials
-        if ($request->has('review_names') && is_array($request->review_names)) {
+        if ($request->has('reviews_present')) {
             $reviewList = [];
-            foreach ($request->review_names as $idx => $name) {
-                $n = trim($name ?? '');
-                $txt = trim($request->review_texts[$idx] ?? '');
-                if ($n !== '' && $txt !== '') {
-                    $reviewList[] = [
-                        'name' => $n,
-                        'role' => trim($request->review_roles[$idx] ?? 'Salon Owner'),
-                        'rating' => max(1, min(5, (int) ($request->review_ratings[$idx] ?? 5))),
-                        'text' => $txt,
-                        'avatar' => trim($request->review_avatars[$idx] ?? ''),
-                    ];
+            if ($request->has('review_names') && is_array($request->review_names)) {
+                foreach ($request->review_names as $idx => $name) {
+                    $n = trim($name ?? '');
+                    $txt = trim($request->review_texts[$idx] ?? '');
+                    if ($n !== '' && $txt !== '') {
+                        $reviewList[] = [
+                            'name' => $n,
+                            'role' => trim($request->review_roles[$idx] ?? 'Salon Owner'),
+                            'rating' => max(1, min(5, (int) ($request->review_ratings[$idx] ?? 5))),
+                            'text' => $txt,
+                            'avatar' => trim($request->review_avatars[$idx] ?? ''),
+                        ];
+                    }
                 }
             }
             $this->settingsService->set('reviews_items', json_encode($reviewList));
@@ -267,33 +277,39 @@ class SuperAdminSettingsController extends Controller
         }
 
         // Handle dynamic FAQ questions and answers
-        if ($request->has('faq_questions') && is_array($request->faq_questions)) {
+        if ($request->has('faq_present')) {
             $faqList = [];
-            foreach ($request->faq_questions as $idx => $q) {
-                $q = trim($q ?? '');
-                $a = trim($request->faq_answers[$idx] ?? '');
-                if ($q !== '' && $a !== '') {
-                    $faqList[] = [
-                        'question' => $q,
-                        'answer' => $a,
-                    ];
+            if ($request->has('faq_questions') && is_array($request->faq_questions)) {
+                foreach ($request->faq_questions as $idx => $q) {
+                    $q = trim($q ?? '');
+                    $a = trim($request->faq_answers[$idx] ?? '');
+                    if ($q !== '' && $a !== '') {
+                        $faqList[] = [
+                            'question' => $q,
+                            'answer' => $a,
+                        ];
+                    }
                 }
             }
             $this->settingsService->set('faq_items', json_encode($faqList));
             $this->settingsService->clearCache('faq_items');
         }
 
-        // Unset raw arrays before saving scalar settings
+        // Unset raw arrays and presence markers before saving scalar settings
         unset(
+            $validated['terms_sections_present'],
             $validated['terms_section_titles'],
             $validated['terms_section_contents'],
+            $validated['privacy_sections_present'],
             $validated['privacy_section_titles'],
             $validated['privacy_section_contents'],
+            $validated['reviews_present'],
             $validated['review_names'],
             $validated['review_roles'],
             $validated['review_ratings'],
             $validated['review_texts'],
             $validated['review_avatars'],
+            $validated['faq_present'],
             $validated['faq_questions'],
             $validated['faq_answers']
         );

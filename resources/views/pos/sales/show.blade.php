@@ -203,6 +203,50 @@
                                             <td>{{ format_currency($item->tax_amount) }}</td>
                                             <td>{{ format_currency($item->total) }}</td>
                                         </tr>
+                                        @php
+                                            $consumables = $item->consumables ?? collect();
+                                            $isService = str_contains(strtolower($item->item_type ?? ''), 'service') || $item->service_id;
+                                        @endphp
+                                        @if($isService && $consumables->isNotEmpty())
+                                            <tr class="table-light">
+                                                <td></td>
+                                                <td colspan="8" class="py-1 ps-4">
+                                                    <small class="text-muted fw-semibold d-block mb-1">
+                                                        <i class="fas fa-flask text-primary me-1"></i> Consumables Used:
+                                                    </small>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        @foreach($consumables as $c)
+                                                            @php
+                                                                $unitCost = (float)($c->unit_cost ?? 0);
+                                                                $qty = (float)($c->quantity_used ?? $c->quantity ?? 0);
+                                                                $lineCost = $unitCost * $qty;
+                                                                $billedAmt = (float)($c->billed_amount ?? 0);
+                                                                $isBilled = $billedAmt > 0;
+                                                            @endphp
+                                                            @if($isBilled)
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                                    <i class="fas fa-flask me-1" style="font-size:0.70rem;"></i>
+                                                                    {{ $c->inventoryItem->name ?? '—' }}
+                                                                    <span class="ms-1">{{ $qty }}{{ $c->unit ? ' '.$c->unit : '' }}</span>
+                                                                    &middot; <strong>+{{ format_currency($billedAmt) }} Billed</strong>
+                                                                </span>
+                                                            @else
+                                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                                                    {{ $c->inventoryItem->name ?? '—' }}
+                                                                    <span class="ms-1 text-muted">{{ $qty }}{{ $c->unit ? ' '.$c->unit : '' }}</span>
+                                                                    @if($lineCost > 0)
+                                                                        &middot; {{ format_currency($lineCost) }}
+                                                                    @else
+                                                                        <span class="text-warning ms-1" title="Set purchase price in Inventory"><i class="fas fa-exclamation-triangle"></i></span>
+                                                                    @endif
+                                                                    <span class="text-muted ms-1" style="font-size:0.70rem;">(Included)</span>
+                                                                </span>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                                 <tfoot>
@@ -213,7 +257,19 @@
                                     @php
                                         $taxRate = $sale->tax_rate ?? $settings->get('tax_rate', 0, $sale->salon_id);
                                         $taxName = $settings->get('tax_name', 'Tax', $sale->salon_id);
+                                        $totalBilledMaterials = 0;
+                                        foreach ($sale->items as $si) {
+                                            foreach ($si->consumables ?? [] as $c) {
+                                                $totalBilledMaterials += (float)($c->billed_amount ?? 0);
+                                            }
+                                        }
                                     @endphp
+                                    @if($totalBilledMaterials > 0)
+                                        <tr class="table-success">
+                                            <td colspan="7" class="text-right"><strong><i class="fas fa-flask me-1"></i>Billed Materials:</strong></td>
+                                            <td colspan="2" class="text-right text-success fw-bold">+{{ format_currency($totalBilledMaterials) }}</td>
+                                        </tr>
+                                    @endif
                                     <tr>
                                         <td colspan="7" class="text-right">
                                             <strong>{{ $taxName }} ({{ number_format($taxRate, 2) + 0 }}%):</strong>

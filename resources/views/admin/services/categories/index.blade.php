@@ -336,10 +336,33 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($inventoryEnabled ?? false)
+                    <!-- Consumables Recipe BOM & Estimated COGS -->
+                    <div id="serviceConsumablesSection" class="mt-3 d-none">
+                        <label class="form-label text-muted small text-uppercase mb-1 fw-bold">
+                            <i class="fas fa-flask text-primary me-1"></i>Consumables (Service Recipe)
+                        </label>
+                        <div class="border rounded-2 p-2 bg-light">
+                            <ul id="serviceConsumablesList" class="list-unstyled mb-0 small"></ul>
+                            <div class="d-flex justify-content-between pt-1 border-top mt-1 fw-semibold text-secondary small">
+                                <span>Estimated COGS:</span>
+                                <span id="serviceEstCogs" class="text-danger fw-bold">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Close
+                <div class="modal-footer py-2 d-flex justify-content-between">
+                    @if($inventoryEnabled ?? false)
+                    <a href="{{ route('admin.inventory.index') }}" class="btn btn-outline-primary btn-sm rounded-pill">
+                        <i class="fas fa-boxes me-1"></i> Inventory Stock
+                    </a>
+                    @else
+                    <div></div>
+                    @endif
+                    <button type="button" class="btn btn-light btn-sm rounded-pill" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Close
                     </button>
                 </div>
             </div>
@@ -348,12 +371,11 @@
 
     <!-- Edit Service Modal -->
     <div class="modal fade" id="editServiceModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="editServiceForm" onsubmit="handleServiceUpdate(event)">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <form class="modal-content" id="editServiceForm" onsubmit="handleServiceUpdate(event)">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
                         <h5 class="modal-title">Edit Service</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -440,6 +462,30 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if($inventoryEnabled ?? false)
+                        <!-- Consumable Products & Recipe (Bill of Materials) -->
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div>
+                                    <label class="form-label small fw-bold text-dark mb-0">
+                                        <i class="fas fa-flask text-primary me-1"></i>Consumable Products (Service Recipe)
+                                    </label>
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Products automatically dispensed from backbar on checkout</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm" onclick="addRecipeRow('edit_recipe_container')">
+                                    <i class="fas fa-plus-circle me-1"></i> Add Consumable
+                                </button>
+                            </div>
+                            <div class="border rounded-3 p-2.5 bg-light" style="max-height: 220px; overflow-y: auto;">
+                                <div id="edit_recipe_container"></div>
+                                <div id="edit_recipe_empty" class="text-center py-3 text-muted small" style="font-size: 0.82rem;">
+                                    <i class="fas fa-pump-soap text-muted opacity-50 fa-2x d-block mb-1"></i>
+                                    No products linked yet. Click <strong>"+ Add Consumable"</strong> to attach backbar materials (shampoo, blades, hair color, developer).
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -449,7 +495,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
         </div>
     </div>
 
@@ -477,11 +522,10 @@
 
     <!-- Add Services Modal -->
     <div class="modal fade" id="addServicesModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="addServicesForm" onsubmit="handleAddServices(event)">
-                    @csrf
-                    <div class="modal-header">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <form class="modal-content" id="addServicesForm" onsubmit="handleAddServices(event)">
+                @csrf
+                <div class="modal-header">
                         <h5 class="modal-title">Add Services to <span id="categoryName"></span></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -567,6 +611,30 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if($inventoryEnabled ?? false)
+                        <!-- Consumable Products & Recipe (Bill of Materials) -->
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div>
+                                    <label class="form-label small fw-bold text-dark mb-0">
+                                        <i class="fas fa-flask text-primary me-1"></i>Consumable Products (Service Recipe)
+                                    </label>
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Products automatically dispensed from backbar on checkout</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm" onclick="addRecipeRow('add_recipe_container')">
+                                    <i class="fas fa-plus-circle me-1"></i> Add Consumable
+                                </button>
+                            </div>
+                            <div class="border rounded-3 p-2.5 bg-light" style="max-height: 220px; overflow-y: auto;">
+                                <div id="add_recipe_container"></div>
+                                <div id="add_recipe_empty" class="text-center py-3 text-muted small" style="font-size: 0.82rem;">
+                                    <i class="fas fa-pump-soap text-muted opacity-50 fa-2x d-block mb-1"></i>
+                                    No products linked yet. Click <strong>"+ Add Consumable"</strong> to attach backbar materials (shampoo, blades, hair color, developer).
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -576,7 +644,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
         </div>
     </div>
 
@@ -1025,17 +1092,329 @@
             .text-muted {
                 color: #6c757d !important;
             }
+        
+            /* Service Modals Scrollability & Sticky Footer Fix */
+            #editServiceModal .modal-dialog,
+            #addServicesModal .modal-dialog {
+                max-height: calc(100vh - 40px);
+                margin: 20px auto;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #editServiceModal .modal-content,
+            #addServicesModal .modal-content {
+                max-height: calc(100vh - 40px);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            #editServiceModal .modal-body,
+            #addServicesModal .modal-body {
+                overflow-y: auto !important;
+                max-height: calc(100vh - 175px);
+                flex: 1 1 auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #editServiceModal .modal-footer,
+            #addServicesModal .modal-footer {
+                position: sticky;
+                bottom: 0;
+                background: #ffffff;
+                z-index: 1050;
+                border-top: 1px solid #dee2e6;
+                box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+                flex-shrink: 0;
+            }
+
+            #edit_recipe_container,
+            #recipe_container {
+                max-height: 260px;
+                overflow-y: auto;
+                padding-right: 4px;
+            }
+
         </style>
     @endpush
 
     @push('scripts')
         <script>
+            const currencySymbol = '{{ currency_symbol() }}';
             let currentServiceId = null;
             let viewServiceModal = null;
             let editServiceModal = null;
             let deleteServiceModal = null;
             let editCategoryModalInstance = null;
             let addServicesModalInstance = null;
+
+            window.consumableProducts = @json($consumableProducts ?? []);
+
+            function addRecipeRow(containerId, initialData = null) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                const products = window.consumableProducts || [];
+                if (products.length === 0 && !initialData) {
+                    if (window.notifications && typeof window.notifications.show === 'function') {
+                        window.notifications.show('No consumable products found. Please add or mark products as "Backbar Consumable" or "Dual-Use" in Inventory first.', 'warning');
+                    } else {
+                        alert('No consumable products found in your inventory catalogue. Please add consumable products in Inventory first.');
+                    }
+                    return;
+                }
+
+                const emptyMsg = document.getElementById(containerId.replace('_container', '_empty'));
+                if (emptyMsg) emptyMsg.style.display = 'none';
+
+                const idx = 'recipe_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+                const row = document.createElement('div');
+                row.className = 'd-flex align-items-center gap-2 mb-2 p-2 bg-white rounded-2 border shadow-sm recipe-row';
+                row.style.cssText = 'min-width:0;overflow:hidden';
+                row.dataset.idx = idx;
+                row.dataset.isOptional = initialData ? (!!initialData.is_optional) : false;
+                row.dataset.isBillableExtra = initialData ? (!!initialData.is_billable_extra) : false;
+                row.dataset.extraPricePerUnit = initialData ? (parseFloat(initialData.extra_price_per_unit) || 0) : 0;
+
+                const selectWrap = document.createElement('div');
+                selectWrap.className = 'flex-grow-1';
+                selectWrap.style.cssText = 'min-width:0;overflow:hidden';
+
+                const select = document.createElement('select');
+                select.className = 'form-select form-select-sm recipe-product-select rounded-2';
+                select.style.cssText = 'min-width:0;max-width:100%';
+                select.required = true;
+                select.setAttribute('onchange', `updateRecipeUnit(this, '${idx}')`);
+
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = '';
+                defaultOpt.textContent = 'Select consumable product...';
+                select.appendChild(defaultOpt);
+
+                let matchedInitial = false;
+                products.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    const u = p.base_unit || p.unit_type || 'pcs';
+                    opt.dataset.unit = u;
+                    opt.textContent = `${p.name} (${u})`;
+                    if (initialData && parseInt(initialData.inventory_item_id) === parseInt(p.id)) {
+                        opt.selected = true;
+                        matchedInitial = true;
+                    }
+                    select.appendChild(opt);
+                });
+
+                if (initialData && !matchedInitial && initialData.inventory_item_id) {
+                    const opt = document.createElement('option');
+                    opt.value = initialData.inventory_item_id;
+                    opt.dataset.unit = initialData.unit || 'pcs';
+                    opt.textContent = `${initialData.item_name || 'Item'} (${initialData.unit || 'pcs'})`;
+                    opt.selected = true;
+                    select.appendChild(opt);
+                }
+
+                selectWrap.appendChild(select);
+                row.appendChild(selectWrap);
+
+                const qtyWrap = document.createElement('div');
+                qtyWrap.className = 'input-group input-group-sm flex-shrink-0';
+                qtyWrap.style.width = '110px';
+
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'number';
+                qtyInput.className = 'form-control form-control-sm recipe-qty-input';
+                qtyInput.placeholder = 'Qty';
+                qtyInput.step = 'any';
+                qtyInput.min = '0.001';
+                qtyInput.required = true;
+                if (initialData && initialData.quantity) {
+                    qtyInput.value = initialData.quantity;
+                }
+                qtyWrap.appendChild(qtyInput);
+
+                const unitLabel = document.createElement('span');
+                unitLabel.className = 'input-group-text bg-light px-2 small recipe-unit-label';
+                unitLabel.id = 'unit_label_' + idx;
+                unitLabel.textContent = (initialData && initialData.unit) ? initialData.unit : 'pcs';
+                qtyWrap.appendChild(unitLabel);
+                row.appendChild(qtyWrap);
+
+                const unitInput = document.createElement('input');
+                unitInput.type = 'hidden';
+                unitInput.className = 'recipe-unit-input';
+                unitInput.id = 'unit_val_' + idx;
+                unitInput.value = (initialData && initialData.unit) ? initialData.unit : 'pcs';
+                row.appendChild(unitInput);
+
+                // Billable Extra Toggle & Automatic Price Display
+                const isBillable = initialData ? (!!initialData.is_billable_extra) : false;
+
+                const billableWrap = document.createElement('div');
+                billableWrap.className = 'd-flex align-items-center gap-1 flex-shrink-0';
+
+                const checkWrap = document.createElement('div');
+                checkWrap.className = 'form-check form-switch m-0 d-flex align-items-center';
+                checkWrap.title = 'Charge this consumable to customer in POS';
+
+                const billableCheck = document.createElement('input');
+                billableCheck.type = 'checkbox';
+                billableCheck.className = 'form-check-input recipe-billable-check';
+                billableCheck.id = 'billable_' + idx;
+                billableCheck.checked = isBillable;
+
+                const billableLabel = document.createElement('label');
+                billableLabel.className = 'form-check-label small ms-1 text-muted fw-semibold';
+                billableLabel.setAttribute('for', 'billable_' + idx);
+                billableLabel.style.fontSize = '0.72rem';
+                billableLabel.textContent = 'Charge';
+
+                checkWrap.appendChild(billableCheck);
+                checkWrap.appendChild(billableLabel);
+                billableWrap.appendChild(checkWrap);
+
+                const priceWrap = document.createElement('div');
+                priceWrap.className = 'input-group input-group-sm recipe-extra-price-wrap';
+                priceWrap.style.width = '115px';
+                priceWrap.style.display = isBillable ? 'flex' : 'none';
+
+                const priceAddon = document.createElement('span');
+                priceAddon.className = 'input-group-text bg-light px-1 text-muted small';
+                priceAddon.style.fontSize = '0.70rem';
+                priceAddon.textContent = '+{{ currency_symbol() }}';
+
+                const priceInput = document.createElement('input');
+                priceInput.type = 'number';
+                priceInput.className = 'form-control form-control-sm recipe-extra-price-input';
+                priceInput.placeholder = '0.00';
+                priceInput.step = '0.01';
+                priceInput.min = '0';
+                priceInput.readOnly = true;
+                priceInput.style.backgroundColor = '#f8fafc';
+                priceInput.style.fontWeight = '600';
+                priceInput.style.cursor = 'default';
+                priceInput.title = 'Auto-calculated price for used quantity';
+
+                priceWrap.appendChild(priceAddon);
+                priceWrap.appendChild(priceInput);
+                billableWrap.appendChild(priceWrap);
+
+                function autoCalcRecipePrice() {
+                    const selectedVal = select.value;
+                    const prod = products.find(p => parseInt(p.id) === parseInt(selectedVal));
+                    if (!prod) {
+                        priceInput.value = '0.00';
+                        return;
+                    }
+                    const capacity = parseFloat(prod.pack_capacity) > 0 ? parseFloat(prod.pack_capacity) : 1;
+                    const basePrice = (parseFloat(prod.selling_price) > 0) 
+                        ? parseFloat(prod.selling_price) 
+                        : (parseFloat(prod.purchase_price) || 0);
+                    const qty = parseFloat(qtyInput.value) > 0 ? parseFloat(qtyInput.value) : 1;
+                    const unitPrice = basePrice / capacity;
+                    const calculated = unitPrice * qty;
+                    priceInput.value = calculated > 0 ? calculated.toFixed(2) : '0.00';
+                    priceInput.title = `${qty} ${prod.base_unit || 'units'} @ {{ currency_symbol() }}${unitPrice.toFixed(4)} per unit (Pack: {{ currency_symbol() }}${basePrice.toFixed(2)} / ${capacity} ${prod.base_unit || ''})`;
+                }
+
+                // Initial price population
+                if (isBillable) {
+                    autoCalcRecipePrice();
+                }
+
+                billableCheck.addEventListener('change', function () {
+                    priceWrap.style.display = this.checked ? 'flex' : 'none';
+                    if (this.checked) {
+                        autoCalcRecipePrice();
+                    }
+                });
+
+                qtyInput.addEventListener('input', function () {
+                    if (billableCheck.checked) {
+                        autoCalcRecipePrice();
+                    }
+                });
+                qtyInput.addEventListener('change', function () {
+                    if (billableCheck.checked) {
+                        autoCalcRecipePrice();
+                    }
+                });
+
+                select.addEventListener('change', function () {
+                    if (billableCheck.checked) {
+                        autoCalcRecipePrice();
+                    }
+                });
+
+                row.appendChild(billableWrap);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'btn btn-sm btn-outline-danger rounded-circle p-1 d-flex align-items-center justify-content-center';
+                delBtn.style.width = '28px';
+                delBtn.style.height = '28px';
+                delBtn.title = 'Remove Consumable';
+                delBtn.setAttribute('onclick', `removeRecipeRow(this, '${containerId}')`);
+                delBtn.innerHTML = '<i class="fas fa-times fa-xs"></i>';
+                row.appendChild(delBtn);
+
+                container.appendChild(row);
+            }
+
+            function updateRecipeUnit(select, idx) {
+                const opt = select.selectedOptions[0];
+                const unit = opt?.dataset?.unit || 'pcs';
+                const label = document.getElementById('unit_label_' + idx);
+                const input = document.getElementById('unit_val_' + idx);
+                if (label) label.textContent = unit;
+                if (input) input.value = unit;
+            }
+
+            function removeRecipeRow(btn, containerId) {
+                const row = btn.closest('.recipe-row');
+                if (row) row.remove();
+                const container = document.getElementById(containerId);
+                if (container && container.querySelectorAll('.recipe-row').length === 0) {
+                    const emptyMsg = document.getElementById(containerId.replace('_container', '_empty'));
+                    if (emptyMsg) emptyMsg.style.display = '';
+                }
+            }
+
+            function getConsumablesFromContainer(containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return [];
+                const rows = container.querySelectorAll('.recipe-row');
+                const items = [];
+                rows.forEach(row => {
+                    const productSelect = row.querySelector('.recipe-product-select');
+                    const qtyInput = row.querySelector('.recipe-qty-input');
+                    const unitInput = row.querySelector('.recipe-unit-input');
+                    const billableCheck = row.querySelector('.recipe-billable-check');
+                    const extraPriceInput = row.querySelector('.recipe-extra-price-input');
+
+                    const itemId = productSelect ? productSelect.value : null;
+                    const qty = qtyInput ? parseFloat(qtyInput.value) : 0;
+                    const unit = unitInput ? unitInput.value : 'pcs';
+                    const isBillable = billableCheck ? billableCheck.checked : false;
+                    const extraPrice = (isBillable && extraPriceInput && extraPriceInput.value) ? (parseFloat(extraPriceInput.value) || 0) : 0;
+                    const perUnitPrice = qty > 0 ? (extraPrice / qty) : extraPrice;
+
+                    if (itemId && qty > 0) {
+                        items.push({
+                            inventory_item_id: parseInt(itemId),
+                            quantity: qty,
+                            unit: unit,
+                            is_optional: false,
+                            is_billable_extra: isBillable,
+                            extra_price_per_unit: perUnitPrice
+                        });
+                    }
+                });
+                return items;
+            }
 
             const salonSlug = getSalonSlug();
                     const baseUrl = salonSlug ? `/${salonSlug}/admin` : '/admin';
@@ -1115,7 +1494,7 @@
 
                                 // Update price
                                 const price = document.getElementById('servicePrice');
-                                price.textContent = `$${parseFloat(data.price).toFixed(2)}`;
+                                price.textContent = `${currencySymbol}${parseFloat(data.price).toFixed(2)}`;
 
                                 // Update duration
                                 const duration = document.getElementById('serviceDuration');
@@ -1130,6 +1509,40 @@
                                                                                                                                             ${data.status}
                                                                                                                                         </div>
                                                                                                                             `;
+
+                                // Update Consumables & COGS in view modal
+                                const consumablesSection = document.getElementById('serviceConsumablesSection');
+                                const consumablesList = document.getElementById('serviceConsumablesList');
+                                const estCogs = document.getElementById('serviceEstCogs');
+                                if (consumablesSection && consumablesList) {
+                                    if (data.consumables && data.consumables.length > 0) {
+                                        consumablesSection.classList.remove('d-none');
+                                        consumablesList.innerHTML = data.consumables.map(c => {
+                                            const cost = parseFloat(c.total_cost || 0);
+                                            const costPerUnit = parseFloat(c.cost_per_unit || 0);
+                                            const noCostSet = costPerUnit <= 0;
+                                            const costDisplay = noCostSet
+                                                ? `<span class="text-warning small text-nowrap" title="Set purchase price in Inventory to calculate cost"><i class="fas fa-exclamation-triangle me-1"></i>Cost not set</span>`
+                                                : `<span class="fw-semibold text-muted text-nowrap">${currencySymbol}${cost.toFixed(2)}</span>`;
+                                            return `<li class="d-flex align-items-start gap-2 py-1 border-bottom border-light" style="min-width:0">
+                                                <i class="fas fa-check text-success mt-1 flex-shrink-0 small"></i>
+                                                <span class="flex-grow-1" style="min-width:0;overflow:hidden">
+                                                    <span class="d-block text-truncate small">${c.item_name}</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary">${c.quantity} ${c.unit}</span>
+                                                    ${c.is_billable_extra ? `<span class="badge bg-success-subtle text-success border border-success-subtle ms-1">+${currencySymbol}${(parseFloat(c.extra_price_per_unit || 0) * parseFloat(c.quantity || 1)).toFixed(2)} Billable</span>` : ''}
+                                                </span>
+                                                <span class="flex-shrink-0 ms-auto">${costDisplay}</span>
+                                            </li>`;
+                                        }).join('');
+                                        const totalCogs = parseFloat(data.estimated_cogs || 0);
+                                        if (estCogs) {
+                                            estCogs.textContent = `${currencySymbol}${totalCogs.toFixed(2)}`;
+                                            estCogs.className = totalCogs > 0 ? 'text-danger fw-bold' : 'text-warning fw-bold';
+                                        }
+                                    } else {
+                                        consumablesSection.classList.add('d-none');
+                                    }
+                                }
 
                                 showModal(viewServiceModal);
                             })
@@ -1156,6 +1569,19 @@
                                 document.querySelectorAll('#edit_staff_container input[type="checkbox"]').forEach(cb => {
                                     cb.checked = staffIds.includes(parseInt(cb.value));
                                 });
+
+                                // Populate Recipe Consumables
+                                const editContainer = document.getElementById('edit_recipe_container');
+                                const editEmpty = document.getElementById('edit_recipe_empty');
+                                if (editContainer) editContainer.innerHTML = '';
+                                if (data.consumables && data.consumables.length > 0) {
+                                    if (editEmpty) editEmpty.style.display = 'none';
+                                    data.consumables.forEach(c => {
+                                        addRecipeRow('edit_recipe_container', c);
+                                    });
+                                } else {
+                                    if (editEmpty) editEmpty.style.display = '';
+                                }
 
                                 document.getElementById('editServiceForm').action = `${baseUrl}/services/${serviceId}`;
 
@@ -1188,7 +1614,8 @@
                             duration: parseInt(formData.get('duration')),
                             status: formData.get('is_active') === 'on' ? 'active' : 'inactive',
                             available_for_online_booking: formData.get('available_for_online_booking') === 'on',
-                            staff_ids: Array.from(form.querySelectorAll('input[name="staff_ids[]"]:checked')).map(cb => cb.value)
+                            staff_ids: Array.from(form.querySelectorAll('input[name="staff_ids[]"]:checked')).map(cb => cb.value),
+                            consumables: getConsumablesFromContainer('edit_recipe_container')
                         };
 
                         fetch(form.action, {
@@ -1425,6 +1852,13 @@
                         currentCategoryId = categoryId;
                         document.getElementById('categoryName').textContent = categoryName;
                         document.getElementById('addServicesForm').reset();
+
+                        // Clear recipe container
+                        const addContainer = document.getElementById('add_recipe_container');
+                        const addEmpty = document.getElementById('add_recipe_empty');
+                        if (addContainer) addContainer.innerHTML = '';
+                        if (addEmpty) addEmpty.style.display = '';
+
                         if (addServicesModalInstance) {
                             addServicesModalInstance.show();
                         } else {
@@ -1452,7 +1886,8 @@
                             duration: parseInt(formData.get('duration')),
                             is_active: formData.get('is_active') === 'on',
                             available_for_online_booking: formData.get('available_for_online_booking') === 'on',
-                            staff_ids: Array.from(form.querySelectorAll('input[name="staff_ids[]"]:checked')).map(cb => cb.value)
+                            staff_ids: Array.from(form.querySelectorAll('input[name="staff_ids[]"]:checked')).map(cb => cb.value),
+                            consumables: getConsumablesFromContainer('add_recipe_container')
                         };
 
                         fetch(`${baseUrl}/services/categories/${currentCategoryId}/services`, {

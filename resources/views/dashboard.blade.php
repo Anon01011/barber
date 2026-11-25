@@ -1595,7 +1595,7 @@
                                                                                         <i class="fas fa-eye"></i>
                                                                                     </button>
                                                                                 @else
-                                                                                    <a href="{{ route('admin.pos.sales.show', $sale->id) }}"
+                                                                                    <a href="{{ route('admin.pos.sales.show', $sale->invoice_number ?? $sale->id) }}"
                                                                                         class="btn btn-sm btn-light text-muted rounded-circle"
                                                                                         title="View Details">
                                                                                         <i class="fas fa-eye"></i>
@@ -3642,7 +3642,8 @@
                     const assignedTime = $('#assignTime').val(); // This is the full datetime string from the slot
 
                     if (!staffId || !assignedTime) {
-                        alert('Please select staff and time.');
+                        if (window.notifications) window.notifications.show('Please select staff and time.', 'warning');
+                        else window.showModalAlert('Please select staff and time.', 'warning');
                         return;
                     }
 
@@ -3663,12 +3664,16 @@
                                 // Reload page to show updated status
                                 window.location.reload();
                             } else {
-                                alert(response.message || 'Failed to assign staff.');
+                                const msg = response.message || 'Failed to assign staff.';
+                                if (window.notifications) window.notifications.show(msg, 'error');
+                                else window.showModalAlert(msg, 'error');
                                 btn.prop('disabled', false).text('Confirm Assignment');
                             }
                         },
                         error: function (xhr) {
-                            alert(xhr.responseJSON?.message || 'An error occurred.');
+                            const errMsg = xhr.responseJSON?.message || 'An error occurred.';
+                            if (window.notifications) window.notifications.show(errMsg, 'error');
+                            else window.showModalAlert(errMsg, 'error');
                             btn.prop('disabled', false).text('Confirm Assignment');
                         }
                     });

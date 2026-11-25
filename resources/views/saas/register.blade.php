@@ -20,6 +20,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
     <!-- SaaS Registration Styles -->
     <link rel="stylesheet" href="{{ asset('css/saas-register.css') }}?v={{ file_exists(public_path('css/saas-register.css')) ? filemtime(public_path('css/saas-register.css')) : time() }}">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        window.showAlert = function (message) {
+            if (window.Swal) {
+                window.Swal.fire({
+                    title: 'Notice',
+                    text: message,
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#c5a880',
+                    customClass: { popup: 'swal2-luxury' }
+                });
+            } else {
+                console.warn('[Alert]:', message);
+            }
+        };
+    </script>
 </head>
 
 <body class="bg-slate-50 h-screen w-full flex overflow-hidden">

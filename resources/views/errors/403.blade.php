@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>403 - Feature Not Available</title>
+    <title>403 - Access Restricted | {{ config('app.name', 'SalonPro') }}</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
+        :root {
+            --theme-primary: #0b0f17;
+            --theme-surface: #111724;
+            --theme-surface-card: rgba(17, 23, 36, 0.92);
+            --theme-accent: #c5a880;
+            --theme-accent-hover: #b38e5d;
+            --theme-accent-light: rgba(197, 168, 128, 0.12);
+            --theme-border: rgba(197, 168, 128, 0.22);
+            --theme-text-muted: #94a3b8;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -25,215 +36,223 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            background: linear-gradient(135deg, #fff5f7 0%, #ffe5ec 50%, #ffd6e0 100%);
             min-height: 100vh;
+            background: radial-gradient(circle at 50% 20%, #1a2232 0%, #0b0f17 75%, #05070a 100%);
+            color: #f8fafc;
+            overflow-x: hidden;
             position: relative;
         }
 
-        /* Animated background blobs */
-        .blob-container {
+        /* Ambient Luxury Glow Effects */
+        .ambient-glow {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
             overflow: hidden;
             z-index: 1;
         }
 
-        .blob {
+        .glow-1 {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.3;
-            animation: blob 20s infinite ease-in-out;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(197, 168, 128, 0.12) 0%, transparent 70%);
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: blur(80px);
         }
 
-        .blob-1 {
+        .glow-2 {
+            position: absolute;
             width: 400px;
             height: 400px;
-            background: linear-gradient(135deg, #ec4899, #f43f5e);
-            top: -100px;
-            left: -100px;
-            animation-delay: 0s;
+            background: radial-gradient(circle, rgba(179, 142, 93, 0.08) 0%, transparent 70%);
+            bottom: -50px;
+            right: 10%;
+            filter: blur(90px);
         }
 
-        .blob-2 {
-            width: 350px;
-            height: 350px;
-            background: linear-gradient(135deg, #f472b6, #fb7185);
-            top: -50px;
-            right: -100px;
-            animation-delay: 4s;
-        }
-
-        .blob-3 {
-            width: 300px;
-            height: 300px;
-            background: linear-gradient(135deg, #fda4af, #fbbf24);
-            bottom: -100px;
-            left: 20%;
-            animation-delay: 8s;
-        }
-
-        @keyframes blob {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-
-        /* Main container */
-        .error-container {
+        /* Error Container */
+        .error-wrapper {
             position: relative;
             z-index: 10;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
+            padding: 2rem 1.25rem;
         }
 
-        /* Glass card effect */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+        /* Luxury Glass Card */
+        .luxury-card {
+            background: var(--theme-surface-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--theme-border);
             border-radius: 24px;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 20px 60px rgba(236, 72, 153, 0.2);
-            max-width: 650px;
+            padding: 3rem 2.5rem;
+            max-width: 620px;
             width: 100%;
-            animation: slideUp 0.6s ease-out;
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65), 0 0 50px rgba(197, 168, 128, 0.08);
+            animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        @keyframes slideUp {
+        .luxury-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--theme-accent) 50%, transparent 100%);
+            opacity: 0.8;
+        }
+
+        @keyframes fadeInScale {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px) scale(0.98);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
-        /* Lock icon */
-        .icon-circle {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+        /* Shield Icon */
+        .icon-shield {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, rgba(197, 168, 128, 0.18) 0%, rgba(197, 168, 128, 0.05) 100%);
+            border: 1px solid var(--theme-border);
             border-radius: 50%;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 40px rgba(236, 72, 153, 0.4);
+            margin-bottom: 1.5rem;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(197, 168, 128, 0.15);
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 10px 40px rgba(236, 72, 153, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(236, 72, 153, 0.5); }
-        }
-
-        .icon-circle i {
+        .icon-shield i {
             font-size: 2.5rem;
-            color: white;
-        }
-
-        /* Error code */
-        .error-code {
-            font-size: 5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            background: linear-gradient(135deg, #f5e6d3 0%, var(--theme-accent) 50%, var(--theme-accent-hover) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        /* Error Code */
+        .error-num {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
             line-height: 1;
             margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #ffffff 0%, var(--theme-accent) 60%, var(--theme-accent-hover) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        /* Title and text */
-        .error-title {
-            font-size: 1.75rem;
+        .error-headline {
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #1f2937;
+            color: #ffffff;
             margin-bottom: 0.75rem;
+            letter-spacing: -0.3px;
         }
 
-        .error-message {
-            font-size: 1rem;
-            color: #6b7280;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
+        .error-desc {
+            color: var(--theme-text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        /* Plan badge */
-        .plan-badge {
-            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
-            color: white;
-            padding: 0.625rem 1.5rem;
-            border-radius: 50px;
+        /* Plan Badge */
+        .plan-pill {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            background: var(--theme-accent-light);
+            border: 1px solid var(--theme-border);
+            color: var(--theme-accent);
+            padding: 0.4rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
+            margin-bottom: 2rem;
         }
 
-        /* Buttons */
-        .btn-custom {
+        /* Luxury Buttons */
+        .btn-luxury-gold {
+            background: linear-gradient(135deg, var(--theme-accent) 0%, var(--theme-accent-hover) 100%);
+            color: #0b0f17 !important;
+            font-weight: 600;
             padding: 0.75rem 1.75rem;
-            border-radius: 50px;
-            font-weight: 600;
-            text-decoration: none;
+            border-radius: 12px;
+            border: none;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all 0.3s ease;
-            border: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 8px 24px rgba(197, 168, 128, 0.25);
+            text-decoration: none;
             font-size: 0.9rem;
         }
 
-        .btn-primary-custom {
-            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
-            color: white;
-            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
-        }
-
-        .btn-primary-custom:hover {
+        .btn-luxury-gold:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(236, 72, 153, 0.4);
-            color: white;
+            box-shadow: 0 12px 30px rgba(197, 168, 128, 0.35);
+            filter: brightness(1.08);
+            color: #05070a !important;
         }
 
-        .btn-secondary-custom {
-            background: white;
-            color: #ec4899;
-            border: 2px solid #ec4899;
+        .btn-luxury-outline {
+            background: rgba(255, 255, 255, 0.03);
+            color: #f1f5f9 !important;
+            border: 1px solid rgba(197, 168, 128, 0.35);
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
 
-        .btn-secondary-custom:hover {
-            background: #ec4899;
-            color: white;
+        .btn-luxury-outline:hover {
+            background: rgba(197, 168, 128, 0.1);
+            border-color: var(--theme-accent);
+            color: var(--theme-accent) !important;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
         }
 
-        /* Features section */
-        .features-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #f3f4f6;
+        /* Features Section */
+        .features-panel {
+            margin-top: 2rem;
+            padding-top: 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .features-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1f2937;
+        .features-heading {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            color: var(--theme-accent);
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
@@ -241,218 +260,191 @@
             gap: 0.5rem;
         }
 
-        .feature-badge {
-            background: linear-gradient(135deg, #fce7f3 0%, #fecdd3 100%);
-            color: #be123c;
-            padding: 0.5rem 1rem;
+        .feature-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            padding: 0.35rem 0.85rem;
             border-radius: 50px;
-            font-weight: 600;
             font-size: 0.8rem;
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            margin: 0.25rem;
-            border: 1px solid rgba(236, 72, 153, 0.2);
         }
 
-        /* Help text */
-        .help-text {
-            margin-top: 1.5rem;
-            color: #9ca3af;
+        .feature-chip i {
+            color: #10b981;
+            font-size: 0.75rem;
+        }
+
+        /* Help Info */
+        .support-info {
+            margin-top: 2rem;
             font-size: 0.8rem;
+            color: #64748b;
         }
 
-        .help-text a {
-            color: #ec4899;
+        .support-info a {
+            color: var(--theme-accent);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
         }
 
-        .help-text a:hover {
+        .support-info a:hover {
             text-decoration: underline;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .glass-card {
-                padding: 2rem 1.5rem;
+        @media (max-width: 576px) {
+            .luxury-card {
+                padding: 2.25rem 1.5rem;
+                border-radius: 18px;
             }
 
-            .error-code {
-                font-size: 4rem;
-            }
-
-            .error-title {
-                font-size: 1.5rem;
-            }
-
-            .icon-circle {
-                width: 80px;
-                height: 80px;
-            }
-
-            .icon-circle i {
-                font-size: 2rem;
-            }
-
-            .btn-custom {
-                padding: 0.625rem 1.25rem;
-                font-size: 0.85rem;
-            }
-        }
-
-        @media (max-height: 700px) {
-            .glass-card {
-                padding: 1.5rem;
-            }
-            
-            .error-code {
+            .error-num {
                 font-size: 3.5rem;
-                margin-bottom: 0.5rem;
             }
-            
-            .icon-circle {
-                width: 70px;
-                height: 70px;
-                margin-bottom: 1rem;
-            }
-            
-            .icon-circle i {
-                font-size: 1.75rem;
-            }
-            
-            .features-section {
-                margin-top: 1rem;
-                padding-top: 1rem;
+
+            .error-headline {
+                font-size: 1.25rem;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Animated background blobs -->
-    <div class="blob-container">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
+    <!-- Ambient Golden Glow -->
+    <div class="ambient-glow">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
     </div>
 
-    <!-- Main content -->
-    <div class="error-container">
-        <div class="glass-card text-center">
-            <!-- Lock icon -->
-            <div class="icon-circle">
-                <i class="fas fa-lock"></i>
+    <!-- Error Content -->
+    <div class="error-wrapper">
+        <div class="luxury-card text-center">
+            <!-- Shield Lock Icon -->
+            <div class="icon-shield">
+                <i class="fas fa-shield-halved"></i>
             </div>
 
-            <!-- Error code -->
-            <div class="error-code">403</div>
+            <!-- Error Code -->
+            <div class="error-num">403</div>
 
             <!-- Title -->
-            <h1 class="error-title">Feature Not Available</h1>
+            <h1 class="error-headline">Access Restricted</h1>
 
             <!-- Message -->
-            <p class="error-message">
-                {{ $exception->getMessage() ?: 'This feature is not available in your current plan. Please upgrade to access this feature.' }}
+            <p class="error-desc">
+                {{ $exception->getMessage() ?: 'You do not have sufficient permissions to view this section, or this feature is not included in your active plan.' }}
             </p>
 
-            <!-- Current Plan Info -->
-            @if(auth()->check() && auth()->user()->salon && auth()->user()->salon->activeSubscription)
+            <!-- Current Plan Badge (if available) -->
+            @if(auth()->check() && optional(auth()->user()->salon)->activeSubscription)
                 @php
                     $subscription = auth()->user()->salon->activeSubscription;
                     $plan = $subscription->plan;
                 @endphp
-                <div class="plan-badge">
+                <div class="plan-pill">
                     <i class="fas fa-crown"></i>
-                    <span>Current Plan: {{ $plan->name }}</span>
+                    <span>Current Tier: {{ $plan->name ?? 'Standard' }}</span>
                 </div>
             @endif
 
-            <!-- Action Buttons -->
-            <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
-                @if(auth()->check() && auth()->user()->hasRole('salon_admin'))
-                    @php
-                        $salonSlug = auth()->user()->salon ? auth()->user()?->salon?->slug : null;
-                    @endphp
-                    @if($salonSlug)
-                        <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}" class="btn-custom btn-primary-custom">
-                            <i class="fas fa-rocket"></i>
-                            Upgrade Plan
-                        </a>
-                    @endif
-                @endif
-                
-                @if(auth()->check())
-                    @php
-                        // Determine the correct dashboard route based on user role and salon
-                        $dashboardUrl = null;
-                        $user = auth()->user();
-                        
-                        if ($user->hasRole('super_admin')) {
-                            // Super admin goes to super admin dashboard
-                            $dashboardUrl = route('admin.super.dashboard');
-                        } elseif ($user->salon && $user->salon->slug) {
-                            // Regular users with salon go to salon dashboard
-                            $dashboardUrl = route('dashboard', ['salon_slug' => $user->salon->slug]);
-                        } else {
-                            // Fallback to home dashboard redirect
-                            $dashboardUrl = route('home.dashboard');
-                        }
-                    @endphp
+            <!-- Action Buttons with Role-Aware Resolution -->
+            <div class="d-flex gap-2 justify-content-center flex-wrap mb-2">
+                @php
+                    $dashboardUrl = route('home.dashboard');
+                    $salonSlug = null;
                     
-                    <a href="{{ $dashboardUrl }}" class="btn-custom btn-secondary-custom">
-                        <i class="fas fa-home"></i>
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('home') }}" class="btn-custom btn-secondary-custom">
-                        <i class="fas fa-home"></i>
-                        Home
+                    if (auth()->check()) {
+                        $user = auth()->user();
+                        $salonSlug = optional($user->salon)->slug ?? request()->segment(1);
+
+                        if ($user->hasRole('super_admin')) {
+                            $dashboardUrl = route('admin.super.dashboard');
+                        } elseif ($user->hasRole('customer')) {
+                            $dashboardUrl = $salonSlug ? route('customer.dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard');
+                        } elseif ($user->hasRole('employee')) {
+                            $dashboardUrl = $salonSlug ? route('employee.dashboard', ['salon_slug' => $salonSlug]) : route('home.dashboard');
+                        } elseif ($salonSlug) {
+                            $dashboardUrl = route('dashboard', ['salon_slug' => $salonSlug]);
+                        }
+                    }
+                @endphp
+
+                @if(auth()->check() && auth()->user()->hasRole('salon_admin') && $salonSlug)
+                    <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}" class="btn-luxury-gold">
+                        <i class="fas fa-rocket"></i>
+                        Upgrade Plan
                     </a>
                 @endif
-                
-                <button onclick="window.history.back()" class="btn-custom btn-secondary-custom">
+
+                <a href="{{ $dashboardUrl }}" class="btn-luxury-gold">
+                    <i class="fas fa-home"></i>
+                    Return to Dashboard
+                </a>
+
+                <button onclick="window.history.back()" class="btn-luxury-outline">
                     <i class="fas fa-arrow-left"></i>
                     Go Back
                 </button>
             </div>
 
-            <!-- Features Info -->
-            @if(auth()->check() && auth()->user()->salon && auth()->user()->salon->activeSubscription)
-                <div class="features-section">
-                    <div class="features-title">
-                        <i class="fas fa-star" style="color: #f59e0b;"></i>
-                        Your Available Features
-                    </div>
-                    <div class="d-flex flex-wrap gap-2 justify-content-center">
-                        @php
-                            $features = $plan->features ?? [];
-                            if (is_string($features)) {
-                                $features = json_decode($features, true) ?? [];
-                            }
-                        @endphp
-                        @if(count($features) > 0)
-                            @foreach($features as $feature)
-                                <span class="feature-badge">
-                                    <i class="fas fa-check-circle"></i>
-                                    {{ $feature }}
+            <!-- Features Breakdown (if subscription exists) -->
+            @if(auth()->check() && optional(auth()->user()->salon)->activeSubscription)
+                @php
+                    $planFeatures = $plan->features ?? [];
+                    if (is_string($planFeatures)) {
+                        $planFeatures = json_decode($planFeatures, true) ?? [];
+                    }
+                @endphp
+                @if(!empty($planFeatures))
+                    <div class="features-panel">
+                        <div class="features-heading">
+                            <i class="fas fa-gem"></i>
+                            Features Included in Your Plan
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            @foreach(array_slice($planFeatures, 0, 6) as $feat)
+                                <span class="feature-chip">
+                                    <i class="fas fa-check"></i>
+                                    {{ $feat }}
                                 </span>
                             @endforeach
-                        @else
-                            <p class="text-muted mb-0 small">No features available in your current plan.</p>
-                        @endif
+                        </div>
                     </div>
-                </div>
+                @endif
             @endif
 
-            <!-- Help Text -->
-            <div class="help-text">
-                <i class="fas fa-question-circle"></i>
-                Need help? Contact <a href="mailto:support@salon.com">support</a>
+            <!-- Support Footer with Dynamic SaaS Settings -->
+            @php
+                $settingsService = app(\App\Services\SettingsService::class);
+                $supportEmail = $settingsService->get('contact_email') 
+                                ?: $settingsService->get('business_email') 
+                                ?: config('mail.from.address', 'support@fsqatar.com');
+                $supportPhone = $settingsService->get('contact_phone') 
+                                ?: $settingsService->get('business_phone', '+974 66266581');
+                $cleanPhone = preg_replace('/[^\d+]/', '', $supportPhone);
+            @endphp
+            <div class="support-info d-flex align-items-center justify-content-center gap-3 flex-wrap">
+                <span>
+                    <i class="far fa-circle-question me-1"></i>
+                    Need assistance? Contact our team:
+                </span>
+                @if($supportEmail)
+                    <a href="mailto:{{ $supportEmail }}" class="text-decoration-none">
+                        <i class="fas fa-envelope me-1" style="color: var(--theme-accent);"></i>{{ $supportEmail }}
+                    </a>
+                @endif
+                @if($supportPhone)
+                    <span class="text-white-50">|</span>
+                    <a href="tel:{{ $cleanPhone }}" class="text-decoration-none">
+                        <i class="fas fa-phone me-1" style="color: var(--theme-accent);"></i>{{ $supportPhone }}
+                    </a>
+                @endif
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -500,6 +500,9 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                         Route::get('/dead-stock', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'deadStock'])->name('dead-stock');
                         Route::get('/profit-analysis', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'profitAnalysis'])->name('profit-analysis');
                         Route::get('/low-stock', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'lowStock'])->name('low-stock');
+                        Route::get('/service-consumption', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'serviceConsumption'])->name('service-consumption');
+                        Route::get('/service-profitability', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'serviceProfitability'])->name('service-profitability');
+                        Route::get('/wastage', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'wastageReport'])->name('wastage');
                         Route::get('/export/{type}', [\App\Http\Controllers\Inventory\InventoryReportController::class, 'export'])->name('export');
                     });
                 });
@@ -512,13 +515,13 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                     Route::delete('/{category}', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'destroy'])->name('destroy')->middleware('permission:inventory.categories.delete');
                     Route::get('/active', [\App\Http\Controllers\Inventory\InventoryCategoryController::class, 'getActiveCategories'])->name('active');
                 });
-            });
 
-            // Product Import/Export
-            Route::prefix('products')->name('products.')->group(function () {
-                Route::get('/template', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'downloadTemplate'])->name('template');
-                Route::post('/import', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'import'])->name('import')->middleware('permission:products.import');
-                Route::get('/export', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'export'])->name('export')->middleware('permission:products.export');
+                // Product Import/Export (Protected by Inventory Management plan feature & module - ISSUE-07)
+                Route::prefix('products')->name('products.')->group(function () {
+                    Route::get('/template', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'downloadTemplate'])->name('template');
+                    Route::post('/import', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'import'])->name('import')->middleware('permission:products.import');
+                    Route::get('/export', [\App\Http\Controllers\Admin\ProductImportExportController::class, 'export'])->name('export')->middleware('permission:products.export');
+                });
             });
 
             // Staff
@@ -748,6 +751,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 
     // Customer Routes
     Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->group(function () {
+        Route::get('/dashboard', [CustomerAppointmentController::class, 'index'])->name('dashboard');
         Route::get('/appointments', [CustomerAppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments/{booking}/rate', [CustomerAppointmentController::class, 'rate'])->name('appointments.rate');
         Route::get('/appointments/create', [CustomerAppointmentController::class, 'create'])->name('appointments.create');
@@ -765,14 +769,14 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
     });
 
     // Employee Routes (Group 2)
-    Route::prefix('employee')->name('employee.')->middleware('subscription')->group(function () {
+    Route::prefix('employee')->name('employee.')->middleware(['subscription', 'role:employee|salon_admin|manager|super_admin'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Staff\ScheduleController::class, 'index'])->name('dashboard');
         Route::get('/appointments', [App\Http\Controllers\Staff\ScheduleController::class, 'appointments'])->name('appointments.index');
         Route::get('/appointments/today', [App\Http\Controllers\Staff\ScheduleController::class, 'today'])->name('appointments.today');
         Route::get('/appointments/upcoming', [App\Http\Controllers\Staff\ScheduleController::class, 'upcoming'])->name('appointments.upcoming');
         Route::get('/appointments/completed', [App\Http\Controllers\Staff\ScheduleController::class, 'completed'])->name('appointments.completed');
-        Route::get('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'index'])->name('employee.bookings.index');
-        Route::get('/bookings/{booking}', [App\Http\Controllers\Admin\BookingController::class, 'show'])->name('employee.bookings.show');
+        Route::get('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'index'])->middleware('permission:bookings.view')->name('employee.bookings.index');
+        Route::get('/bookings/{booking}', [App\Http\Controllers\Admin\BookingController::class, 'show'])->middleware('permission:bookings.view')->name('employee.bookings.show');
         Route::get('/appointments/{id}', [App\Http\Controllers\Employee\AppointmentController::class, 'show'])->name('appointments.show');
         Route::get('/appointments/{id}/check-slot', [App\Http\Controllers\Employee\AppointmentController::class, 'checkSlot'])->name('appointments.check-slot');
         Route::post('/appointments/{id}/accept', [App\Http\Controllers\Employee\AppointmentController::class, 'accept'])->name('appointments.accept');
