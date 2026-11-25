@@ -7,6 +7,13 @@
         text-decoration: underline !important;
     }
 
+    /* By default on desktop (>=768px), mobile card cell is NEVER visible */
+    .bk-mobile-card-td,
+    #bookingsList td.bk-mobile-card-td,
+    #bookingsTable td.bk-mobile-card-td {
+        display: none !important;
+    }
+
     /* ===== MOBILE CARD STYLES for booking rows ===== */
     @media (max-width: 767.98px) {
         #bookingsList tr.bk-card-row {
@@ -24,7 +31,9 @@
             transform: scale(0.985);
             box-shadow: 0 1px 6px rgba(0,0,0,0.06);
         }
-        #bookingsList td { display: none !important; }
+        #bookingsList tr.bk-card-row td:not(.bk-mobile-card-td) {
+            display: none !important;
+        }
         #bookingsList td.bk-mobile-card-td {
             display: block !important;
             padding: 0 !important;
@@ -225,7 +234,7 @@
             </td>
 
             {{-- ===== MOBILE CARD (visible on mobile via CSS only) ===== --}}
-            <td class="bk-mobile-card-td">
+            <td class="bk-mobile-card-td d-none">
                 <div class="bk-mob-card">
                     {{-- Top row: avatar + name/phone + status --}}
                     <div class="bk-mob-top">

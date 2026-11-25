@@ -68,15 +68,15 @@ class ScheduleController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        // Get upcoming appointments (assigned to me AND pending, OR unassigned AND pending)
-        $upcomingAppointments = Booking::where(function ($query) use ($user) {
+        // Get upcoming appointments (assigned to me or unassigned pending, not completed/cancelled)
+        $upcomingQuery = Booking::where(function ($query) use ($user) {
             $query->where(function ($q1) use ($user) {
                 $q1->where('staff_id', $user->id)
-                    ->where('status', 'pending');
+                    ->whereNotIn('status', ['completed', 'cancelled']);
             })->orWhere(function ($q2) {
                 $q2->whereNull('staff_id')
                     ->where('staff_assignment_status', 'pending')
-                    ->where('status', 'pending');
+                    ->whereNotIn('status', ['completed', 'cancelled']);
             });
         })
             ->where('salon_id', $user->salon_id) // SECURITY: Explicit salon scoping
@@ -84,7 +84,11 @@ class ScheduleController extends Controller
             ->where(function ($q) use ($user) {
                 $q->whereNull('rejected_by_staff_id')
                     ->orWhere('rejected_by_staff_id', '!=', $user->id);
-            })
+            });
+
+        $upcomingAppointmentsCount = (clone $upcomingQuery)->count();
+
+        $upcomingAppointments = $upcomingQuery
             ->with(['customer', 'service', 'package'])
             ->orderBy('start_time')
             ->take(5)
@@ -100,7 +104,49 @@ class ScheduleController extends Controller
             ->take(5)
             ->get();
 
-        return view('staff.dashboard', compact('todayAppointments', 'upcomingAppointments', 'newBookings'));
+        $todayAppointmentsCount = $todayAppointments->count();
+
+        $completedQuery = Booking::where('staff_id', $user->id)
+            ->where('salon_id', $user->salon_id)
+            ->where('status', 'completed');
+        $completedAppointmentsCount = (clone $completedQuery)->count();
+        $totalRevenue = (clone $completedQuery)->sum('amount');
+
+        // Employee earned points and performance ratings
+        // Base points: 10 points per completed service
+        $servicePoints = $completedAppointmentsCount * 10;
+
+        // Customer ratings for this employee
+        $ratings = \App\Models\Rating::where('employee_id', $user->id)->get();
+        $ratingsCount = $ratings->count();
+        $avgRating = $ratingsCount > 0 ? round($ratings->avg('rating'), 1) : 5.0;
+
+        // Rating bonus points (20 pts for 5-star, 10 pts for 4-star)
+        $ratingBonusPoints = $ratings->sum(function ($r) {
+            return match ((int)$r->rating) {
+                5 => 20,
+                4 => 10,
+                default => 0,
+            };
+        });
+
+        // Total staff earned points
+        $employeeEarnedPoints = $servicePoints + $ratingBonusPoints;
+
+        return view('staff.dashboard', compact(
+            'todayAppointments',
+            'upcomingAppointments',
+            'newBookings',
+            'todayAppointmentsCount',
+            'upcomingAppointmentsCount',
+            'completedAppointmentsCount',
+            'totalRevenue',
+            'employeeEarnedPoints',
+            'servicePoints',
+            'ratingBonusPoints',
+            'avgRating',
+            'ratingsCount'
+        ));
     }
 
     /**

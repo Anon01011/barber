@@ -188,11 +188,13 @@
                 </div>
             </div>
 
+            @if(!empty($ratingUrl))
             <div class="rating-section">
                 <h2>How Was Your Experience?</h2>
                 <p>We would love to hear your feedback. Your rating helps us continuously improve our service quality.</p>
                 <a href="{{ $ratingUrl }}" class="btn">Rate Your Experience &rarr;</a>
             </div>
+            @endif
 
             <p class="thank-you">We look forward to serving you again soon.</p>
 

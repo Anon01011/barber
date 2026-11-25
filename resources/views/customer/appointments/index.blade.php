@@ -23,6 +23,83 @@
                             </div>
                         @endif
 
+                        @if(!empty($hasLoyalty))
+                        <!-- Customer Loyalty Rewards Balance Card -->
+                        <div class="card border-0 shadow-sm mb-3 text-white overflow-hidden" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); border-radius: 12px;">
+                            <div class="card-body p-3 p-md-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-7">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold text-uppercase me-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                                <i class="fas fa-coins me-1"></i> Loyalty Rewards
+                                            </span>
+                                            <span class="text-white-50 small">Customer VIP Tier</span>
+                                        </div>
+                                        <h5 class="fw-bold mb-1 text-white">Your Loyalty Points Balance</h5>
+                                        <p class="text-white-50 small mb-0">Earn points on every salon visit and redeem them for instant discounts at POS checkout.</p>
+                                    </div>
+                                    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                        <div class="display-6 fw-bold text-warning mb-0">
+                                            {{ number_format($loyaltyPoints ?? 0) }} <span class="fs-6 text-white-50">pts</span>
+                                        </div>
+                                        <div class="small text-white opacity-75">
+                                            Approx. Value: <strong>{{ currency_symbol() }}{{ number_format($loyaltyValue ?? 0, 2) }}</strong>
+                                            @if(($loyaltyPoints ?? 0) >= ($minPointsToRedeem ?? 50))
+                                                <span class="badge bg-success text-white ms-1" style="font-size: 0.65rem;">Ready to Redeem</span>
+                                            @else
+                                                <span class="badge bg-secondary text-white-50 ms-1" style="font-size: 0.65rem;">Min {{ $minPointsToRedeem ?? 50 }} pts to redeem</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if(isset($loyaltyTransactions) && $loyaltyTransactions->count() > 0)
+                                <div class="mt-3 pt-3 border-top border-white border-opacity-10">
+                                    <button class="btn btn-sm text-white p-0 text-decoration-none fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#loyaltyHistoryCollapse" aria-expanded="false" aria-controls="loyaltyHistoryCollapse">
+                                        <i class="fas fa-history me-1 text-warning"></i> View Points History <i class="fas fa-chevron-down ms-1 small"></i>
+                                    </button>
+                                    <div class="collapse mt-2" id="loyaltyHistoryCollapse">
+                                        <div class="table-responsive rounded-2" style="background: rgba(0,0,0,0.25);">
+                                            <table class="table table-sm table-borderless text-white mb-0" style="font-size: 0.8rem;">
+                                                <thead>
+                                                    <tr class="text-white-50 border-bottom border-white border-opacity-10">
+                                                        <th class="ps-2">Date</th>
+                                                        <th>Type</th>
+                                                        <th>Points</th>
+                                                        <th>Reason / Note</th>
+                                                        <th class="pe-2 text-end">Balance</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($loyaltyTransactions as $tx)
+                                                    <tr class="border-bottom border-white border-opacity-10">
+                                                        <td class="ps-2 text-white-50">{{ $tx->created_at ? $tx->created_at->format('M d, Y') : '-' }}</td>
+                                                        <td>
+                                                            @if($tx->type === 'earned')
+                                                                <span class="badge bg-success text-white" style="font-size: 0.65rem;">+ Earned</span>
+                                                            @elseif($tx->type === 'redeemed')
+                                                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">- Redeemed</span>
+                                                            @else
+                                                                <span class="badge bg-info text-white" style="font-size: 0.65rem;">{{ ucfirst($tx->type) }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="fw-bold {{ $tx->points > 0 ? 'text-success' : 'text-danger' }}">
+                                                            {{ $tx->points > 0 ? '+' : '' }}{{ number_format($tx->points) }}
+                                                        </td>
+                                                        <td class="text-white-50 text-truncate" style="max-width: 180px;">{{ $tx->notes ?: ($tx->reference_type ? class_basename($tx->reference_type) : '-') }}</td>
+                                                        <td class="pe-2 text-end font-monospace text-white">{{ number_format($tx->balance_after) }}</td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Compact Statistics Cards -->
                         <div class="row g-2 mb-3">
                             <div class="col-6 col-md-3">
@@ -244,13 +321,21 @@
                                                                 </button>
                                                             </form>
                                                         @endif
-                                                        @if($appointment->status === 'completed' && !$appointment->rating)
-                                                            <button type="button" class="btn btn-sm btn-outline-warning px-2"
-                                                                onclick="showRatingModal({{ $appointment->id }})"
-                                                                data-bs-toggle="tooltip" title="Rate Service"
-                                                                style="font-size: 0.75rem;">
-                                                                <i class="fas fa-star fa-fw"></i>
-                                                            </button>
+                                                        @if($appointment->status === 'completed')
+                                                            @if(!$appointment->is_rated && !$appointment->rating && !$appointment->ratings()->exists())
+                                                                <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-2 py-1 shadow-sm"
+                                                                    onclick="showRatingModal({{ $appointment->id }})"
+                                                                    data-bs-toggle="tooltip" title="Rate Service"
+                                                                    style="font-size: 0.75rem; border-radius: 6px;">
+                                                                    <i class="fas fa-star text-dark me-1"></i> Rate
+                                                                </button>
+                                                            @else
+                                                                <button type="button" class="btn btn-sm btn-light text-muted border px-2 py-1 shadow-none" disabled
+                                                                    data-bs-toggle="tooltip" title="Already Rated {{ $appointment->rating ?? 5 }}/5"
+                                                                    style="font-size: 0.75rem; border-radius: 6px;">
+                                                                    <i class="fas fa-check-circle text-success me-1"></i> Rated ({{ $appointment->rating ?? 5 }}/5 &#9733;)
+                                                                </button>
+                                                            @endif
                                                         @endif
                                                     </div>
                                                 </td>
@@ -452,6 +537,28 @@
                 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                     return new bootstrap.Tooltip(tooltipTriggerEl);
                 });
+
+                const ratingModalEl = document.getElementById('ratingModal');
+                if (ratingModalEl) {
+                    ratingModalEl.addEventListener('hidden.bs.modal', function () {
+                        const apptId = $('#appointment_id').val();
+                        if (apptId) {
+                            try {
+                                sessionStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
+                            } catch(e) {}
+                        }
+                    });
+                }
+
+                @if(!empty($pendingFeedbackBooking))
+                // Auto show feedback popup once per session for recent completed unrated appointment
+                const feedbackDismissKey = 'feedback_modal_dismissed_{{ $pendingFeedbackBooking->id }}';
+                if (!sessionStorage.getItem(feedbackDismissKey)) {
+                    setTimeout(function () {
+                        showRatingModal({{ $pendingFeedbackBooking->id }});
+                    }, 800);
+                }
+                @endif
             });
 
             function showRatingModal(appointmentId) {
@@ -476,6 +583,10 @@
                     return;
                 }
 
+                try {
+                    sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
+                } catch(e) {}
+
                 // Disable submit button and show loading state
                 const submitBtn = $('#submitRatingBtn');
                 submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...');
@@ -483,8 +594,11 @@
                 // Clear any previous errors
                 $('#ratingError').addClass('d-none');
 
+                const rateUrlTemplate = "{{ route('customer.appointments.rate', ['salon_slug' => request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? 'default', 'booking' => ':id']) }}";
+                const targetUrl = rateUrlTemplate.replace(':id', bookingId);
+
                 $.ajax({
-                    url: `/{{ request()->current_salon->slug ?? 'demo-salon' }}/customer/appointments/${bookingId}/rate`,
+                    url: targetUrl,
                     method: 'POST',
                     data: {
                         rating: rating,
@@ -513,7 +627,8 @@
                         submitBtn.prop('disabled', false).html('Submit Rating');
 
                         // Show error in modal
-                        $('#ratingError').removeClass('d-none').text('Error submitting rating. Please try again.');
+                        const errorMsg = xhr.responseJSON?.message || 'Error submitting rating. Please try again.';
+                        $('#ratingError').removeClass('d-none').text(errorMsg);
                     }
                 });
             }

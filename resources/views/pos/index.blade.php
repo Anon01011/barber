@@ -600,6 +600,18 @@
                                             <small id="membershipDates" class="ms-1"></small>
                                         </small>
                                     </div>
+                                    <div id="loyaltyPointsInfo" class="mt-2 d-none">
+                                        <div class="d-flex align-items-center justify-content-between bg-warning bg-opacity-10 border border-warning rounded px-2 py-1">
+                                            <small class="text-dark fw-semibold">
+                                                <i class="fas fa-coins text-warning me-1"></i>
+                                                <span id="customerLoyaltyPoints">0</span> pts (<span id="customerLoyaltyValue">{{ currency_symbol() }}0.00</span>)
+                                            </small>
+                                            <div class="form-check form-switch mb-0 ms-2">
+                                                <input class="form-check-input" type="checkbox" id="redeemLoyaltyToggle" title="Redeem Loyalty Points">
+                                                <label class="form-check-label small fw-bold text-primary" for="redeemLoyaltyToggle" style="cursor:pointer;">Redeem</label>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div id="assignMembershipSection" class="mt-2 d-none">
                                         <button class="btn btn-sm btn-outline-primary" id="assignMembershipBtn">
                                             <i class="fas fa-plus me-1"></i>Assign Membership
@@ -1057,6 +1069,9 @@
             let discountAmount = 0;
             let discountPercent = 0;
             let discountType = 'fixed'; // 'fixed' or 'percent'
+            let customerLoyaltyData = { enabled: false, points: 0, rate: 0.05, min_points: 50, max_pct: 50 };
+            let loyaltyPointsRedeemed = 0;
+            let loyaltyDiscountAmt = 0;
             let grossSubtotal = 0;
             let totalItemDiscount = 0;
             let netSubtotal = 0;
@@ -1250,24 +1265,101 @@
                     if (typeof fetchCustomerPackageBalances === 'function') {
                         fetchCustomerPackageBalances(id);
                     }
+
+                    // Fetch customer loyalty points
+                    if (typeof fetchCustomerLoyalty === 'function') {
+                        fetchCustomerLoyalty(id);
+                    }
                 }
+
+                let loyaltyRequestGen = 0;
+
+                function fetchCustomerLoyalty(customerId) {
+                    const reqGen = ++loyaltyRequestGen;
+                    // Reset loyalty state before each request
+                    customerLoyaltyData = { enabled: false, points: 0, rate: 0.05, min_points: 50, max_pct: 50 };
+                    loyaltyPointsRedeemed = 0;
+                    loyaltyDiscountAmt = 0;
+                    $('#loyaltyPointsInfo').addClass('d-none');
+                    $('#redeemLoyaltyToggle').prop('checked', false).prop('disabled', true);
+                    if (typeof updateCart === 'function') updateCart();
+
+                    const url = '{{ route("admin.pos.customer", ":id") }}'.replace(':id', customerId);
+                    $.get(url).done(function(res) {
+                        if (reqGen !== loyaltyRequestGen || String($('#customerId').val()) !== String(customerId)) {
+                            return;
+                        }
+                        if (res && res.loyalty_enabled) {
+                            customerLoyaltyData = {
+                                enabled: true,
+                                points: parseInt(res.loyalty_points || 0),
+                                rate: parseFloat(res.loyalty_redemption_rate || 0.05),
+                                min_points: parseInt(res.loyalty_min_points !== undefined && res.loyalty_min_points !== null ? res.loyalty_min_points : 50),
+                                max_pct: parseInt(res.loyalty_max_discount_pct || 50)
+                            };
+                            const val = (customerLoyaltyData.points * customerLoyaltyData.rate).toFixed(2);
+                            $('#customerLoyaltyPoints').text(customerLoyaltyData.points);
+                            $('#customerLoyaltyValue').text('{{ currency_symbol() }}' + val);
+                            if (customerLoyaltyData.points > 0) {
+                                $('#loyaltyPointsInfo').removeClass('d-none');
+                            } else {
+                                $('#loyaltyPointsInfo').addClass('d-none');
+                            }
+                            $('#redeemLoyaltyToggle').prop('disabled', customerLoyaltyData.points < customerLoyaltyData.min_points);
+                        } else {
+                            customerLoyaltyData.enabled = false;
+                            $('#loyaltyPointsInfo').addClass('d-none');
+                            $('#redeemLoyaltyToggle').prop('disabled', true);
+                        }
+                        $('#redeemLoyaltyToggle').prop('checked', false);
+                        loyaltyPointsRedeemed = 0;
+                        loyaltyDiscountAmt = 0;
+                        if (typeof updateCart === 'function') updateCart();
+                    }).fail(function() {
+                        if (reqGen !== loyaltyRequestGen) return;
+                        customerLoyaltyData.enabled = false;
+                        $('#loyaltyPointsInfo').addClass('d-none');
+                        $('#redeemLoyaltyToggle').prop('checked', false).prop('disabled', true);
+                        loyaltyPointsRedeemed = 0;
+                        loyaltyDiscountAmt = 0;
+                        if (typeof updateCart === 'function') updateCart();
+                    });
+                }
+
+                $('#redeemLoyaltyToggle').on('change', function() {
+                    if (typeof updateCart === 'function') updateCart();
+                });
 
 
                 // Handle customer clearing
                 $('#customerSelect').on('select2:clear', function () {
+                    loyaltyRequestGen++;
                     $('#customerId').val('');
                     $('#customerDisplay').addClass('d-none');
                     $('#customerSearchSection').removeClass('d-none');
+                    $('#loyaltyPointsInfo').addClass('d-none');
+                    $('#redeemLoyaltyToggle').prop('checked', false).prop('disabled', true);
+                    customerLoyaltyData = { enabled: false, points: 0, rate: 0.05, min_points: 50, max_pct: 50 };
+                    loyaltyPointsRedeemed = 0;
+                    loyaltyDiscountAmt = 0;
+                    if (typeof updateCart === 'function') updateCart();
                 });
 
                 // Clear customer button
                 $('#clearCustomerBtn').on('click', function () {
+                    loyaltyRequestGen++;
                     $('#customerSelect').val('').trigger('change');
                     $('#customerId').val('');
                     $('#customerDisplay').addClass('d-none');
                     $('#customerSearchSection').removeClass('d-none');
                     $('#membershipInfo').addClass('d-none');
+                    $('#loyaltyPointsInfo').addClass('d-none');
+                    $('#redeemLoyaltyToggle').prop('checked', false).prop('disabled', true);
+                    customerLoyaltyData = { enabled: false, points: 0, rate: 0.05, min_points: 50, max_pct: 50 };
+                    loyaltyPointsRedeemed = 0;
+                    loyaltyDiscountAmt = 0;
                     customerPackageBalances = [];
+                    if (typeof updateCart === 'function') updateCart();
                     showAlert('Customer cleared', 'info');
                 });
 
@@ -2225,6 +2317,22 @@
                         globalDiscount = Math.min(discountAmount, netSubtotal);
                     }
 
+                    // Calculate Loyalty Points Redemption
+                    loyaltyPointsRedeemed = 0;
+                    loyaltyDiscountAmt = 0;
+                    if ($('#redeemLoyaltyToggle').is(':checked') && customerLoyaltyData.enabled && customerLoyaltyData.points >= customerLoyaltyData.min_points) {
+                        const remainingAfterDiscount = Math.max(0, netSubtotal - globalDiscount);
+                        if (remainingAfterDiscount > 0) {
+                            const maxDiscByPct = (remainingAfterDiscount * customerLoyaltyData.max_pct) / 100;
+                            const maxDiscByPts = customerLoyaltyData.points * customerLoyaltyData.rate;
+                            const maxRawDiscount = Math.min(remainingAfterDiscount, Math.min(maxDiscByPct, maxDiscByPts));
+                            const eligiblePoints = Math.min(customerLoyaltyData.points, Math.floor((maxRawDiscount + 1e-9) / customerLoyaltyData.rate));
+                            loyaltyPointsRedeemed = Math.max(0, eligiblePoints);
+                            loyaltyDiscountAmt = Math.round(loyaltyPointsRedeemed * customerLoyaltyData.rate * 100) / 100;
+                            globalDiscount += loyaltyDiscountAmt;
+                        }
+                    }
+
                     // Calculate tax on the discounted amount
                     let tax = 0;
                     if (taxEnabledPos && netSubtotal > 0) {
@@ -2684,6 +2792,11 @@
 
                     // Reset customer balances/memberships
                     $('#membershipInfo').addClass('d-none');
+                    $('#loyaltyPointsInfo').addClass('d-none');
+                    $('#redeemLoyaltyToggle').prop('checked', false);
+                    customerLoyaltyData = { enabled: false, points: 0, rate: 0.05, min_points: 50, max_pct: 50 };
+                    loyaltyPointsRedeemed = 0;
+                    loyaltyDiscountAmt = 0;
                     if (typeof customerPackageBalances !== 'undefined') {
                         customerPackageBalances = [];
                     }
@@ -3033,6 +3146,7 @@
                         other_amount: other,
                         discount_amount: discountPercent > 0 ? discountPercent : discountAmount,
                         discount_type: discountPercent > 0 ? 'percent' : 'fixed',
+                        loyalty_points_redeemed: loyaltyPointsRedeemed,
                         payment_method: selectedPaymentMethod,
                         notes: $('#saleNotes').val() || '',
                         tendered_amount: ['cash'].includes(selectedPaymentMethod) ? $('#amountReceived').val() : 0,

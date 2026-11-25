@@ -139,6 +139,16 @@ trait HandlesSalonSettings
             'enable_ai_inventory_alerts' => 'nullable|boolean',
             'enable_ai_dynamic_yield_pricing' => 'nullable|boolean',
             'enable_ai_floating_widget' => 'nullable|boolean',
+
+            // Loyalty & Feedback Settings
+            'loyalty_enabled' => 'nullable|boolean',
+            'loyalty_points_per_currency' => 'nullable|integer|min:1|max:1000',
+            'loyalty_point_redemption_rate' => 'nullable|numeric|min:0.001|max:1000',
+            'loyalty_min_points_to_redeem' => 'nullable|integer|min:0|max:100000',
+            'loyalty_max_discount_percentage' => 'nullable|integer|min:1|max:100',
+            'loyalty_points_expiry_months' => 'nullable|integer|min:0|max:120',
+            'feedback_enabled' => 'nullable|boolean',
+            'feedback_auto_send_email' => 'nullable|boolean',
         ];
     }
 
@@ -201,20 +211,30 @@ trait HandlesSalonSettings
                 'enable_ai_visual_consultation',
                 'enable_ai_noshow_prevention',
                 'enable_ai_marketing_generator',
-                'enable_ai_whatsapp_assistant'
+                'enable_ai_whatsapp_assistant',
+                'loyalty_enabled',
+                'feedback_enabled',
+                'feedback_auto_send_email',
             ];
 
             foreach ($booleanFields as $field) {
                 $value = $request->boolean($field);
 
-                // Security Check: Only allow enabling if plan supports the feature
-                if ($field === 'enable_sms' && $value && !$salon->canUseFeature('SMS Notifications')) {
+                $entitlementSvc = app(\App\Services\ModuleEntitlementService::class);
+                // Security Check: Only allow enabling if plan/global/dependencies support the feature
+                if ($field === 'enable_sms' && $value && !$entitlementSvc->isEntitledByPlan($salon, 'sms')) {
                     $value = false;
                 }
-                if ($field === 'enable_whatsapp' && $value && !$salon->canUseFeature('WhatsApp Notifications')) {
+                if ($field === 'enable_whatsapp' && $value && !$entitlementSvc->isEntitledByPlan($salon, 'whatsapp')) {
                     $value = false;
                 }
                 if (in_array($field, ['enable_ai_insights', 'enable_ai_churn_auto_marketing', 'enable_ai_inventory_alerts', 'enable_ai_dynamic_yield_pricing', 'enable_ai_floating_widget', 'enable_ai_visual_consultation', 'enable_ai_noshow_prevention', 'enable_ai_marketing_generator', 'enable_ai_whatsapp_assistant']) && $value && !$salon->canUseFeature('AI Insights & Automation')) {
+                    $value = false;
+                }
+                if ($field === 'loyalty_enabled' && $value && !$entitlementSvc->isEntitledByPlan($salon, 'loyalty')) {
+                    $value = false;
+                }
+                if (in_array($field, ['feedback_enabled', 'feedback_auto_send_email']) && $value && !$entitlementSvc->isEntitledByPlan($salon, 'feedback')) {
                     $value = false;
                 }
 
@@ -317,13 +337,31 @@ trait HandlesSalonSettings
                 'mail_password',
                 'mail_encryption',
                 'mail_from_address',
-                'mail_from_name'
+                'mail_from_name',
+
+                // Loyalty settings
+                'loyalty_points_per_currency',
+                'loyalty_point_redemption_rate',
+                'loyalty_min_points_to_redeem',
+                'loyalty_max_discount_percentage',
+                'loyalty_points_expiry_months',
+            ];
+
+            $loyaltyDefaults = [
+                'loyalty_points_per_currency' => 1,
+                'loyalty_point_redemption_rate' => 0.05,
+                'loyalty_min_points_to_redeem' => 50,
+                'loyalty_max_discount_percentage' => 50,
+                'loyalty_points_expiry_months' => 12,
             ];
 
             $salonUpdates = [];
             foreach ($fieldsToUpdate as $field) {
                 if ($request->has($field)) {
                     $value = $request->input($field);
+                    if (array_key_exists($field, $loyaltyDefaults) && ($value === null || $value === '')) {
+                        $value = $loyaltyDefaults[$field];
+                    }
                     $this->settingsService->set($field, $value, $salonId);
 
                     // Sync Salon Model Core Fields

@@ -1,5 +1,16 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    @media (min-width: 768px) {
+        .bk-mobile-card-td,
+        #bookingsTableBody td.bk-mobile-card-td {
+            display: none !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
     <div class="container-fluid py-4">
         <div class="row">

@@ -70,7 +70,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 @auth
-                    @if(\App\Helpers\ModuleHelper::branchesEnabled() && session('current_branch_name') && session('current_branch_name') !== 'All Branches')
+                    @if(optional(auth()->user()->salon)->hasBranchModule() && session('current_branch_name') && session('current_branch_name') !== 'All Branches')
                         <div class="ms-3">
                             <span
                                 class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
@@ -366,6 +366,21 @@
                                         </li>
                                     @endif
                                 </ul>
+                            </div>
+                        @endif
+
+                        @if(($portalContext === 'customer' || auth()->user()->hasRole('customer')) && \App\Helpers\ModuleHelper::loyaltyEnabled() && (optional(auth()->user()->salon)->hasLoyaltyProgram() || (method_exists(optional(auth()->user()->salon), 'isOnTrial') && optional(auth()->user()->salon)->isOnTrial())))
+                            @php
+                                $custPoints = auth()->user()->customer?->loyalty_points ?? 0;
+                            @endphp
+                            <div class="me-2 me-md-3">
+                                <span class="badge rounded-pill d-inline-flex align-items-center gap-1 px-2 px-md-3 py-2 shadow-sm"
+                                    style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 0.78rem;"
+                                    title="Your Loyalty Points">
+                                    <i class="fas fa-coins text-warning"></i>
+                                    <span class="fw-bold">{{ number_format($custPoints) }}</span>
+                                    <span class="d-none d-sm-inline text-white-50 ms-1" style="font-size: 0.7rem;">pts</span>
+                                </span>
                             </div>
                         @endif
 

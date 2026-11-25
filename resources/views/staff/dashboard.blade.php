@@ -31,6 +31,51 @@
             </div>
         </div>
 
+        <!-- Employee Performance & Earned Points Banner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; border-left: 5px solid #eab308 !important;">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold text-uppercase me-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-trophy me-1"></i> Staff Performance &amp; Points
+                                    </span>
+                                    <span class="text-white-50 small">Service Excellence Tier</span>
+                                </div>
+                                <h4 class="fw-bold mb-1 text-white">Your Earned Points &amp; Client Reputation</h4>
+                                <p class="text-white-50 small mb-0">
+                                    Earn 10 points for every completed service plus up to 20 bonus points for 5-star customer ratings!
+                                </p>
+                            </div>
+                            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                <div class="d-inline-flex flex-column align-items-md-end">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="text-center px-3 py-2 rounded-3" style="background: rgba(255, 255, 255, 0.07);">
+                                            <div class="fs-4 fw-bold text-warning mb-0">
+                                                <i class="fas fa-coins me-1"></i>{{ number_format($employeeEarnedPoints ?? 0) }}
+                                            </div>
+                                            <div class="text-white-50" style="font-size: 0.72rem;">Earned Points</div>
+                                        </div>
+                                        <div class="text-center px-3 py-2 rounded-3" style="background: rgba(255, 255, 255, 0.07);">
+                                            <div class="fs-4 fw-bold text-warning mb-0">
+                                                <i class="fas fa-star text-warning me-1"></i>{{ number_format($avgRating ?? 5.0, 1) }}
+                                            </div>
+                                            <div class="text-white-50" style="font-size: 0.72rem;">{{ $ratingsCount ?? 0 }} Reviews</div>
+                                        </div>
+                                    </div>
+                                    <div class="small text-white-50 mt-2">
+                                        Breakdown: <span class="text-white">{{ $servicePoints ?? 0 }} pts</span> (services) + <span class="text-white">{{ $ratingBonusPoints ?? 0 }} pts</span> (ratings)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stats Cards -->
         <div class="row g-4 mb-5">
             <!-- Today's Appointments -->

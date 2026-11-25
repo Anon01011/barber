@@ -1,4 +1,4 @@
-@if(auth()->check() && auth()->user()->hasRole(['salon_admin', 'super_admin']))
+@if(auth()->check() && auth()->user()->hasRole(['salon_admin', 'super_admin']) && optional(auth()->user()->salon)->hasBranchModule())
     @php
         $salon = auth()->user()->salon;
         $currentBranch = app()->has('current_branch') ? app('current_branch') : null;

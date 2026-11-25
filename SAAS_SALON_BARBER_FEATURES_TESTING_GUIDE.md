@@ -192,12 +192,36 @@ The inventory suite features 8 specialized reporting dashboards, each accessible
 
 ---
 
-### MODULE 10: CUSTOMER CRM & LOYALTY
+### MODULE 10: CUSTOMER CRM & LOYALTY POINTS ENGINE
 
 #### Key Capabilities:
 1. **Customer Dossier:** Complete history of visits, services performed, preferred barbers, allergies, formula notes, and total lifetime spend (`total_spent`, `last_visit_at`).
-2. **Customer Rewards & Retention (Memberships & Packages):** Currently handled via **Memberships** (discounts/credits) and **Service Packages** (prepaid bundle balances). *(Note: Points-per-dollar loyalty ledger is currently a settings toggle in `SettingsService`, not yet a transactional database table in POS).*
-3. **Tenant-Safe Contact Isolation:** Customer telephone and email lookups are strictly compound-scoped (`salon_id, phone`), preventing collision across salons.
+2. **Loyalty Points & Rewards (Plan Feature Gated):** Salons on plans featuring `Loyalty Program` can enable points in Salon Settings -> Loyalty & Feedback, configure earn rates (points per currency unit), redemption value (e.g. $0.05/pt), minimum points threshold, and max discount percentage per bill.
+3. **POS Points Earn & Redeem:** POS displays customer's available points balance and dollar value; one-click "Redeem" applies point discount while automatically awarding points on net paid amounts via `loyalty_transactions`.
+4. **Tenant-Safe Contact Isolation:** Customer telephone and email lookups are strictly compound-scoped (`salon_id, phone`), preventing collision across salons.
+
+#### QA Test Cases:
+| Test ID | Test Scenario | Steps | Expected Result |
+|---|---|---|---|
+| **LOY-01** | SaaS Plan Gating | 1. Assign salon to plan WITHOUT `Loyalty Program`; open Salon Settings -> Loyalty & Feedback.<br>2. Submit a forced-toggle POST to loyalty settings endpoint. | 1. Unavailable loyalty controls are omitted, and the entire tab is omitted when customer feedback is also unavailable in the plan.<br>2. Backend ignores forced toggle POSTs and keeps loyalty disabled. |
+| **LOY-02** | Configure Loyalty Rules | On enabled plan, open Loyalty & Feedback tab, enable program, set 1 pt/$1, $0.05/pt value, 50 min pts | Settings save cleanly; `LoyaltyService::isEnabled()` returns true. |
+| **LOY-03** | Earn & Redeem at POS | Select customer with 100 pts ($5.00), toggle "Redeem" on $40 bill, checkout | Bill reduces by $5.00 to $35.00; 100 pts deducted (`redeemed`), 35 pts awarded (`earned`). |
+
+---
+
+### MODULE 11: CUSTOMER FEEDBACK & STAR REVIEWS
+
+#### Key Capabilities:
+1. **SaaS Plan Gating:** Gated by `Customer Feedback & Reviews` feature in Super Admin subscription plans.
+2. **Public Tokenized Review Portal (`/booking/rate/{token}`):** Mobile-friendly 5-star review form requiring no customer login, protected against replay and token expiration.
+3. **Salon Admin Feedback Dashboard (`/{salon_slug}/admin/feedback`):** Displays overall average rating, star distribution bars, and filterable reviews by specialist or star rating.
+
+#### QA Test Cases:
+| Test ID | Test Scenario | Steps | Expected Result |
+|---|---|---|---|
+| **FDB-01** | Public Review Submission | Complete booking to generate `rating_token`; visit `/booking/rate/{token}`, select 5 stars + comment, submit | Review saves on booking (`is_rated = true`), token invalidates, thank-you page renders. |
+| **FDB-02** | Replay Prevention | Revisit `/booking/rate/{token}` after submission | Displays "Thank You / Invalid Review Link" message; prevents duplicate submissions. |
+| **FDB-03** | Admin Dashboard & Filter | Open `/{slug}/admin/feedback`; filter by specialist or 1-star rating | KPI cards reflect updated average rating; table filters accurately. |
 
 ---
 

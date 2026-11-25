@@ -6,90 +6,95 @@
         --primary-light: rgba(197, 168, 128, 0.12);
         --primary-dark: var(--theme-accent-hover, #b38e5d);
         --border-color: #e2e8f0;
-        --text-color: #334155;
+        --text-color: #1e293b;
     }
 
     #editCustomerModal .modal-content {
-        border-radius: 14px;
+        border-radius: 16px;
         border: none;
         overflow: hidden;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
     }
 
     #editCustomerModal .modal-header {
-        border-bottom: 1px solid rgba(197, 168, 128, 0.25);
-        padding: 1.25rem 1.5rem;
-        background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%);
+        background: linear-gradient(135deg, #0b0f17 0%, #1e2638 50%, #0f172a 100%);
+        border-bottom: 1px solid rgba(197, 168, 128, 0.3) !important;
+        padding: 1.25rem 1.75rem;
         position: relative;
-        overflow: hidden;
-    }
-
-    #editCustomerModal .modal-header:before {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 100%;
-        height: 100%;
-        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
-        opacity: 0.5;
     }
 
     #editCustomerModal .modal-title {
-        font-weight: 600;
+        font-weight: 700;
         color: #fff !important;
-        font-size: 1.25rem;
-        letter-spacing: -0.3px;
-        position: relative;
-        display: flex;
+        font-size: 1.2rem;
+        letter-spacing: -0.2px;
         margin: 0;
-        line-height: 1.2;
+        line-height: 1.3;
+    }
+
+    #editCustomerModal .header-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(197, 168, 128, 0.15);
+        border: 1px solid rgba(197, 168, 128, 0.3);
+        display: flex;
         align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(197, 168, 128, 0.15);
+    }
+
+    #editCustomerModal .nav-pills {
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
     }
 
     #editCustomerModal .nav-pills .nav-link {
         color: #64748b;
-        font-weight: 500;
-        padding: 0.5rem 1.25rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
         border-radius: 8px;
-        transition: all 0.15s ease;
-        font-size: 0.875rem;
-        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
     #editCustomerModal .nav-pills .nav-link.active {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, #c5a880 0%, #b38e5d 100%);
         color: #fff;
+        box-shadow: 0 4px 10px rgba(197, 168, 128, 0.35);
     }
 
     #editCustomerModal .nav-pills .nav-link:hover:not(.active) {
-        background-color: #f1f5f9;
-        color: #334155;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #0f172a;
     }
 
     #editCustomerModal .form-label {
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.8rem;
         color: #475569;
         margin-bottom: 0.35rem;
         display: flex;
         align-items: center;
-    }
-
-    #editCustomerModal .form-label i {
-        color: #64748b;
-        font-size: 0.85rem;
+        gap: 0.35rem;
     }
 
     #editCustomerModal .form-control,
     #editCustomerModal .form-select {
-        height: 38px;
-        font-size: 0.85rem;
+        height: 40px;
+        font-size: 0.875rem;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 0.375rem 0.75rem;
+        padding: 0.45rem 0.85rem;
         color: var(--text-color);
         transition: all 0.15s ease-in-out;
+        background-color: #fff;
     }
 
     #editCustomerModal textarea.form-control {
@@ -100,16 +105,47 @@
     #editCustomerModal .form-control:focus,
     #editCustomerModal .form-select:focus {
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.2);
+        box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.22);
         outline: none;
     }
 
-    #editCustomerModal .iti {
-        width: 100%;
+    #editCustomerModal .portal-card {
+        border: 1px solid #e8dccb !important;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ffffff 0%, #faf8f5 100%);
+        box-shadow: 0 4px 12px rgba(197, 168, 128, 0.08);
+        transition: all 0.2s ease;
     }
 
-    #editCustomerModal .iti input[type="tel"] {
-        padding-left: 90px !important;
+    #editCustomerModal .portal-card.active-portal {
+        border-color: #c5a880 !important;
+        box-shadow: 0 6px 16px rgba(197, 168, 128, 0.18);
+    }
+
+    #editCustomerModal .selection-pill {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.65rem 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    #editCustomerModal .selection-pill:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+
+    #editCustomerModal .selection-pill.active {
+        border-color: var(--primary-color);
+        background: rgba(197, 168, 128, 0.08);
+    }
+
+    #editCustomerModal .pass-strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+        background: #e2e8f0;
     }
 
     #editCustomerModal .form-check-input:checked {
@@ -117,78 +153,71 @@
         border-color: var(--primary-color);
     }
 
-    #editCustomerModal .btn {
-        height: 38px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        padding: 0.375rem 1.25rem;
+    #editCustomerModal .btn-save-luxury {
+        background: linear-gradient(135deg, #c5a880 0%, #b38e5d 100%);
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        padding: 0.5rem 1.4rem;
         border-radius: 8px;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        box-shadow: 0 4px 12px rgba(197, 168, 128, 0.35);
+        transition: all 0.2s ease;
     }
 
-    #editCustomerModal .btn-primary {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    #editCustomerModal .btn-primary:hover {
-        background-color: var(--primary-dark);
-        border-color: var(--primary-dark);
+    #editCustomerModal .btn-save-luxury:hover {
+        background: linear-gradient(135deg, #b38e5d 0%, #9f7947 100%);
+        color: #fff;
         transform: translateY(-1px);
-    }
-
-    #editCustomerModal .btn-outline-secondary {
-        border: 1px solid #cbd5e1;
-        color: #475569;
-    }
-
-    #editCustomerModal .btn-outline-secondary:hover {
-        background-color: #f8fafc;
-        color: #1e293b;
+        box-shadow: 0 6px 16px rgba(197, 168, 128, 0.45);
     }
 </style>
 
-<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <!-- Modern Header with Gradient and fixed transparent icon bg -->
+            <!-- Luxury Header -->
             <div class="modal-header text-white">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(197, 168, 128, 0.15);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon-box">
                         <i class="fas fa-user-edit fa-lg" style="color: #c5a880;"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title m-0">Edit Customer</h5>
-                        <p class="m-0" style="font-size: 0.75rem; opacity: 0.8; line-height: 1.2;">Update customer details & preferences</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title" id="editCustomerModalLabel">Edit Customer Profile</h5>
+                            <span class="badge" id="headerCustomerCode" style="background: rgba(197, 168, 128, 0.2); color: #e8dccb; font-size: 0.75rem; border: 1px solid rgba(197, 168, 128, 0.3);"></span>
+                        </div>
+                        <p class="m-0 text-white-50" style="font-size: 0.78rem;">Manage client details, contact information, and portal login credentials</p>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white opacity-100" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-4">
                 {{-- Tabs Navigation --}}
-                <ul class="nav nav-pills mb-4 d-flex justify-content-center gap-2" id="editCustomerTabs" role="tablist">
+                <ul class="nav nav-pills mb-4 d-flex justify-content-center gap-1" id="editCustomerTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="basic-tab" data-bs-toggle="pill" data-bs-target="#basic-pane"
                             type="button" role="tab" aria-controls="basic-pane" aria-selected="true">
-                            <i class="fas fa-user me-2"></i>Profile & Basic
+                            <i class="fas fa-user"></i> Profile & Basic
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="contact-tab" data-bs-toggle="pill" data-bs-target="#contact-pane"
                             type="button" role="tab" aria-controls="contact-pane" aria-selected="false">
-                            <i class="fas fa-phone me-2"></i>Contact & Address
+                            <i class="fas fa-address-book"></i> Contact & Address
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="portal-tab" data-bs-toggle="pill" data-bs-target="#portal-pane"
+                            type="button" role="tab" aria-controls="portal-pane" aria-selected="false">
+                            <i class="fas fa-key"></i> Portal & Security
+                            <span class="badge rounded-pill bg-warning text-dark ms-1 d-none" id="portalTabBadge" style="font-size: 0.65rem;">Active</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="preferences-tab" data-bs-toggle="pill" data-bs-target="#preferences-pane"
                             type="button" role="tab" aria-controls="preferences-pane" aria-selected="false">
-                            <i class="fas fa-cog me-2"></i>Preferences & Notes
+                            <i class="fas fa-sliders-h"></i> Preferences & Notes
                         </button>
                     </li>
                 </ul>
@@ -203,25 +232,30 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="editFirstName" class="form-label">
-                                        <i class="fas fa-user me-2"></i>First Name *
+                                        <i class="fas fa-user text-muted"></i> First Name <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" class="form-control" id="editFirstName" name="first_name" required placeholder="Enter first name">
+                                    <input type="text" class="form-control" id="editFirstName" name="first_name" required placeholder="e.g. Ketan">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editLastName" class="form-label">
-                                        <i class="fas fa-user me-2"></i>Last Name
+                                        <i class="fas fa-user text-muted"></i> Last Name
                                     </label>
-                                    <input type="text" class="form-control" id="editLastName" name="last_name" placeholder="Enter last name">
+                                    <input type="text" class="form-control" id="editLastName" name="last_name" placeholder="e.g. Mhatre">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editCustomerId" class="form-label">
-                                        <i class="fas fa-id-card me-2"></i>Customer ID
+                                        <i class="fas fa-id-card text-muted"></i> Customer ID
                                     </label>
-                                    <input type="text" class="form-control bg-light" id="editCustomerId" readonly disabled>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-light font-monospace" id="editCustomerId" readonly disabled style="font-weight: 600; color: #475569;">
+                                        <button class="btn btn-outline-secondary" type="button" title="Copy Customer ID" onclick="copyCustomerId()">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editGender" class="form-label">
-                                        <i class="fas fa-venus-mars me-2"></i>Gender
+                                        <i class="fas fa-venus-mars text-muted"></i> Gender
                                     </label>
                                     <select class="form-select" id="editGender" name="gender">
                                         <option value="">Select Gender</option>
@@ -232,26 +266,26 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label for="editDob" class="form-label">
-                                        <i class="fas fa-calendar-alt me-2"></i>Date of Birth
+                                        <i class="fas fa-birthday-cake text-muted"></i> Date of Birth
                                     </label>
                                     <input type="date" class="form-control" id="editDob" name="dob">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="editAnniversary" class="form-label">
-                                        <i class="fas fa-heart me-2"></i>Anniversary Date
+                                        <i class="fas fa-heart text-muted"></i> Anniversary Date
                                     </label>
                                     <input type="date" class="form-control" id="editAnniversary" name="anniversary">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="editSource" class="form-label">
-                                        <i class="fas fa-bullhorn me-2"></i>Source
+                                        <i class="fas fa-bullhorn text-muted"></i> Client Source
                                     </label>
                                     <select class="form-select" id="editSource" name="source">
                                         <option value="">Select Source</option>
                                         <option value="walk-in">Walk-in</option>
-                                        <option value="referral">Referral</option>
-                                        <option value="online">Online</option>
-                                        <option value="social-media">Social Media</option>
+                                        <option value="referral">Referral / Word of Mouth</option>
+                                        <option value="online">Online Booking</option>
+                                        <option value="social-media">Instagram / Social Media</option>
                                         <option value="advertisement">Advertisement</option>
                                         <option value="other">Other</option>
                                     </select>
@@ -264,163 +298,208 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="editPhone" class="form-label">
-                                        <i class="fas fa-phone me-2"></i>Mobile Number *
+                                        <i class="fas fa-phone text-muted"></i> Mobile Number <span class="text-danger">*</span>
                                     </label>
-                                    <input type="tel" class="form-control" id="editPhone" name="phone" required placeholder="Enter mobile number">
+                                    <input type="tel" class="form-control" id="editPhone" name="phone" required placeholder="e.g. +974 66266581">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editSecondaryNumber" class="form-label">
-                                        <i class="fas fa-phone-alt me-2"></i>Secondary Phone
+                                        <i class="fas fa-phone-alt text-muted"></i> Secondary / Alternate Phone
                                     </label>
-                                    <input type="tel" class="form-control" id="editSecondaryNumber" name="secondary_number" placeholder="Enter alternate number">
+                                    <input type="tel" class="form-control" id="editSecondaryNumber" name="secondary_number" placeholder="Optional alternate number">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editEmail" class="form-label" id="editEmailLabel">
-                                        <i class="fas fa-envelope me-2"></i>Email Address
+                                        <i class="fas fa-envelope text-muted"></i> Email Address
                                     </label>
-                                    <input type="email" class="form-control" id="editEmail" name="email" placeholder="email@example.com">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fas fa-at"></i></span>
+                                        <input type="email" class="form-control" id="editEmail" name="email" placeholder="client@example.com" oninput="syncPortalEmailPreview()">
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.72rem;">Required if Client Portal login access is enabled</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editPreferredContact" class="form-label">
-                                        <i class="fas fa-comments me-2"></i>Preferred Contact Method
+                                        <i class="fas fa-comments text-muted"></i> Preferred Contact Method
                                     </label>
                                     <select class="form-select" id="editPreferredContact" name="preferred_contact" required>
-                                        <option value="phone">Phone</option>
+                                        <option value="phone">Phone Call</option>
                                         <option value="email">Email</option>
-                                        <option value="sms">SMS</option>
+                                        <option value="sms">SMS / Text Message</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editLocation" class="form-label">
-                                        <i class="fas fa-map-marker-alt me-2"></i>Location (City/State)
+                                        <i class="fas fa-map-marker-alt text-muted"></i> City / Area
                                     </label>
                                     <input type="text" class="form-control" id="editLocation" name="location" placeholder="e.g., Doha, Qatar">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editAddress" class="form-label">
-                                        <i class="fas fa-home me-2"></i>Full Address
+                                        <i class="fas fa-home text-muted"></i> Full Street Address
                                     </label>
-                                    <textarea class="form-control" id="editAddress" name="address" rows="1" placeholder="Enter address details..."></textarea>
+                                    <textarea class="form-control" id="editAddress" name="address" rows="2" placeholder="Street, Building, Flat / Villa No..."></textarea>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Tab 3: Preferences & Notes --}}
+                        {{-- Tab 3: Dedicated Portal & Security Tab --}}
+                        <div class="tab-pane fade" id="portal-pane" role="tabpanel" aria-labelledby="portal-tab">
+                            <div class="portal-card p-3 mb-3" id="portalMainCard">
+                                <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(197, 168, 128, 0.2); width: 42px; height: 42px;">
+                                            <i class="fas fa-shield-alt fa-lg" style="color: #c5a880;"></i>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h6 class="mb-0 fw-bold text-dark">Client Portal Login Access</h6>
+                                                <span id="portalActiveStatusPill" class="badge" style="font-size: 0.72rem; padding: 4px 8px;"></span>
+                                            </div>
+                                            <small class="text-muted">Allows this client to sign in, view appointments, book services, and redeem loyalty points</small>
+                                        </div>
+                                    </div>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" name="grant_login_access" value="1" id="grantLoginToggle_EDIT" style="width: 44px; height: 22px; cursor: pointer;" onchange="togglePortalSection()">
+                                    </div>
+                                </div>
+
+                                {{-- Warning if Email Missing --}}
+                                <div id="portalMissingEmailWarning" class="alert alert-warning py-2 px-3 mb-3 d-none align-items-center justify-content-between" style="border-radius: 8px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        <span class="small">An email address is required to activate portal login access.</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-warning text-dark py-0 px-2" onclick="switchToContactTab()">
+                                        Add Email
+                                    </button>
+                                </div>
+
+                                {{-- Portal Fields (revealed when toggle is ON) --}}
+                                <div id="portalConfigFields" style="display: none;">
+                                    {{-- Info Banner --}}
+                                    <div class="p-2 px-3 rounded-2 mb-3 d-flex align-items-center justify-content-between" style="background: rgba(197, 168, 128, 0.1); border: 1px dashed rgba(197, 168, 128, 0.4);">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-info-circle" style="color: #c5a880;"></i>
+                                            <span class="small text-muted">Login Username: <strong class="text-dark font-monospace" id="portalUsernamePreview">—</strong></span>
+                                        </div>
+                                        <span class="badge bg-light text-muted border font-monospace small" style="font-size: 0.7rem;">Role: Customer</span>
+                                    </div>
+
+                                    {{-- Password Mode Selection --}}
+                                    <label class="form-label mb-2 fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #64748b;">
+                                        <i class="fas fa-lock text-muted"></i> Choose Password Setup Mode
+                                    </label>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-md-6">
+                                            <div class="selection-pill active d-flex align-items-start gap-2" id="pillAutoPass" onclick="selectPasswordMode('auto')">
+                                                <input class="form-check-input mt-1" type="radio" name="password_mode" id="auto_pass_EDIT" value="auto" checked onchange="handlePasswordModeChange()">
+                                                <div>
+                                                    <div class="fw-bold small text-dark"><i class="fas fa-magic text-success me-1"></i> Auto-Generate &amp; Send</div>
+                                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Generates a secure password and delivers it via chosen notification method.</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="selection-pill d-flex align-items-start gap-2" id="pillManualPass" onclick="selectPasswordMode('manual')">
+                                                <input class="form-check-input mt-1" type="radio" name="password_mode" id="manual_pass_EDIT" value="manual" onchange="handlePasswordModeChange()">
+                                                <div>
+                                                    <div class="fw-bold small text-dark"><i class="fas fa-key text-warning me-1"></i> Set Password Manually</div>
+                                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Type a specific password or generate one right here to share with the client.</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Manual Password Field (hidden by default) --}}
+                                    <div id="manualPasswordField" class="mb-3 p-3 rounded-2" style="background: #ffffff; border: 1px solid #cbd5e1; display: none;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label for="portalPasswordInput_EDIT" class="form-label m-0 fw-semibold">
+                                                <i class="fas fa-key text-warning me-1"></i> Enter New Password (Min. 8 chars)
+                                            </label>
+                                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="color: #b38e5d; font-size: 0.78rem;" onclick="generateStrongPassword()">
+                                                <i class="fas fa-random me-1"></i> Generate Strong Password
+                                            </button>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" name="portal_password" id="portalPasswordInput_EDIT" placeholder="Type or generate password..." autocomplete="new-password" oninput="checkPassStrength(this.value)">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassVisibility()">
+                                                <i class="fas fa-eye" id="passToggleIcon"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" type="button" title="Copy Password" onclick="copyPassword()">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                        <div class="mt-2">
+                                            <div class="pass-strength-bar" id="passStrengthBar"></div>
+                                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                                <small class="text-muted" style="font-size: 0.7rem;" id="passStrengthLabel">Enter at least 8 characters</small>
+                                                <span class="badge d-none" id="passCopiedBadge" style="background: #10b981; font-size: 0.68rem;">Copied to clipboard!</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Notification Method --}}
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-paper-plane text-muted"></i> Deliver Credentials Via
+                                            </label>
+                                            <select class="form-select" name="credential_notify" id="credentialNotifySelect">
+                                                <option value="email" selected>Email only (to customer's email)</option>
+                                                <option value="sms">SMS only (to mobile number)</option>
+                                                <option value="both">Both Email and SMS</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-external-link-alt text-muted"></i> Portal Access Link
+                                            </label>
+                                            <input type="text" class="form-control bg-light font-monospace text-muted" value="{{ route('login') }}" readonly style="font-size: 0.78rem;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Tab 4: Preferences & Notes --}}
                         <div class="tab-pane fade" id="preferences-pane" role="tabpanel" aria-labelledby="preferences-tab">
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label for="editStatus" class="form-label">
-                                        <i class="fas fa-user-shield me-2"></i>Account Status
+                                        <i class="fas fa-user-shield text-muted"></i> Account Status
                                     </label>
                                     <select class="form-select" id="editStatus" name="status" required>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
-                                <div class="col-md-8 d-flex flex-column justify-content-center">
+                                <div class="col-md-8">
                                     <label class="form-label mb-2">
-                                        <i class="fas fa-sms me-2"></i>SMS/WhatsApp Preferences
+                                        <i class="fas fa-bell text-muted"></i> Communication &amp; Marketing Preferences
                                     </label>
-                                    <div class="d-flex gap-4">
-                                        <div class="form-check form-switch">
+                                    <div class="d-flex gap-4 p-2 bg-light rounded-2 border">
+                                        <div class="form-check form-switch m-0">
                                             <input class="form-check-input" type="checkbox" id="editSendPromotional" name="send_promotional_sms" value="1">
-                                            <label class="form-check-label text-muted" for="editSendPromotional">Promotional Messages</label>
+                                            <label class="form-check-label small text-dark" for="editSendPromotional">Promotional Messages (Discounts, News)</label>
                                         </div>
-                                        <div class="form-check form-switch">
+                                        <div class="form-check form-switch m-0">
                                             <input class="form-check-input" type="checkbox" id="editSendTransactional" name="send_transactional_sms" value="1">
-                                            <label class="form-check-label text-muted" for="editSendTransactional">Transactional Messages</label>
+                                            <label class="form-check-label small text-dark" for="editSendTransactional">Transactional Alerts (Confirmations, Reminders)</label>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editNotes" class="form-label">
-                                        <i class="fas fa-sticky-note me-2"></i>Customer Notes
+                                        <i class="fas fa-sticky-note text-muted"></i> Customer Preferences &amp; Notes
                                     </label>
-                                    <textarea class="form-control" id="editNotes" name="notes" rows="3" placeholder="Add customer preferences or notes..."></textarea>
+                                    <textarea class="form-control" id="editNotes" name="notes" rows="3" placeholder="Styling preferences, favorite drink, personal notes..."></textarea>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editMedicalNotes" class="form-label text-danger">
-                                        <i class="fas fa-notes-medical me-2"></i>Medical Notes
+                                        <i class="fas fa-notes-medical text-danger"></i> Medical, Skin &amp; Allergy Notes
                                     </label>
-                                    <textarea class="form-control" id="editMedicalNotes" name="medical_notes" rows="3" placeholder="Add allergies, medical conditions..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Portal Login Access Section -->
-                    <div class="card border-0 mb-3" style="border: 1px solid #e8dccb !important; background: linear-gradient(135deg, #fdfcfa 0%, #faf7f2 100%);">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="p-2 rounded-2 me-2" style="background: rgba(197,168,128,0.15);">
-                                    <i class="fas fa-key" style="color: #c5a880;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0 fw-semibold text-dark" style="font-size:13px;">Portal Login Access</h6>
-                                    <small class="text-muted">Allow this customer to log in to their client portal</small>
-                                </div>
-                                <div class="form-check form-switch ms-2 mb-0">
-                                    <input class="form-check-input" type="checkbox" name="grant_login_access"
-                                        value="1" id="grantLoginToggle_EDIT" onchange="toggleLoginAccessSection('EDIT')">
-                                </div>
-                            </div>
-
-                            <div id="loginAccessSection_status" class="mb-2" style="display:none;">
-                                <span class="badge" style="background:#0b0f17; color:#c5a880; font-size:11px;">
-                                    <i class="fas fa-check-circle me-1"></i>Portal access active
-                                </span>
-                                <small class="text-muted ms-2">Enable the toggle to reset the password and re-send credentials.</small>
-                            </div>
-
-                            <div id="loginAccessFields_EDIT" style="display:none;">
-                                <div class="p-3 rounded-2 mb-3" style="background:#fff8f0; border:1px solid #f0dfc0;">
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fas fa-info-circle text-warning mt-1" style="font-size:11px;"></i>
-                                        <small class="text-muted">A new password will be generated/set and credentials will be resent to the customer's email.</small>
-                                    </div>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold" style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280;">
-                                            <i class="fas fa-lock me-1" style="color:#c5a880;"></i>Password Setup
-                                        </label>
-                                        <div class="d-flex gap-3 mb-1">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="password_mode_EDIT" id="auto_pass_EDIT" value="auto" checked onchange="togglePasswordMode('EDIT')">
-                                                <label class="form-check-label small" for="auto_pass_EDIT">
-                                                    <i class="fas fa-magic me-1 text-success"></i>Auto-generate &amp; email
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="password_mode_EDIT" id="manual_pass_EDIT" value="manual" onchange="togglePasswordMode('EDIT')">
-                                                <label class="form-check-label small" for="manual_pass_EDIT">
-                                                    <i class="fas fa-pen me-1" style="color:#c5a880;"></i>Set manually
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6" id="manualPassField_EDIT" style="display:none;">
-                                        <label class="form-label fw-semibold small">
-                                            <i class="fas fa-key me-1" style="color:#c5a880;"></i>New Password
-                                        </label>
-                                        <div class="input-group input-group-sm">
-                                            <input type="password" class="form-control" name="portal_password"
-                                                id="portalPasswordInput_EDIT" placeholder="Min. 8 characters" autocomplete="new-password">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePortalPassVis('EDIT')">
-                                                <i class="fas fa-eye" id="portalPassEye_EDIT"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">
-                                            <i class="fas fa-paper-plane me-1" style="color:#c5a880;"></i>Send Credentials Via
-                                        </label>
-                                        <select class="form-select form-select-sm" name="credential_notify">
-                                            <option value="email" selected>Email only</option>
-                                            <option value="sms">SMS only</option>
-                                            <option value="both">Email and SMS</option>
-                                        </select>
-                                    </div>
+                                    <textarea class="form-control border-danger-subtle" id="editMedicalNotes" name="medical_notes" rows="3" placeholder="Skin allergies, scalp sensitivity, chemical reactions..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -429,15 +508,15 @@
                     {{-- Footer actions --}}
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                         <div class="text-muted small">
-                            <i class="fas fa-info-circle me-1"></i> Fields marked with * are required
+                            <i class="fas fa-info-circle me-1"></i> Fields marked with <span class="text-danger">*</span> are required
                         </div>
                         <div class="d-flex gap-2">
-                            <x-btn type="button" variant="secondary" icon="fas fa-times" data-bs-dismiss="modal">
-                                Cancel
-                            </x-btn>
-                            <x-btn type="submit" variant="primary" icon="fas fa-save" id="saveEditCustomerBtn">
-                                Save Changes
-                            </x-btn>
+                            <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-save-luxury" id="saveEditCustomerBtn">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -453,11 +532,10 @@
             function loadEditCustomerModal(customerId) {
                 const modalElement = document.getElementById('editCustomerModal');
                 if (!modalElement) {
-                    window.notifications.show('Error: Could not open edit form', 'error');
+                    if (window.notifications) window.notifications.show('Error: Could not open edit form', 'error');
                     return;
                 }
 
-                // Initialize modal if not already initialized
                 let modal = bootstrap.Modal.getInstance(modalElement);
                 if (!modal) {
                     modal = new bootstrap.Modal(modalElement);
@@ -465,13 +543,11 @@
 
                 const form = document.getElementById('customerEditForm');
                 if (!form) {
-                    window.notifications.show('Error: Could not open edit form', 'error');
+                    if (window.notifications) window.notifications.show('Error: Could not open edit form', 'error');
                     return;
                 }
 
-                // Get form elements
-                const submitButton = form.querySelector('button[type="submit"]');
-                const spinner = submitButton.querySelector('.spinner-border');
+                const submitButton = document.getElementById('saveEditCustomerBtn');
 
                 // Reset and show the modal
                 form.reset();
@@ -483,6 +559,9 @@
                     const firstTab = new bootstrap.Tab(firstTabEl);
                     firstTab.show();
                 }
+
+                // Reset portal state
+                resetPortalUi();
 
                 // Load customer data
                 fetch(`{{ route('admin.customers.index') }}/${customerId}/edit`, {
@@ -499,12 +578,17 @@
                         return response.json();
                     })
                     .then(data => {
-                        // Populate form with customer data
                         if (data.success && data.data) {
                             const customer = data.data;
                             document.getElementById('editFirstName').value = customer.first_name || '';
                             document.getElementById('editLastName').value = customer.last_name || '';
                             document.getElementById('editCustomerId').value = customer.customer_id || 'Not assigned';
+                            
+                            const headerCode = document.getElementById('headerCustomerCode');
+                            if (headerCode) {
+                                headerCode.textContent = customer.customer_id || '';
+                            }
+
                             document.getElementById('editGender').value = customer.gender || '';
                             document.getElementById('editDob').value = customer.dob || '';
                             document.getElementById('editAnniversary').value = customer.anniversary || '';
@@ -521,71 +605,78 @@
                             document.getElementById('editSendPromotional').checked = customer.send_promotional_sms || false;
                             document.getElementById('editSendTransactional').checked = customer.send_transactional_sms || false;
 
-                            // Portal access toggle and indicator
+                            // Portal status setup
                             const portalToggle = document.getElementById('grantLoginToggle_EDIT');
-                            const portalStatus = document.getElementById('loginAccessSection_status');
-                            const portalFields = document.getElementById('loginAccessFields_EDIT');
-                            if (portalToggle) portalToggle.checked = false;
-                            if (portalFields) portalFields.style.display = 'none';
-                            if (portalStatus) {
-                                portalStatus.style.display = customer.has_portal_access ? 'block' : 'none';
+                            const portalBadge = document.getElementById('portalTabBadge');
+                            const statusPill = document.getElementById('portalActiveStatusPill');
+
+                            if (customer.has_portal_access) {
+                                if (portalBadge) portalBadge.classList.remove('d-none');
+                                if (statusPill) {
+                                    statusPill.className = 'badge bg-success text-white';
+                                    statusPill.innerHTML = '<i class="fas fa-check-circle me-1"></i>Portal Active';
+                                }
+                                if (portalToggle) {
+                                    portalToggle.checked = true;
+                                }
+                            } else {
+                                if (portalBadge) portalBadge.classList.add('d-none');
+                                if (statusPill) {
+                                    statusPill.className = 'badge bg-secondary text-white';
+                                    statusPill.innerHTML = '<i class="fas fa-times-circle me-1"></i>Not Active';
+                                }
+                                if (portalToggle) {
+                                    portalToggle.checked = false;
+                                }
                             }
+                            togglePortalSection();
+                            syncPortalEmailPreview();
 
                             // Handle conditional email requirement
                             updateEmailRequirement();
 
                             // Set form action
                             form.action = `{{ route('admin.customers.index') }}/${customer.id}`;
-
-                            // Ensure CSRF token is set
-                            if (!form.querySelector('input[name="_token"]')) {
-                                const token = document.querySelector('meta[name="csrf-token"]');
-                                if (token) {
-                                    const csrfInput = document.createElement('input');
-                                    csrfInput.type = 'hidden';
-                                    csrfInput.name = '_token';
-                                    csrfInput.value = token.content;
-                                    form.appendChild(csrfInput);
-                                }
-                            }
                         } else {
                             throw new Error('Could not load customer data');
                         }
                     })
                     .catch(error => {
-                        window.notifications.show(error.message || 'Failed to load customer details', 'error');
+                        window.notifications ? window.notifications.show(error.message || 'Failed to load customer details', 'error') : alert(error.message);
                         modal.hide();
                     });
 
-                // Handle conditional email requirement
-                function updateEmailRequirement() {
-                    const preferredContact = document.getElementById('editPreferredContact').value;
-                    const emailInput = document.getElementById('editEmail');
-                    const emailLabel = document.getElementById('editEmailLabel');
-
-                    if (preferredContact === 'email') {
-                        emailInput.setAttribute('required', 'required');
-                        emailLabel.innerHTML = '<i class="fas fa-envelope me-2"></i>Email Address <span class="text-danger">*</span>';
-                    } else {
-                        emailInput.removeAttribute('required');
-                        emailLabel.innerHTML = '<i class="fas fa-envelope me-2"></i>Email Address';
-                    }
-                }
-
-                // Add event listener for preferred contact change
-                document.getElementById('editPreferredContact').addEventListener('change', updateEmailRequirement);
-
-                // Handle form submission
+                // Form submission
                 form.onsubmit = function (e) {
                     e.preventDefault();
 
                     const formData = new FormData(form);
+                    formData.set('_method', 'PUT');
 
-                    // Show loading state
+                    const portalToggle = document.getElementById('grantLoginToggle_EDIT');
+                    const passInput = document.getElementById('portalPasswordInput_EDIT');
+                    const isManual = document.getElementById('manual_pass_EDIT')?.checked;
+                    const hasPassword = passInput && passInput.value.trim().length > 0;
+
+                    if (portalToggle && portalToggle.checked) {
+                        formData.set('grant_login_access', '1');
+                    }
+
+                    if (isManual && hasPassword) {
+                        formData.set('password_mode', 'manual');
+                        formData.set('portal_password', passInput.value.trim());
+                        formData.set('grant_login_access', '1');
+                    } else if (isManual) {
+                        formData.set('password_mode', 'manual');
+                    } else {
+                        formData.set('password_mode', 'auto');
+                        formData.delete('portal_password');
+                    }
+
                     submitButton.disabled = true;
-                    spinner.classList.remove('d-none');
+                    const originalBtnHtml = submitButton.innerHTML;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving Changes...';
 
-                    // Submit the form
                     fetch(form.action, {
                         method: 'POST',
                         body: formData,
@@ -595,32 +686,256 @@
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         }
                     })
-                        .then(response => response.json())
+                        .then(async response => {
+                            const data = await response.json().catch(() => null);
+                            if (!response.ok) {
+                                let errorMsg = 'Failed to update customer';
+                                if (data && data.errors) {
+                                    const firstKey = Object.keys(data.errors)[0];
+                                    const firstVal = data.errors[firstKey];
+                                    errorMsg = Array.isArray(firstVal) ? firstVal[0] : firstVal;
+
+                                    // Auto-navigate to tab containing error
+                                    if (['first_name', 'last_name', 'gender', 'dob'].includes(firstKey)) {
+                                        new bootstrap.Tab(document.getElementById('basic-tab')).show();
+                                    } else if (['email', 'phone', 'secondary_number', 'location', 'address'].includes(firstKey)) {
+                                        new bootstrap.Tab(document.getElementById('contact-tab')).show();
+                                    } else if (['portal_password', 'grant_login_access', 'password_mode'].includes(firstKey)) {
+                                        new bootstrap.Tab(document.getElementById('portal-tab')).show();
+                                    } else if (['status', 'notes', 'medical_notes'].includes(firstKey)) {
+                                        new bootstrap.Tab(document.getElementById('preferences-tab')).show();
+                                    }
+                                } else if (data && data.message) {
+                                    errorMsg = data.message;
+                                }
+                                throw new Error(errorMsg);
+                            }
+                            return data;
+                        })
                         .then(data => {
-                            if (data.success || data.status === 'success') {
-                                window.notifications.show(data.message || 'Customer updated successfully', 'success');
+                            if (data && (data.success || data.status === 'success')) {
+                                if (window.notifications && typeof window.notifications.show === 'function') {
+                                    window.notifications.show(data.message || 'Customer updated successfully', 'success');
+                                } else {
+                                    alert(data.message || 'Customer updated successfully');
+                                }
                                 modal.hide();
 
-                                // Refresh the customers list if the function exists
                                 if (typeof loadCustomers === 'function') {
                                     loadCustomers();
                                 }
+                                if (window.jQuery && $('#customersTable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#customersTable')) {
+                                    $('#customersTable').DataTable().ajax.reload(null, false);
+                                }
+                                window.dispatchEvent(new CustomEvent('customer-updated', { detail: data.data || data.customer }));
                             } else {
-                                throw new Error(data.message || 'Failed to update customer');
+                                throw new Error(data ? data.message : 'Failed to update customer');
                             }
                         })
                         .catch(error => {
-                            window.notifications.show(error.message || 'Failed to update customer', 'error');
+                            if (window.notifications && typeof window.notifications.show === 'function') {
+                                window.notifications.show(error.message || 'Failed to update customer', 'error');
+                            } else {
+                                alert(error.message || 'Failed to update customer');
+                            }
                         })
                         .finally(() => {
                             submitButton.disabled = false;
-                            spinner.classList.add('d-none');
+                            submitButton.innerHTML = originalBtnHtml;
                         });
                 };
             }
 
-            // Make the function available globally
             window.loadEditCustomerModal = loadEditCustomerModal;
         }
+
+        // Helper functions
+        function resetPortalUi() {
+            const toggle = document.getElementById('grantLoginToggle_EDIT');
+            const config = document.getElementById('portalConfigFields');
+            const manualField = document.getElementById('manualPasswordField');
+            if (toggle) toggle.checked = false;
+            if (config) config.style.display = 'none';
+            if (manualField) manualField.style.display = 'none';
+            selectPasswordMode('auto');
+        }
+
+        function togglePortalSection() {
+            const toggle = document.getElementById('grantLoginToggle_EDIT');
+            const config = document.getElementById('portalConfigFields');
+            const card = document.getElementById('portalMainCard');
+            const email = document.getElementById('editEmail').value.trim();
+            const warning = document.getElementById('portalMissingEmailWarning');
+
+            if (!toggle || !config) return;
+
+            if (toggle.checked) {
+                config.style.display = 'block';
+                if (card) card.classList.add('active-portal');
+                if (!email && warning) {
+                    warning.classList.remove('d-none');
+                    warning.classList.add('d-flex');
+                } else if (warning) {
+                    warning.classList.add('d-none');
+                    warning.classList.remove('d-flex');
+                }
+            } else {
+                config.style.display = 'none';
+                if (card) card.classList.remove('active-portal');
+                if (warning) {
+                    warning.classList.add('d-none');
+                    warning.classList.remove('d-flex');
+                }
+            }
+        }
+
+        function syncPortalEmailPreview() {
+            const email = document.getElementById('editEmail').value.trim();
+            const preview = document.getElementById('portalUsernamePreview');
+            const warning = document.getElementById('portalMissingEmailWarning');
+            const toggle = document.getElementById('grantLoginToggle_EDIT');
+
+            if (preview) {
+                preview.textContent = email || '(Enter email in Contact tab)';
+            }
+            if (toggle && toggle.checked && warning) {
+                if (!email) {
+                    warning.classList.remove('d-none');
+                    warning.classList.add('d-flex');
+                } else {
+                    warning.classList.add('d-none');
+                    warning.classList.remove('d-flex');
+                }
+            }
+        }
+
+        function selectPasswordMode(mode) {
+            const autoRadio = document.getElementById('auto_pass_EDIT');
+            const manualRadio = document.getElementById('manual_pass_EDIT');
+            const pillAuto = document.getElementById('pillAutoPass');
+            const pillManual = document.getElementById('pillManualPass');
+            const manualField = document.getElementById('manualPasswordField');
+
+            if (mode === 'manual') {
+                if (manualRadio) manualRadio.checked = true;
+                if (pillManual) pillManual.classList.add('active');
+                if (pillAuto) pillAuto.classList.remove('active');
+                if (manualField) $(manualField).slideDown(180);
+            } else {
+                if (autoRadio) autoRadio.checked = true;
+                if (pillAuto) pillAuto.classList.add('active');
+                if (pillManual) pillManual.classList.remove('active');
+                if (manualField) $(manualField).slideUp(180);
+            }
+        }
+
+        function handlePasswordModeChange() {
+            const isManual = document.getElementById('manual_pass_EDIT').checked;
+            selectPasswordMode(isManual ? 'manual' : 'auto');
+        }
+
+        function togglePassVisibility() {
+            const input = document.getElementById('portalPasswordInput_EDIT');
+            const icon = document.getElementById('passToggleIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                if (icon) icon.className = 'fas fa-eye';
+            }
+        }
+
+        function generateStrongPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+            let pass = '';
+            for (let i = 0; i < 12; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const input = document.getElementById('portalPasswordInput_EDIT');
+            if (input) {
+                input.value = pass;
+                input.type = 'text';
+                const icon = document.getElementById('passToggleIcon');
+                if (icon) icon.className = 'fas fa-eye-slash';
+                checkPassStrength(pass);
+            }
+            copyPassword();
+        }
+
+        function copyPassword() {
+            const input = document.getElementById('portalPasswordInput_EDIT');
+            if (!input || !input.value) return;
+            navigator.clipboard.writeText(input.value).then(() => {
+                const badge = document.getElementById('passCopiedBadge');
+                if (badge) {
+                    badge.classList.remove('d-none');
+                    setTimeout(() => badge.classList.add('d-none'), 2500);
+                }
+            });
+        }
+
+        function checkPassStrength(val) {
+            const bar = document.getElementById('passStrengthBar');
+            const lbl = document.getElementById('passStrengthLabel');
+            if (!bar || !lbl) return;
+
+            if (!val || val.length < 8) {
+                bar.style.width = '25%';
+                bar.style.backgroundColor = '#ef4444';
+                lbl.textContent = 'Too short (minimum 8 characters)';
+                lbl.className = 'text-danger small';
+            } else if (val.length < 10 || !/[0-9]/.test(val) || !/[A-Z]/.test(val)) {
+                bar.style.width = '60%';
+                bar.style.backgroundColor = '#f59e0b';
+                lbl.textContent = 'Medium strength';
+                lbl.className = 'text-warning small';
+            } else {
+                bar.style.width = '100%';
+                bar.style.backgroundColor = '#10b981';
+                lbl.textContent = 'Strong password';
+                lbl.className = 'text-success small';
+            }
+        }
+
+        function copyCustomerId() {
+            const input = document.getElementById('editCustomerId');
+            if (!input || !input.value) return;
+            navigator.clipboard.writeText(input.value).then(() => {
+                if (window.notifications) window.notifications.show('Customer ID copied to clipboard!', 'info');
+            });
+        }
+
+        function switchToContactTab() {
+            const tabBtn = document.getElementById('contact-tab');
+            if (tabBtn) {
+                new bootstrap.Tab(tabBtn).show();
+                setTimeout(() => {
+                    const emailInput = document.getElementById('editEmail');
+                    if (emailInput) emailInput.focus();
+                }, 200);
+            }
+        }
+
+        function updateEmailRequirement() {
+            const preferredContact = document.getElementById('editPreferredContact').value;
+            const emailInput = document.getElementById('editEmail');
+            const emailLabel = document.getElementById('editEmailLabel');
+            if (!emailInput || !emailLabel) return;
+
+            if (preferredContact === 'email') {
+                emailInput.setAttribute('required', 'required');
+                emailLabel.innerHTML = '<i class="fas fa-envelope text-muted"></i> Email Address <span class="text-danger">*</span>';
+            } else {
+                emailInput.removeAttribute('required');
+                emailLabel.innerHTML = '<i class="fas fa-envelope text-muted"></i> Email Address';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pref = document.getElementById('editPreferredContact');
+            if (pref) pref.addEventListener('change', updateEmailRequirement);
+        });
     </script>
 @endpush

@@ -186,6 +186,12 @@
                                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="quickAddFeature('Staff Management')">+ Staff Management</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="quickAddFeature('Customer Management')">+ Customer Management</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="quickAddFeature('Analytics & Reports')">+ Analytics & Reports</button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill fw-semibold text-dark" onclick="quickAddFeature('Loyalty Program')">
+                                                    <i class="fas fa-coins text-warning me-1"></i>+ Loyalty Program
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill fw-semibold text-dark" onclick="quickAddFeature('Customer Feedback & Reviews')">
+                                                    <i class="fas fa-star text-warning me-1"></i>+ Feedback & Reviews
+                                                </button>
                                             </div>
                                         </div>
                                         
@@ -390,7 +396,9 @@
                 { name: 'Email Notifications', module: 'marketing' },
                 { name: 'SMS Notifications', module: 'sms' },
                 { name: 'WhatsApp Notifications', module: 'whatsapp' },
-                { name: 'AI Insights & Automation', module: 'ai' }
+                { name: 'AI Insights & Automation', module: 'ai' },
+                { name: 'Loyalty Program', module: null },
+                { name: 'Customer Feedback & Reviews', module: null }
             ];
 
             // Get enabled modules from backend

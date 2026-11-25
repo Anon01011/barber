@@ -90,13 +90,106 @@ class AppointmentController extends Controller
         }
     }
 
+    public function dashboard(Request $request)
+    {
+        try {
+            $customer = $this->resolveCustomer();
+            if (!$customer) {
+                return redirect()->route('login')
+                    ->with('error', 'Customer profile could not be located. Please log in again.');
+            }
+
+            $salonId = $this->resolveSalonId();
+            $salon = $customer->salon ?? \App\Models\Salon::find($salonId);
+            $isOnTrial = $salon && method_exists($salon, 'isOnTrial') && $salon->isOnTrial();
+            $hasLoyalty = \App\Helpers\ModuleHelper::loyaltyEnabled() && $salon && ($salon->hasLoyaltyProgram() || $isOnTrial);
+            $hasFeedback = \App\Helpers\ModuleHelper::feedbackEnabled() && $salon && ($salon->hasFeedbackModule() || $isOnTrial);
+
+            $loyaltyPoints = (int)($customer->loyalty_points ?? 0);
+            $loyaltySettings = $salon ? app(\App\Services\LoyaltyService::class)->getSettings($salon) : [];
+            $pointRate = (float)($loyaltySettings['redemption_rate'] ?? 0.05);
+            $loyaltyValue = round($loyaltyPoints * $pointRate, 2);
+            $minPointsToRedeem = (int)($loyaltySettings['min_points_to_redeem'] ?? 50);
+            $loyaltyExpiryMonths = (int)($loyaltySettings['points_expiry_months'] ?? 12);
+
+            // Get appointment statistics
+            $stats = [
+                'total' => $customer->bookings()->count(),
+                'upcoming' => $customer->bookings()->upcoming()->count(),
+                'completed' => $customer->bookings()->where('status', 'completed')->count(),
+                'cancelled' => $customer->bookings()->cancelled()->count(),
+                'pending' => $customer->bookings()->where('status', 'pending')->count(),
+            ];
+
+            // Upcoming appointments
+            $upcomingAppointments = $customer->bookings()
+                ->with(['service', 'staff', 'package'])
+                ->upcoming()
+                ->orderBy('start_time', 'asc')
+                ->take(5)
+                ->get();
+
+            // Completed appointments (for review / rating and recent history)
+            $completedAppointments = $customer->bookings()
+                ->with(['service', 'staff', 'package'])
+                ->where('status', 'completed')
+                ->latest('start_time')
+                ->take(10)
+                ->get();
+
+            // Services for Quick Book
+            $services = Service::where('salon_id', $salonId)->where('status', 'active')->get();
+
+            // Check for completed unrated appointment to trigger popup modal
+            $pendingFeedbackBooking = null;
+            if ($hasFeedback) {
+                $pendingFeedbackBooking = $customer->bookings()
+                    ->with(['service', 'staff'])
+                    ->where('status', 'completed')
+                    ->where('is_rated', false)
+                    ->whereNull('rating')
+                    ->latest('start_time')
+                    ->first();
+            }
+
+            // Loyalty transactions
+            $loyaltyTransactions = collect();
+            if ($hasLoyalty && class_exists(\App\Models\LoyaltyTransaction::class)) {
+                $loyaltyTransactions = \App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
+                    ->latest()
+                    ->take(10)
+                    ->get();
+            }
+
+            return view('customer.dashboard', compact(
+                'customer',
+                'salon',
+                'stats',
+                'upcomingAppointments',
+                'completedAppointments',
+                'services',
+                'hasLoyalty',
+                'hasFeedback',
+                'loyaltyPoints',
+                'loyaltyValue',
+                'minPointsToRedeem',
+                'loyaltyExpiryMonths',
+                'pendingFeedbackBooking',
+                'loyaltyTransactions'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Error loading customer dashboard: ' . $e->getMessage());
+            return redirect()->route('customer.appointments.index', ['salon_slug' => request()->route('salon_slug') ?? 'default']);
+        }
+    }
+
     public function index(Request $request)
     {
         try {
             $customer = $this->resolveCustomer();
             if (!$customer) {
-                return redirect()->route('customer.dashboard')
-                    ->with('error', 'Customer profile could not be located.');
+                return redirect()->route('login')
+                    ->with('error', 'Customer profile could not be located. Please log in again.');
             }
 
             // Get appointment statistics
@@ -125,7 +218,52 @@ class AppointmentController extends Controller
 
             $appointments = $query->latest()->paginate(10);
 
-            return view('customer.appointments.index', compact('stats', 'appointments', 'status'));
+            // Loyalty points & customer balance
+            $salon = $customer->salon ?? \App\Models\Salon::find($this->resolveSalonId());
+            $isOnTrial = $salon && method_exists($salon, 'isOnTrial') && $salon->isOnTrial();
+            $hasLoyalty = \App\Helpers\ModuleHelper::loyaltyEnabled() && $salon && ($salon->hasLoyaltyProgram() || $isOnTrial);
+            $hasFeedback = \App\Helpers\ModuleHelper::feedbackEnabled() && $salon && ($salon->hasFeedbackModule() || $isOnTrial);
+
+            $loyaltyPoints = (int)($customer->loyalty_points ?? 0);
+            $loyaltySettings = $salon ? app(\App\Services\LoyaltyService::class)->getSettings($salon) : [];
+            $pointRate = (float)($loyaltySettings['redemption_rate'] ?? 0.05);
+            $loyaltyValue = round($loyaltyPoints * $pointRate, 2);
+            $minPointsToRedeem = (int)($loyaltySettings['min_points_to_redeem'] ?? 50);
+            $loyaltyExpiryMonths = (int)($loyaltySettings['points_expiry_months'] ?? 12);
+
+            // Check for completed unrated appointment to trigger popup modal
+            $pendingFeedbackBooking = null;
+            if ($hasFeedback) {
+                $pendingFeedbackBooking = $customer->bookings()
+                    ->with(['service', 'staff'])
+                    ->where('status', 'completed')
+                    ->where('is_rated', false)
+                    ->whereNull('rating')
+                    ->latest('start_time')
+                    ->first();
+            }
+
+            $loyaltyTransactions = collect();
+            if ($hasLoyalty && class_exists(\App\Models\LoyaltyTransaction::class)) {
+                $loyaltyTransactions = \App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
+                    ->latest()
+                    ->take(15)
+                    ->get();
+            }
+
+            return view('customer.appointments.index', compact(
+                'stats',
+                'appointments',
+                'status',
+                'hasLoyalty',
+                'hasFeedback',
+                'loyaltyPoints',
+                'loyaltyValue',
+                'minPointsToRedeem',
+                'loyaltyExpiryMonths',
+                'pendingFeedbackBooking',
+                'loyaltyTransactions'
+            ));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to load appointments. Please try again.');
         }
@@ -249,6 +387,19 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
+        // Support ISO start_time input if date/time are not separately supplied
+        if ((!$request->has('date') || !$request->has('time')) && $request->has('start_time')) {
+            try {
+                $parsedTime = Carbon::parse($request->input('start_time'));
+                $request->merge([
+                    'date' => $parsedTime->format('Y-m-d'),
+                    'time' => $parsedTime->format('H:i'),
+                ]);
+            } catch (\Exception $e) {
+                // Ignore parse errors and let validator handle
+            }
+        }
+
         $salonId = $this->resolveSalonId();
         $validated = $request->validate([
             'service_id' => [
@@ -345,8 +496,10 @@ class AppointmentController extends Controller
                 : 'Appointment request submitted successfully. Our staff will review and confirm your booking time.';
 
             return response()->json([
+                'success' => true,
                 'message' => $successMsg,
-                'booking' => $booking
+                'booking' => $booking,
+                'redirect' => route('customer.appointments.index', ['salon_slug' => $customer->salon?->slug ?? request()->route('salon_slug') ?? ''])
             ]);
 
         } catch (\Exception $e) {
@@ -749,6 +902,11 @@ class AppointmentController extends Controller
             ]);
 
             $rating->save();
+            $booking->update([
+                'is_rated' => true,
+                'rating' => (int) $validated['rating'],
+                'feedback' => $validated['comment'] ?? null,
+            ]);
 
             // Commit the transaction
             DB::commit();

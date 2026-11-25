@@ -580,6 +580,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
             }
+            if (staffFilterAll && staffFilterAll.checked && !selected.includes('unassigned')) {
+                selected.push('unassigned');
+            }
             return selected;
         } catch (error) {
 
@@ -824,6 +827,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                     return resource;
                                 });
+
+                            // Add an Unassigned / Online column at the beginning so customer bookings without assigned staff appear prominently
+                            resources.unshift({
+                                id: 'unassigned',
+                                title: '⚡ Online / Unassigned',
+                                businessHours: {
+                                    startTime: '06:00',
+                                    endTime: '23:00',
+                                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
+                                }
+                            });
 
 
                             successCallback(resources);
@@ -1220,7 +1234,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     // Pass directly to FullCalendar - it will handle the timezone conversion
                                     start: booking.start,
                                     end: booking.end,
-                                    resourceId: booking.extendedProps.staff_id ? String(booking.extendedProps.staff_id) : null, // Convert to string
+                                    resourceId: booking.extendedProps.staff_id ? String(booking.extendedProps.staff_id) : 'unassigned', // Fallback to unassigned column
                                     backgroundColor: booking.backgroundColor,
                                     borderColor: booking.borderColor,
                                     textColor: booking.textColor,
@@ -2255,19 +2269,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Load list view data
             function loadListView(page = 1) {
+                currentPage = page;
                 const selectedStaffIds = getSelectedStaffIds();
                 const staffId = selectedStaffIds.length > 0 ? selectedStaffIds.join(',') : '';
                 const url = new URL(window.location);
 
                 // Show loading state
-                bookingsList.innerHTML = `
+                if (bookingsList) {
+                    bookingsList.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center py-4">
+                <td colspan="8" class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </td>
             </tr>`;
+                }
 
                 // Build query parameters
                 const statusFilterVal = document.getElementById('statusFilter')?.value || '';
@@ -2302,23 +2319,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
+                        if (data.success && bookingsList) {
                             // Update bookings list
                             bookingsList.innerHTML = data.html;
+                            currentPage = data.current_page || page;
 
                             // Update pagination
-                            listViewPagination.innerHTML = data.pagination;
+                            if (listViewPagination) {
+                                listViewPagination.innerHTML = data.pagination;
+                            }
 
                             // Update count
-                            const start = (data.current_page - 1) * 10 + 1;
-                            const end = Math.min(data.current_page * 10, data.total);
-                            listViewCount.textContent = `Showing ${start} to ${end} of ${data.total} bookings`;
+                            if (listViewCount) {
+                                const start = (data.current_page - 1) * 10 + 1;
+                                const end = Math.min(data.current_page * 10, data.total);
+                                listViewCount.textContent = `Showing ${start} to ${end} of ${data.total} bookings`;
+                            }
 
                             // Add event listeners to pagination links
                             document.querySelectorAll('#listViewPagination .page-link').forEach(link => {
                                 link.addEventListener('click', function (e) {
                                     e.preventDefault();
                                     const page = this.getAttribute('data-page') || this.textContent.trim();
+                                    currentPage = page;
                                     loadListView(page);
                                 });
                             });
@@ -2328,22 +2351,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     })
                     .catch(error => {
-
-                        bookingsList.innerHTML = `
+                        if (bookingsList) {
+                            bookingsList.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-4 text-danger">
+                    <td colspan="8" class="text-center py-4 text-danger">
                         <i class="fas fa-exclamation-circle me-2"></i>
                         Error loading bookings. Please try again.
                     </td>
                 </tr>`;
+                        }
                     });
             }
 
 
             // Setup event listeners for list view actions
             function setupListEventListeners() {
-                // Expose showEditModal globally so inline table row cells can trigger it
+                // Expose showEditModal and loadListView globally
                 window.showEditModal = showEditModal;
+                window.loadListView = loadListView;
 
                 // Edit booking
                 document.querySelectorAll('.edit-booking').forEach(button => {
@@ -2603,11 +2628,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                     }
                                 }
 
-                                // Refresh the current view
-                                if (listViewEl && listViewEl.checked) {
-                                    loadListView(currentPage);
-                                } else {
+                                // Refresh views
+                                if (calendar && typeof calendar.refetchEvents === 'function') {
                                     calendar.refetchEvents();
+                                }
+                                if (typeof loadListView === 'function') {
+                                    loadListView(currentPage || 1);
                                 }
                             } else if (data.requires_payment) {
                                 // If payment is required, show the payment modal
@@ -3686,6 +3712,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Function to handle form submission
             function handleFormSubmit() {
+                window.handleFormSubmit = handleFormSubmit;
                 const bookingIdInput = document.getElementById('booking_id');
                 const bookingId = bookingIdInput?.value;
                 const isEditMode = !!bookingId;
@@ -3862,7 +3889,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('selectedPackagesContainer').style.display = 'none';
 
                         // Refresh calendar
-                        calendar.refetchEvents();
+                        if (calendar && typeof calendar.refetchEvents === 'function') {
+                            calendar.refetchEvents();
+                        }
+
+                        // Refresh list view table so updated row appears immediately
+                        if (typeof loadListView === 'function') {
+                            loadListView(currentPage || 1);
+                        } else if (typeof window.loadListView === 'function') {
+                            window.loadListView(currentPage || 1);
+                        }
 
                         // Show success message
                         const successModalTitle = document.getElementById('successModalTitle');
@@ -3882,7 +3918,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
             }
 
-            // Add click handlers for the unified booking button
+            // Expose globally and add click handlers for the unified booking button
+            window.handleFormSubmit = handleFormSubmit;
             if (createButton) {
                 createButton.addEventListener('click', () => handleFormSubmit());
             }

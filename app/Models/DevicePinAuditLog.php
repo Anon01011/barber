@@ -10,6 +10,12 @@ class DevicePinAuditLog extends Model
 {
     use HasFactory, BelongsToSalon;
 
+    /**
+     * Allow null salon_id for platform/super-admin users.
+     * Prevents BelongsToSalon from throwing context errors.
+     */
+    public $allowNullSalon = true;
+
     protected $table = 'device_pin_audit_logs';
 
     protected $fillable = [

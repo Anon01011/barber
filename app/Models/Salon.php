@@ -244,22 +244,11 @@ class Salon extends Model
 
     /**
      * Check if salon can use a specific feature
-     * During active trial, all features are accessible.
+     * During active trial, all features are accessible unless globally disabled.
      */
     public function canUseFeature(string $feature): bool
     {
-        // During active trial, grant access to all features
-        if ($this->isOnTrial()) {
-            return true;
-        }
-
-        $subscription = $this->currentSubscription();
-
-        if (!$subscription || !$subscription->plan) {
-            return false;
-        }
-
-        return $subscription->plan->hasFeature($feature);
+        return app(\App\Services\ModuleEntitlementService::class)->canUseFeature($this, $feature);
     }
 
     /**
@@ -477,19 +466,27 @@ class Salon extends Model
     }
 
     /**
-     * Check if salon's plan includes branch module
+     * Check if salon's plan includes branch module and is globally enabled
      */
     public function hasBranchModule(): bool
     {
-        $subscription = $this->activeSubscription;
-        if (!$subscription || !$subscription->plan) {
-            return false; // No branch module without subscription
-        }
+        return app(\App\Services\ModuleEntitlementService::class)->canAccess($this, 'branches');
+    }
 
-        // Check multiple possible feature names for compatibility
-        return $subscription->plan->hasFeature('Multi-Branch Support') ||
-            $subscription->plan->hasFeature('multi_branch') ||
-            $subscription->plan->hasFeature('branches');
+    /**
+     * Check if salon's plan includes loyalty program module and is globally enabled
+     */
+    public function hasLoyaltyProgram(): bool
+    {
+        return app(\App\Services\ModuleEntitlementService::class)->canAccess($this, 'loyalty');
+    }
+
+    /**
+     * Check if salon's plan includes customer feedback & reviews module and is globally enabled
+     */
+    public function hasFeedbackModule(): bool
+    {
+        return app(\App\Services\ModuleEntitlementService::class)->canAccess($this, 'feedback');
     }
 
     /**

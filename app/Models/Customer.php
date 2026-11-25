@@ -43,6 +43,7 @@ class Customer extends Model
         'user_id',
         'preferred_service',
         'is_guest',
+        'loyalty_points',
         'salon_id'
     ];
 
@@ -52,6 +53,7 @@ class Customer extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'loyalty_points' => 'integer',
         'last_visit_at' => 'datetime',
         'dob' => 'date',
         'anniversary' => 'date',
@@ -143,6 +145,14 @@ class Customer extends Model
     public function posSales()
     {
         return $this->hasMany(PosSale::class);
+    }
+
+    /**
+     * Get the customer's loyalty transactions.
+     */
+    public function loyaltyTransactions()
+    {
+        return $this->hasMany(LoyaltyTransaction::class)->latest();
     }
 
     /**

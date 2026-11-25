@@ -204,7 +204,9 @@ class CustomerController extends Controller
             'custom_fields' => 'nullable|array',
             'grant_login_access' => 'nullable|boolean',
             'password_mode' => 'nullable|in:auto,manual',
-            'portal_password' => 'nullable|required_if:password_mode,manual|string|min:8|max:100',
+            'password_mode_ADD' => 'nullable|in:auto,manual',
+            'password_mode_EDIT' => 'nullable|in:auto,manual',
+            'portal_password' => 'nullable|string|min:8|max:100',
             'credential_notify' => 'nullable|in:email,sms,both',
         ], [
             'email.required_if' => 'The email field is required when email is selected as preferred contact method.',
@@ -232,7 +234,7 @@ class CustomerController extends Controller
                 ], 403);
             }
 
-            $data = $request->all();
+            $data = $request->except(['loyalty_points']);
             $data['salon_id'] = auth()->user()->salon_id; // Force salon_id
 
             // Handle name/first_name/last_name logic
@@ -253,10 +255,19 @@ class CustomerController extends Controller
                 $data['preferred_contact'] = !empty($data['email']) ? 'email' : 'phone';
             }
 
+            // Handle portal login access requirement check before creating customer
+            if ($request->boolean('grant_login_access') && empty($data['email'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'An email address is required to enable portal login access.',
+                    'errors' => ['email' => ['An email address is required to enable portal login access.']]
+                ], 422);
+            }
+
             $customer = Customer::create($data);
 
             // Handle portal login access grant
-            if ($request->boolean('grant_login_access') && !empty($customer->email)) {
+            if ($request->boolean('grant_login_access')) {
                 try {
                     $this->grantCustomerLoginAccess($customer, $request, $salon);
                 } catch (\Exception $e) {
@@ -332,35 +343,61 @@ class CustomerController extends Controller
      */
     protected function grantCustomerLoginAccess(Customer $customer, Request $request, $salon): void
     {
-        // Determine password
-        $passwordMode = $request->input('password_mode', 'auto');
-        $plainPassword = ($passwordMode === 'manual' && $request->filled('portal_password'))
-            ? $request->input('portal_password')
-            : Str::password(12, true, true, false); // letters + numbers, no symbols
+        // Determine password mode — supports both standard password_mode and suffix-based forms
+        $passwordMode = $request->input('password_mode')
+            ?? $request->input('password_mode_EDIT')
+            ?? $request->input('password_mode_ADD')
+            ?? 'auto';
 
-        // Find or create the linked User record
-        $user = User::where('email', $customer->email)->first();
+        // Use the supplied password only when password_mode is manual; when auto is selected, generate random password
+        $manualPassword = $request->input('portal_password') ?? $request->input('password');
+        if ($passwordMode === 'manual' && !empty($manualPassword) && is_string($manualPassword) && strlen(trim($manualPassword)) >= 6) {
+            $plainPassword = trim($manualPassword);
+        } else {
+            $plainPassword = Str::password(12, true, true, false); // letters + numbers, no symbols
+        }
+
+        // Find or create the linked User record (by customer->user_id or by email in this salon)
+        $user = null;
+        if ($customer->user_id) {
+            $user = User::find($customer->user_id);
+        }
+        if (!$user && $customer->email) {
+            $user = User::where('email', $customer->email)
+                ->where('salon_id', $customer->salon_id)
+                ->first();
+        }
 
         if (!$user) {
             $user = User::create([
-                'name'          => $customer->name,
-                'email'         => $customer->email,
-                'password'      => Hash::make($plainPassword),
-                'salon_id'      => $customer->salon_id,
-                'status'        => 'active',
+                'name'              => $customer->name,
+                'email'             => $customer->email,
+                'password'          => Hash::make($plainPassword),
+                'salon_id'          => $customer->salon_id,
+                'status'            => 'active',
                 'email_verified_at' => now(),
             ]);
         } else {
-            // Update password if user already exists
-            $user->update(['password' => Hash::make($plainPassword)]);
+            // Update password and keep email/name/status in sync
+            $user->update([
+                'name'     => $customer->name,
+                'email'    => $customer->email,
+                'password' => Hash::make($plainPassword),
+                'status'   => 'active',
+                'salon_id' => $customer->salon_id,
+            ]);
         }
 
-        // Assign customer role (Spatie)
-        if (!$user->hasRole('customer')) {
-            $customerRole = Role::where('name', 'customer')->first();
-            if ($customerRole) {
-                $user->assignRole($customerRole);
-            }
+        // Assign customer role (Spatie) — strictly scoped to this salon or global fallback
+        $customerRole = Role::where('name', 'customer')
+            ->where(function ($q) use ($customer) {
+                $q->where('salon_id', $customer->salon_id)
+                  ->orWhereNull('salon_id');
+            })
+            ->first();
+
+        if ($customerRole && !$user->hasRole($customerRole)) {
+            $user->assignRole($customerRole);
         }
 
         // Link customer record to the user
@@ -601,7 +638,9 @@ class CustomerController extends Controller
             'custom_fields' => 'nullable|array',
             'grant_login_access' => 'nullable|boolean',
             'password_mode' => 'nullable|in:auto,manual',
-            'portal_password' => 'nullable|required_if:password_mode,manual|string|min:8|max:100',
+            'password_mode_ADD' => 'nullable|in:auto,manual',
+            'password_mode_EDIT' => 'nullable|in:auto,manual',
+            'portal_password' => 'nullable|string|min:8|max:100',
             'credential_notify' => 'nullable|in:email,sms,both',
         ], [
             'email.required_if' => 'The email field is required when email is selected as preferred contact method.',
@@ -620,7 +659,7 @@ class CustomerController extends Controller
         }
 
         try {
-            $data = $request->all();
+            $data = $request->except(['loyalty_points']);
 
             // Handle name/first_name/last_name logic
             if (empty($data['first_name']) && !empty($data['name'])) {
@@ -631,10 +670,37 @@ class CustomerController extends Controller
                 $data['name'] = trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''));
             }
 
+            // Handle portal login access grant, password change, or reset
+            $shouldUpdateLogin = $request->boolean('grant_login_access')
+                || $request->filled('portal_password')
+                || $request->filled('password')
+                || ($request->has('reset_password') && $request->boolean('reset_password'));
+
+            if ($shouldUpdateLogin && empty($data['email'] ?? $customer->email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An email address is required to enable portal login access.',
+                    'errors' => ['email' => ['An email address is required to enable portal login access.']]
+                ], 422);
+            }
+
             $customer->update($data);
 
-            // Handle portal login access grant or reset
-            if ($request->boolean('grant_login_access') && !empty($customer->email)) {
+            // Synchronize linked User name/email if customer changed them
+            if ($customer->user_id && ($linkedUser = User::find($customer->user_id))) {
+                $userUpdates = [];
+                if (!empty($customer->email) && $linkedUser->email !== $customer->email) {
+                    $userUpdates['email'] = $customer->email;
+                }
+                if (!empty($customer->name) && $linkedUser->name !== $customer->name) {
+                    $userUpdates['name'] = $customer->name;
+                }
+                if (!empty($userUpdates)) {
+                    $linkedUser->update($userUpdates);
+                }
+            }
+
+            if ($shouldUpdateLogin) {
                 try {
                     $this->grantCustomerLoginAccess($customer, $request, auth()->user()->salon);
                 } catch (\Exception $e) {
@@ -642,6 +708,10 @@ class CustomerController extends Controller
                         'customer_id' => $customer->id,
                         'error' => $e->getMessage()
                     ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to update customer login credentials: ' . $e->getMessage(),
+                    ], 500);
                 }
             }
 

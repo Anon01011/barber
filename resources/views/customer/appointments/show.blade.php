@@ -205,35 +205,42 @@
                                                 <i class="fas fa-star me-2"></i>
                                                 Service Rating
                                             </h6>
-                                            @if($booking->ratings()->exists())
+                                            @if($booking->is_rated || $booking->rating || $booking->ratings()->exists())
                                                 <!-- Display existing rating -->
                                                 @php
-                                                    $rating = $booking->ratings()->first();
+                                                    $ratingRecord = $booking->ratings()->first();
+                                                    $displayRating = $booking->rating ?? $ratingRecord?->rating ?? 5;
+                                                    $displayComment = $booking->feedback ?? $ratingRecord?->comment;
                                                 @endphp
                                                 <div class="d-flex align-items-center mb-3">
                                                     <div class="flex-shrink-0">
-                                                        <div class="avatar avatar-lg bg-warning-subtle text-warning rounded">
+                                                        <div class="avatar avatar-lg bg-warning-subtle text-warning rounded d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
                                                             <i class="fas fa-star"></i>
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1 ms-3">
                                                         <div class="mb-2">
                                                             @for($i = 1; $i <= 5; $i++)
-                                                                <i
-                                                                    class="fas fa-star {{ $i <= $rating->rating ? 'text-warning' : 'text-muted' }}"></i>
+                                                                <i class="fas fa-star {{ $i <= $displayRating ? 'text-warning' : 'text-muted' }}"></i>
                                                             @endfor
-                                                            <span class="ms-2 text-muted">{{ $rating->rating }}/5</span>
+                                                            <span class="ms-2 text-muted fw-bold">{{ $displayRating }}/5</span>
+                                                            <span class="badge bg-success-subtle text-success ms-2">Completed &amp; Rated</span>
                                                         </div>
-                                                        @if($rating->comment)
-                                                            <p class="mb-0 text-muted">{{ $rating->comment }}</p>
+                                                        @if($displayComment)
+                                                            <p class="mb-0 text-muted fst-italic">"{{ $displayComment }}"</p>
                                                         @endif
                                                     </div>
+                                                </div>
+                                                <div class="pt-2 border-top">
+                                                    <button type="button" class="btn btn-sm btn-light text-muted border shadow-none" disabled title="This appointment has already been rated">
+                                                        <i class="fas fa-check-circle text-success me-1"></i> Appointment Rated
+                                                    </button>
                                                 </div>
                                             @else
                                                 <!-- Rate service button -->
                                                 <div class="text-center py-3">
                                                     <p class="text-muted mb-3">How was your experience?</p>
-                                                    <button type="button" class="btn btn-warning"
+                                                    <button type="button" class="btn btn-warning fw-bold text-dark px-4"
                                                         onclick="showRatingModal({{ $booking->id }})">
                                                         <i class="fas fa-star me-2"></i>Rate This Service
                                                     </button>

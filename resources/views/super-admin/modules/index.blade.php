@@ -43,12 +43,13 @@
 
                     <div class="row">
                         @foreach($availableModules as $key => $module)
+                            @php $isModEnabled = !array_key_exists($key, $enabledModules) || (bool)$enabledModules[$key]; @endphp
                             <div class="col-xl-4 col-md-6 mb-4">
-                                <div class="card h-100 module-card {{ isset($enabledModules[$key]) && $enabledModules[$key] ? 'border-primary-left' : 'border-gray-left' }} shadow-sm transition-all border-0">
+                                <div class="card h-100 module-card {{ $isModEnabled ? 'border-primary-left' : 'border-gray-left' }} shadow-sm transition-all border-0">
                                     <div class="card-body">
                                         <div class="row align-items-center">
                                             <div class="col-auto">
-                                                <div class="icon-circle shadow-sm {{ isset($enabledModules[$key]) && $enabledModules[$key] ? 'bg-primary text-white' : 'bg-light text-muted' }}">
+                                                <div class="icon-circle shadow-sm {{ $isModEnabled ? 'bg-primary text-white' : 'bg-light text-muted' }}">
                                                     <i class="fas {{ $module['icon'] }}"></i>
                                                 </div>
                                             </div>
@@ -62,7 +63,7 @@
                                                                id="module_{{ $key }}" 
                                                                name="enabled_modules[{{ $key }}]" 
                                                                value="1"
-                                                               {{ (isset($enabledModules[$key]) && $enabledModules[$key]) ? 'checked' : '' }}>
+                                                               {{ $isModEnabled ? 'checked' : '' }}>
                                                     </div>
                                                 </div>
                                                 <p class="text-muted small mb-3 mt-1 line-clamp">{{ $module['description'] }}</p>
@@ -81,9 +82,9 @@
                                     </div>
                                     <div class="card-footer bg-white py-2 border-top-0 d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
-                                            <span class="status-indicator-dot {{ isset($enabledModules[$key]) && $enabledModules[$key] ? 'bg-success' : 'bg-danger' }}"></span>
-                                            <small class="module-status-label fw-bold {{ isset($enabledModules[$key]) && $enabledModules[$key] ? 'text-success' : 'text-danger' }} text-uppercase" style="font-size: 0.65rem;">
-                                                {{ (isset($enabledModules[$key]) && $enabledModules[$key]) ? 'Online' : 'Offline' }}
+                                            <span class="status-indicator-dot {{ $isModEnabled ? 'bg-success' : 'bg-danger' }}"></span>
+                                            <small class="module-status-label fw-bold {{ $isModEnabled ? 'text-success' : 'text-danger' }} text-uppercase" style="font-size: 0.65rem;">
+                                                {{ $isModEnabled ? 'Online' : 'Offline' }}
                                             </small>
                                         </div>
                                         @php $stage = $moduleStatuses[$key] ?? 'stable'; @endphp

@@ -14,12 +14,19 @@ class Booking extends Model
     use HasFactory;
     use BelongsToSalon, BelongsToBranch;
 
+    public $allowFutureCompletion = false;
+
     protected static function boot()
     {
         parent::boot();
 
         static::saving(function ($booking) {
             if ($booking->isDirty('status') && in_array($booking->status, [self::STATUS_COMPLETED, self::STATUS_STAFF_COMPLETED])) {
+                // If the booking is paid or being completed via POS/payment flow, allow completion
+                if ($booking->payment_status === self::PAYMENT_STATUS_PAID || !empty($booking->allowFutureCompletion)) {
+                    return;
+                }
+
                 $salonTimezone = salon_timezone();
                 if ($booking->start_time->isFuture() && !$booking->start_time->copy()->setTimezone($salonTimezone)->isToday()) {
                     throw new \Exception('Bookings scheduled for the future cannot be completed. Only today\'s bookings can be completed today.');
@@ -530,16 +537,20 @@ class Booking extends Model
     /**
      * Complete booking with payment
      */
-    public function completeWithPayment(string $paymentMethod, ?float $tipAmount = null, bool $incrementTotalSpent = true): bool
+    public function completeWithPayment(string $paymentMethod, ?float $tipAmount = null, bool $incrementTotalSpent = true, bool $allowFuture = false): bool
     {
         // Check if booking is in the future
         $salonTimezone = salon_timezone();
-        if ($this->start_time->isFuture() && !$this->start_time->copy()->setTimezone($salonTimezone)->isToday()) {
+        if (!$allowFuture && $this->start_time->isFuture() && !$this->start_time->copy()->setTimezone($salonTimezone)->isToday()) {
             throw new \Exception('Bookings scheduled for the future cannot be completed. Only today\'s bookings can be completed today.');
         }
 
-        if (!in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_STAFF_COMPLETED])) {
-            throw new \Exception('Only confirmed or staff completed bookings can be completed.');
+        if (!in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_STAFF_COMPLETED, self::STATUS_PENDING])) {
+            throw new \Exception('Only confirmed, staff completed, or pending bookings can be completed.');
+        }
+
+        if ($allowFuture) {
+            $this->allowFutureCompletion = true;
         }
 
         $updated = $this->update([

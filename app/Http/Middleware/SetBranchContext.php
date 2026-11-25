@@ -35,6 +35,32 @@ class SetBranchContext
         $isSuperAdmin = $user && $user->hasRole('super_admin');
         $branch = null;
 
+        // If Multi-Branch module is not enabled globally or not entitled in plan, enforce single-branch isolation
+        if (!$isSuperAdmin && $salon && method_exists($salon, 'hasBranchModule') && !$salon->hasBranchModule()) {
+            if (session()->has('current_branch_id')) {
+                session()->forget('current_branch_id');
+            }
+
+            $fallbackBranch = null;
+            if ($user && $user->branch_id) {
+                $fallbackBranch = Branch::where('salon_id', $salon->id)
+                    ->where('id', $user->branch_id)
+                    ->where('is_active', true)
+                    ->first();
+            } else {
+                $fallbackBranch = Branch::where('salon_id', $salon->id)
+                    ->where('is_active', true)
+                    ->orderBy('id')
+                    ->first();
+            }
+
+            if ($fallbackBranch) {
+                app()->instance('current_branch', $fallbackBranch);
+                view()->share('current_branch', $fallbackBranch);
+            }
+            return $next($request);
+        }
+
         // Priority 1: Session value (when user manually switches branches)
         if (session()->has('current_branch_id')) {
             $branchId = session()->get('current_branch_id');
@@ -71,6 +97,9 @@ class SetBranchContext
                 view()->share('current_branch', $branch);
                 session()->put('current_branch_id', $branch->id);
                 return $next($request);
+            } else {
+                Log::warning('SetBranchContext: User assigned branch ID not found or inactive, falling back to active branch.', ['branch_id' => $user->branch_id]);
+                session()->forget('current_branch_id');
             }
         }
 

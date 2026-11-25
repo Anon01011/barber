@@ -233,53 +233,61 @@
                     </div>
 
                     <!-- Portal Login Access Section -->
-                    <div class="card border-0 mb-3" style="border: 1px solid #e8dccb !important; background: linear-gradient(135deg, #fdfcfa 0%, #faf7f2 100%);">
+                    <div class="card border-0 mb-3" style="border: 1px solid #e8dccb !important; border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #faf8f5 100%); box-shadow: 0 4px 12px rgba(197, 168, 128, 0.08);">
                         <div class="card-body p-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="p-2 rounded-2 me-2" style="background: rgba(197,168,128,0.15);">
-                                    <i class="fas fa-key" style="color: #c5a880;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0 fw-semibold text-dark" style="font-size:13px;">Portal Login Access</h6>
-                                    <small class="text-muted">Allow this customer to log in to their client portal</small>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="p-2 rounded-2 d-flex align-items-center justify-content-center" style="background: rgba(197, 168, 128, 0.18); width: 36px; height: 36px;">
+                                        <i class="fas fa-shield-alt text-warning" style="color: #c5a880 !important;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">Client Portal Login Access</h6>
+                                        <small class="text-muted">Allow this customer to sign in to book services, view history, and redeem points</small>
+                                    </div>
                                 </div>
                                 <div class="form-check form-switch ms-2 mb-0">
                                     <input class="form-check-input" type="checkbox" name="grant_login_access"
-                                        value="1" id="grantLoginToggle_ADD" onchange="toggleLoginAccessSection('ADD')">
+                                        value="1" id="grantLoginToggle_ADD" style="width: 40px; height: 20px; cursor: pointer;" onchange="toggleLoginAccessSection('ADD')">
                                 </div>
                             </div>
 
-                            <div id="loginAccessFields_ADD" style="display:none;">
-                                <div class="p-3 rounded-2 mb-3" style="background:#fff8f0; border:1px solid #f0dfc0;">
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fas fa-info-circle text-warning mt-1" style="font-size:11px;"></i>
-                                        <small class="text-muted">An account will be created so the customer can log in to view their appointments and history. Credentials will be sent to their email address.</small>
+                            <div id="loginAccessFields_ADD" style="display:none;" class="mt-3 pt-3 border-top">
+                                <div class="p-2 px-3 rounded-2 mb-3 d-flex align-items-center justify-content-between" style="background: rgba(197, 168, 128, 0.1); border: 1px dashed rgba(197, 168, 128, 0.4);">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-info-circle" style="color: #c5a880;"></i>
+                                        <small class="text-muted">Username will be the customer's <strong>Email Address</strong>. Credentials will be sent automatically.</small>
                                     </div>
                                 </div>
+
                                 <div class="row g-3">
                                     <div class="col-12">
-                                        <label class="form-label fw-semibold" style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280;">
-                                            <i class="fas fa-lock me-1" style="color:#c5a880;"></i>Password Setup
+                                        <label class="form-label fw-bold small text-uppercase" style="font-size: 11px; letter-spacing: 0.5px; color: #64748b;">
+                                            <i class="fas fa-lock me-1" style="color: #c5a880;"></i>Password Setup Mode
                                         </label>
-                                        <div class="d-flex gap-3 mb-1">
+                                        <div class="d-flex gap-4 mb-1">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="password_mode_ADD" id="auto_pass_ADD" value="auto" checked onchange="togglePasswordMode('ADD')">
-                                                <label class="form-check-label small" for="auto_pass_ADD">
-                                                    <i class="fas fa-magic me-1 text-success"></i>Auto-generate &amp; email
+                                                <input class="form-check-input" type="radio" name="password_mode" id="auto_pass_ADD" value="auto" checked onchange="togglePasswordMode('ADD')">
+                                                <label class="form-check-label small fw-semibold text-dark" for="auto_pass_ADD">
+                                                    <i class="fas fa-magic me-1 text-success"></i>Auto-generate &amp; send
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="password_mode_ADD" id="manual_pass_ADD" value="manual" onchange="togglePasswordMode('ADD')">
-                                                <label class="form-check-label small" for="manual_pass_ADD">
-                                                    <i class="fas fa-pen me-1" style="color:#c5a880;"></i>Set manually
+                                                <input class="form-check-input" type="radio" name="password_mode" id="manual_pass_ADD" value="manual" onchange="togglePasswordMode('ADD')">
+                                                <label class="form-check-label small fw-semibold text-dark" for="manual_pass_ADD">
+                                                    <i class="fas fa-pen me-1" style="color: #c5a880;"></i>Set manually
                                                 </label>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6" id="manualPassField_ADD" style="display:none;">
-                                        <label class="form-label fw-semibold small">
-                                            <i class="fas fa-key me-1" style="color:#c5a880;"></i>Password
-                                        </label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label fw-semibold small m-0">
+                                                <i class="fas fa-key me-1" style="color: #c5a880;"></i>Password (Min. 8 chars)
+                                            </label>
+                                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="color: #b38e5d; font-size: 0.75rem;" onclick="generateAddPassword()">
+                                                <i class="fas fa-random me-1"></i>Generate
+                                            </button>
+                                        </div>
                                         <div class="input-group input-group-sm">
                                             <input type="password" class="form-control" name="portal_password"
                                                 id="portalPasswordInput_ADD" placeholder="Min. 8 characters" autocomplete="new-password">
@@ -290,7 +298,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold small">
-                                            <i class="fas fa-paper-plane me-1" style="color:#c5a880;"></i>Send Credentials Via
+                                            <i class="fas fa-paper-plane me-1" style="color: #c5a880;"></i>Send Credentials Via
                                         </label>
                                         <select class="form-select form-select-sm" name="credential_notify">
                                             <option value="email" selected>Email only</option>
@@ -333,9 +341,9 @@ function toggleLoginAccessSection(suffix) {
     if (toggle && fields) { fields.style.display = toggle.checked ? 'block' : 'none'; }
 }
 function togglePasswordMode(suffix) {
-    var mode = document.querySelector('input[name="password_mode_' + suffix + '"]:checked');
+    var mode = document.querySelector('input[name="password_mode"]:checked') || document.querySelector('input[name="password_mode_' + suffix + '"]:checked');
     var manualField = document.getElementById('manualPassField_' + suffix);
-    if (mode && manualField) { manualField.style.display = mode.value === 'manual' ? 'flex' : 'none'; }
+    if (mode && manualField) { manualField.style.display = mode.value === 'manual' ? 'block' : 'none'; }
 }
 function togglePortalPassVis(suffix) {
     var input = document.getElementById('portalPasswordInput_' + suffix);
@@ -343,5 +351,19 @@ function togglePortalPassVis(suffix) {
     if (!input) return;
     if (input.type === 'password') { input.type = 'text'; if (icon) icon.className = 'fas fa-eye-slash'; }
     else { input.type = 'password'; if (icon) icon.className = 'fas fa-eye'; }
+}
+function generateAddPassword() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    var pass = '';
+    for (var i = 0; i < 12; i++) {
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    var input = document.getElementById('portalPasswordInput_ADD');
+    if (input) {
+        input.value = pass;
+        input.type = 'text';
+        var icon = document.getElementById('portalPassEye_ADD');
+        if (icon) icon.className = 'fas fa-eye-slash';
+    }
 }
 </script>

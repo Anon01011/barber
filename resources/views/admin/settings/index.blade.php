@@ -112,6 +112,18 @@
                         <button class="nav-link" id="pri-tab" data-bs-toggle="pill" data-bs-target="#privacy" type="button" role="tab">
                             <i class="fas fa-shield-alt"></i> Security & Privacy
                         </button>
+                        @php
+                            $salonForPlan = auth()->user()?->salon;
+                            $entitlementSvc = app(\App\Services\ModuleEntitlementService::class);
+                            $isOnTrial = $salonForPlan && method_exists($salonForPlan, 'isOnTrial') && $salonForPlan->isOnTrial();
+                            $hasLoyaltyTab = \App\Helpers\ModuleHelper::loyaltyEnabled() && $salonForPlan && ($entitlementSvc->isEntitledByPlan($salonForPlan, 'loyalty') || $isOnTrial);
+                            $hasFeedbackTab = \App\Helpers\ModuleHelper::feedbackEnabled() && $salonForPlan && ($entitlementSvc->isEntitledByPlan($salonForPlan, 'feedback') || $isOnTrial);
+                        @endphp
+                        @if($hasLoyaltyTab || $hasFeedbackTab)
+                        <button class="nav-link" id="loyalty-tab" data-bs-toggle="pill" data-bs-target="#loyalty-feedback" type="button" role="tab">
+                            <i class="fas fa-coins text-warning"></i> Loyalty &amp; Feedback
+                        </button>
+                        @endif
                         @if(optional(auth()->user()->salon)->canUseFeature('AI Insights & Automation'))
                         <button class="nav-link" id="ai-tab" data-bs-toggle="pill" data-bs-target="#ai-settings" type="button" role="tab">
                             <i class="fas fa-brain text-warning"></i> AI & Automation
@@ -166,6 +178,13 @@
                             <div class="tab-pane fade" id="privacy" role="tabpanel">
                                 @include('admin.settings.partials.privacy', ['settings' => $settings])
                             </div>
+
+                            @if($hasLoyaltyTab || $hasFeedbackTab)
+                            <!-- Loyalty & Feedback Tab -->
+                            <div class="tab-pane fade" id="loyalty-feedback" role="tabpanel">
+                                @include('admin.settings.partials.loyalty-feedback', ['settings' => $settings, 'hasLoyaltyTab' => $hasLoyaltyTab, 'hasFeedbackTab' => $hasFeedbackTab])
+                            </div>
+                            @endif
 
                             <!-- AI & Automation Tab -->
                             @if(optional(auth()->user()->salon)->canUseFeature('AI Insights & Automation'))

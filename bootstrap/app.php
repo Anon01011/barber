@@ -85,7 +85,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if (in_array($status, [403, 500, 503]) && view()->exists("errors.{$status}")) {
-                return response()->view("errors.{$status}", [], $status);
+                return response()->view("errors.{$status}", ['exception' => $e], $status);
             }
 
             return null;

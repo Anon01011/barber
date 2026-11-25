@@ -46,6 +46,15 @@
                             </div>
                         </li>
                         <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <div class="form-check">
+                                <input class="form-check-input staff-filter-checkbox" type="checkbox"
+                                    value="unassigned" id="staffFilterUnassigned" checked>
+                                <label class="form-check-label w-100" for="staffFilterUnassigned">
+                                    ⚡ Online / Unassigned
+                                </label>
+                            </div>
+                        </li>
                         @foreach($staffMembers as $staff)
                             <li>
                                 <div class="form-check">
@@ -452,23 +461,35 @@
             }
         }
 
+        /* --- Desktop: Mobile card cell NEVER visible on desktop --- */
+        @media (min-width: 768px) {
+            .bk-mobile-card-td,
+            #bookingsList td.bk-mobile-card-td,
+            #bookingsTable td.bk-mobile-card-td {
+                display: none !important;
+            }
+        }
+
         /* --- Mobile: Hide table, show cards ----------------------- */
         @media (max-width: 767.98px) {
             #bookingsList tr.bk-card-row {
-                display: block;
+                display: block !important;
                 background: #fff;
                 border-radius: 16px;
                 box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
                 margin: 0 0 12px 0;
                 padding: 14px 14px 10px;
-                border: none;
+                border: none !important;
                 transition: box-shadow 0.18s;
             }
             #bookingsList tr.bk-card-row:hover {
                 box-shadow: 0 6px 20px rgba(99,102,241,0.12), 0 2px 6px rgba(0,0,0,0.08);
             }
-            #bookingsList td {
-                display: block;
+            #bookingsList tr.bk-card-row td:not(.bk-mobile-card-td) {
+                display: none !important;
+            }
+            #bookingsList td.bk-mobile-card-td {
+                display: block !important;
                 border: none !important;
                 padding: 0 !important;
             }
@@ -1186,7 +1207,7 @@
                         <i class="fas fa-times me-1"></i>
                         <span>Cancel</span>
                     </button>
-                    <button type="button" class="btn btn-modern btn-primary-modern" id="createBooking">
+                    <button type="button" class="btn btn-modern btn-primary-modern" id="createBooking" onclick="if(window.handleFormSubmit) { window.handleFormSubmit(); }">
                         <i class="fas fa-save me-1"></i>
                         <span id="createBookingText">Create Appointment</span>
                     </button>

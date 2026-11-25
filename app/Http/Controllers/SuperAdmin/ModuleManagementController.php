@@ -99,6 +99,16 @@ class ModuleManagementController extends Controller
                 'icon' => 'fa-brain',
                 'description' => 'Autonomous ML churn campaigns, revenue forecasting & AI copilot',
             ],
+            'loyalty' => [
+                'name' => 'Loyalty Program',
+                'icon' => 'fa-star',
+                'description' => 'Customer loyalty reward points and POS redemption',
+            ],
+            'feedback' => [
+                'name' => 'Customer Feedback & Reviews',
+                'icon' => 'fa-comments',
+                'description' => 'Customer post-service star ratings and reviews',
+            ],
         ];
 
         // Get current enabled modules from settings
@@ -107,9 +117,9 @@ class ModuleManagementController extends Controller
         // Get module statuses from settings
         $moduleStatuses = $this->settingsService->get('module_statuses', [], null, null);
 
-        // If empty, default all to enabled
-        if (empty($enabledModules)) {
-            foreach (array_keys($availableModules) as $key) {
+        // Default missing module keys to enabled (matching ModuleHelper::isEnabled())
+        foreach (array_keys($availableModules) as $key) {
+            if (!array_key_exists($key, $enabledModules)) {
                 $enabledModules[$key] = true;
             }
         }
@@ -150,7 +160,9 @@ class ModuleManagementController extends Controller
             'marketing',
             'sms',
             'whatsapp',
-            'ai'
+            'ai',
+            'loyalty',
+            'feedback'
         ];
 
         // Build the enabled modules array

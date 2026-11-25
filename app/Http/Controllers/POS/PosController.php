@@ -715,6 +715,7 @@ class PosController extends Controller
                 }
             ],
             'discount_type' => 'nullable|in:fixed,percent',
+            'loyalty_points_redeemed' => 'nullable|integer|min:0',
             'payment_method' => 'nullable|string|in:cash,card,online,other,mixed,none,package',
             'tendered_amount' => 'nullable|numeric|min:0',
             'change_amount' => 'nullable|numeric|min:0',
@@ -1440,6 +1441,24 @@ class PosController extends Controller
                             $overallDiscount = min($netBeforeGlobal, $overallDiscount);
                         }
 
+                        // Apply Loyalty Points Redemption if requested and customer is eligible
+                        $loyaltyPointsToRedeem = 0;
+                        $loyaltyDiscountAmount = 0.00;
+                        if (!empty($validated['loyalty_points_redeemed']) && !empty($validated['customer_id'])) {
+                            $loyaltyCustomer = Customer::find($validated['customer_id']);
+                            $loyaltyService = app(\App\Services\LoyaltyService::class);
+                            if ($loyaltyCustomer && $loyaltyService->isEnabled($loyaltyCustomer->salon)) {
+                                $remainingAfterDiscount = max(0, $netBeforeGlobal - $overallDiscount);
+                                $eligibility = $loyaltyService->calculateMaxRedeemable($loyaltyCustomer, $remainingAfterDiscount, $loyaltyCustomer->salon);
+                                if ($eligibility['can_redeem']) {
+                                    $requestedPts = (int) $validated['loyalty_points_redeemed'];
+                                    $loyaltyPointsToRedeem = min($requestedPts, $eligibility['max_points']);
+                                    $loyaltyDiscountAmount = round(min($remainingAfterDiscount, $eligibility['max_discount'], $loyaltyPointsToRedeem * $eligibility['redemption_rate']), 2);
+                                    $overallDiscount += $loyaltyDiscountAmount;
+                                }
+                            }
+                        }
+
                         // Adjust tax if global discount exists
                         if ($overallDiscount > 0 && $netBeforeGlobal > 0) {
                             $ratio = ($netBeforeGlobal - $overallDiscount) / $netBeforeGlobal;
@@ -1678,20 +1697,34 @@ class PosController extends Controller
                         ]);
 
                         // Update booking statuses to completed if booking_ids provided and payment is complete
-                        // OR if customer has staff_completed bookings from today
+                        // OR if customer has bookings from today
                         if ($paymentStatus === 'paid') {
                             $bookingIdsToUpdate = [];
 
-                            // If booking_ids explicitly provided, use those
+                            // 1. If booking_ids explicitly provided, use those
                             if (!empty($validated['booking_ids'])) {
-                                $bookingIdsToUpdate = $validated['booking_ids'];
+                                $bookingIdsToUpdate = array_merge($bookingIdsToUpdate, (array) $validated['booking_ids']);
                             }
-                            // Otherwise, find all staff_completed bookings for this customer from today
-                            elseif (!empty($validated['customer_id'])) {
+
+                            // 2. Also collect booking IDs attached to items in cart
+                            if (!empty($validated['items'])) {
+                                foreach ($validated['items'] as $cartItem) {
+                                    if (!empty($cartItem['booking_id'])) {
+                                        $bookingIdsToUpdate[] = $cartItem['booking_id'];
+                                    }
+                                    if (!empty($cartItem['booking_ids']) && is_array($cartItem['booking_ids'])) {
+                                        $bookingIdsToUpdate = array_merge($bookingIdsToUpdate, $cartItem['booking_ids']);
+                                    }
+                                }
+                            }
+                            $bookingIdsToUpdate = array_values(array_unique(array_filter($bookingIdsToUpdate)));
+
+                            // 3. Fallback: find all active bookings for this customer from today
+                            if (empty($bookingIdsToUpdate) && !empty($validated['customer_id'])) {
                                 $bookingIdsToUpdate = \App\Models\Booking::where('salon_id', $salonId)
                                     ->where('customer_id', $validated['customer_id'])
                                     ->whereDate('start_time', now()->toDateString())
-                                    ->where('status', 'staff_completed')
+                                    ->whereIn('status', ['staff_completed', 'confirmed', 'pending', 'arrived', 'started'])
                                     ->pluck('id')
                                     ->toArray();
                             }
@@ -2090,28 +2123,23 @@ class PosController extends Controller
                                             $currentBookingTip = round($tip - ($tipPerBooking * ($bookingsToUpdate->count() - 1)), 2);
                                         }
 
-                                        // Use completeWithPayment to trigger rating tokens, emails, etc.
-                                        $salonTimezone = salon_timezone();
-                                        $isFutureBooking = $booking->start_time->isFuture() && !$booking->start_time->copy()->setTimezone($salonTimezone)->isToday();
+                                        // Mark booking as completed upon successful POS checkout
+                                        $booking->allowFutureCompletion = true;
+                                        $booking->update([
+                                            'status' => 'completed',
+                                            'payment_status' => 'paid',
+                                            'payment_method' => $paymentMethod,
+                                            'paid_at' => now(),
+                                            'tip_amount' => $currentBookingTip ?? 0,
+                                            'updated_at' => now(),
+                                        ]);
 
-                                        if ($isFutureBooking) {
-                                            // For future bookings, only mark as paid but keep status as confirmed (or whatever it was, unless pending)
-                                            if ($booking->status === 'pending') {
-                                                $booking->status = 'confirmed';
-                                            }
-
-                                            // Mark as paid
-                                            $booking->markAsPaid($paymentMethod, $currentBookingTip);
-                                            // Note: Customer total_spent is updated globally at POS checkout (REV-09)
-
-                                            $updatedCount++;
-                                            \Log::info("Future booking {$booking->id} marked as PAID but not completed via POS");
-                                        } else {
-                                            // Today or past: Complete normally
-                                            if ($booking->completeWithPayment($paymentMethod, $currentBookingTip, false)) {
-                                                $updatedCount++;
-                                            }
+                                        // Generate rating token & send completion email
+                                        $booking->generateRatingToken();
+                                        if ($booking->customer && $booking->customer->email) {
+                                            \App\Jobs\SendBookingCompletionEmail::dispatch($booking);
                                         }
+                                        $updatedCount++;
 
                                         // AUTO-LINKING: If this booking is not yet linked to any PosSaleItem, try to link it now
                                         if (!in_array($booking->id, $linkedBookingIds)) {
@@ -2252,6 +2280,26 @@ class PosController extends Controller
                         if ($sale->customer) {
                             $sale->customer->increment('total_spent', $paid);
                             $sale->customer->update(['last_visit_at' => now()]);
+
+                            // Process Loyalty Points Redemption & Awarding
+                            $loyaltyService = app(\App\Services\LoyaltyService::class);
+                            if ($loyaltyService->isEnabled($sale->customer->salon)) {
+                                if ($loyaltyPointsToRedeem > 0 && $loyaltyDiscountAmount > 0) {
+                                    $loyaltyService->redeemPoints(
+                                        $sale->customer,
+                                        $loyaltyPointsToRedeem,
+                                        $loyaltyDiscountAmount,
+                                        $sale
+                                    );
+                                }
+                                if ($paid > 0) {
+                                    $loyaltyService->awardPoints(
+                                        $sale->customer,
+                                        $paid,
+                                        $sale
+                                    );
+                                }
+                            }
                         }
 
                         // Create commission records for tips distributed among staff
@@ -2807,6 +2855,7 @@ class PosController extends Controller
                     'name' => $customer->name,
                     'phone' => $maskedPhone,
                     'email' => \App\Helpers\CustomerDataHelper::getMaskedEmail($customer),
+                    'loyalty_points' => (int) ($customer->loyalty_points ?? 0),
                     'text' => "{$customer->name} ({$maskedPhone})"
                 ];
             });
@@ -3526,6 +3575,9 @@ class PosController extends Controller
                         ->whereIn('membership_id', $membershipIds)
                         ->update(['is_active' => false]);
                 }
+
+                // Reverse earned and redeemed loyalty points
+                app(\App\Services\LoyaltyService::class)->reverseSaleLoyalty($sale, 'Refunded');
             }
 
             DB::commit();
@@ -3696,6 +3748,9 @@ class PosController extends Controller
                 }
             }
 
+            // 4. Reverse earned and redeemed loyalty points
+            app(\App\Services\LoyaltyService::class)->reverseSaleLoyalty($sale, 'Voided');
+
             DB::commit();
 
             if ($request->ajax() || $request->wantsJson()) {
@@ -3798,12 +3853,20 @@ class PosController extends Controller
     {
         $salonId = auth()->user()->salon_id;
         $customer = Customer::with('user')->where('salon_id', $salonId)->findOrFail($id);
+        $loyaltyService = app(\App\Services\LoyaltyService::class);
+        $loyaltyEnabled = $loyaltyService->isEnabled($customer->salon);
+        $loyaltySettings = $loyaltyService->getSettings($customer->salon);
         return response()->json([
             'id' => $customer->id,
             'name' => $customer->name,
             'email' => \App\Helpers\CustomerDataHelper::getMaskedEmail($customer),
             'phone' => \App\Helpers\CustomerDataHelper::getMaskedPhone($customer),
             'address' => $customer->address,
+            'loyalty_points' => (int) ($customer->loyalty_points ?? 0),
+            'loyalty_enabled' => $loyaltyEnabled,
+            'loyalty_redemption_rate' => $loyaltySettings['redemption_rate'] ?? 0.05,
+            'loyalty_min_points' => $loyaltySettings['min_points_to_redeem'] ?? 50,
+            'loyalty_max_discount_pct' => $loyaltySettings['max_discount_percentage'] ?? 50,
         ]);
     }
 

@@ -166,6 +166,26 @@ class ModuleHelper
     }
 
     /**
+     * Check if loyalty program module is enabled
+     *
+     * @return bool
+     */
+    public static function loyaltyEnabled(): bool
+    {
+        return self::isEnabled('loyalty');
+    }
+
+    /**
+     * Check if customer feedback & reviews module is enabled
+     *
+     * @return bool
+     */
+    public static function feedbackEnabled(): bool
+    {
+        return self::isEnabled('feedback');
+    }
+
+    /**
      * Get all enabled modules
      *
      * @return array

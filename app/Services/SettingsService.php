@@ -291,14 +291,14 @@ class SettingsService
 
     public function set($key, $value, $salonId = null, $branchId = null)
     {
-        // When storing a global setting (no salonId), bypass the BelongsToSalon
+        // When storing a global setting (no salonId or false), bypass the BelongsToSalon
         // creating hook that would auto-assign the current_salon context.
-        if ($salonId === null) {
+        if ($salonId === null || $salonId === false) {
             $setting = Setting::withoutGlobalScopes()->updateOrCreate(
                 [
                     'key'       => $key,
                     'salon_id'  => null,
-                    'branch_id' => $branchId,
+                    'branch_id' => $branchId ? $branchId : null,
                 ],
                 ['value' => $value]
             );
@@ -394,6 +394,14 @@ class SettingsService
 
             return $settings;
         });
+    }
+
+    /**
+     * Helper to get all settings for a specific salon.
+     */
+    public function getForSalon($salonId, $branchId = null)
+    {
+        return $this->getAll($salonId, $branchId);
     }
 
     public function clearCache($key = null, $salonId = null, $branchId = null)

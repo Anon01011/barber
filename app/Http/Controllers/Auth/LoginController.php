@@ -99,7 +99,8 @@ class LoginController extends Controller
 
                 // Route customer portal users to their dashboard
                 if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'manager', 'employee', 'super_admin'])) {
-                    return redirect()->route('customer.dashboard');
+                    $slug = $user->salon?->slug ?? session('current_salon_slug') ?? 'default';
+                    return redirect()->route('customer.dashboard', ['salon_slug' => $slug]);
                 }
 
                 // SaaS Check for salon users
@@ -183,10 +184,44 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate([
+            'email' => ['required', 'string'],
             'password' => ['required'],
         ]);
+
+        $loginInput = trim((string)$request->input('email'));
+        $credentials = [
+            'email' => $loginInput,
+            'password' => $request->input('password'),
+        ];
+
+        // Allow customers to sign in with phone number as well as email
+        if (!filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            $matchingCustomers = \App\Models\Customer::where(function ($q) use ($loginInput) {
+                    $q->where('phone', $loginInput)
+                      ->orWhere('secondary_number', $loginInput);
+                })
+                ->whereNotNull('user_id')
+                ->with('user')
+                ->get();
+
+            // Disambiguate across multiple linked portal accounts by verifying password hash
+            $resolvedEmail = null;
+            foreach ($matchingCustomers as $mc) {
+                if ($mc->user && \Illuminate\Support\Facades\Hash::check($credentials['password'], $mc->user->password)) {
+                    $resolvedEmail = $mc->user->email;
+                    break;
+                }
+            }
+
+            if (!$resolvedEmail && $matchingCustomers->isNotEmpty() && $matchingCustomers->first()->user) {
+                $resolvedEmail = $matchingCustomers->first()->user->email;
+            }
+
+            if ($resolvedEmail) {
+                $credentials['email'] = $resolvedEmail;
+            }
+        }
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $user = Auth::user();
@@ -217,7 +252,8 @@ class LoginController extends Controller
 
             // Route customer portal users to their dashboard
             if ($user->hasRole('customer') && !$user->hasAnyRole(['salon_admin', 'manager', 'employee', 'super_admin'])) {
-                return redirect()->route('customer.dashboard');
+                $slug = $user->salon?->slug ?? session('current_salon_slug') ?? 'default';
+                return redirect()->route('customer.dashboard', ['salon_slug' => $slug]);
             }
 
             // SaaS Check for salon users

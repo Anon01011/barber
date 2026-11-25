@@ -48,9 +48,11 @@ Route::get('/subscription-expired', function () {
     return view('saas.subscription.expired');
 })->name('subscription.expired');
 
-// Guest Rating Routes (Public - no auth required)
-Route::get('/rating/{token}', [App\Http\Controllers\RatingController::class, 'showGuestRatingForm'])->name('ratings.guest.form');
-Route::post('/rating/{token}', [App\Http\Controllers\RatingController::class, 'submitGuestRating'])->name('ratings.guest.submit');
+// Guest Rating Routes (Public - no auth required, legacy URL compatibility)
+Route::middleware(['throttle:30,1'])->group(function () {
+    Route::get('/rating/{token}', [\App\Http\Controllers\Booking\RatingController::class, 'show'])->name('ratings.legacy.form');
+    Route::post('/rating/{token}', [\App\Http\Controllers\Booking\RatingController::class, 'store'])->name('ratings.legacy.submit');
+});
 
 // Auth routes
 Route::middleware('guest')->group(function () {
@@ -233,6 +235,12 @@ Route::middleware('auth')->group(function () {
     // Notification routes
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+});
+
+// Public Customer Rating & Feedback Routes (Tokenized)
+Route::middleware(['throttle:30,1'])->group(function () {
+    Route::get('/booking/rate/{token}', [\App\Http\Controllers\Booking\RatingController::class, 'show'])->name('ratings.guest.form');
+    Route::post('/booking/rate/{token}', [\App\Http\Controllers\Booking\RatingController::class, 'store'])->name('ratings.guest.store');
 });
 
 // SALON ROUTES (Scoped by Slug)
@@ -420,6 +428,11 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                 });
                 */
             });
+
+            // Customer Feedback & Reviews (Independent of bookings.view; gated by feature, module, and review permission)
+            Route::get('/feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])
+                ->name('feedback.index')
+                ->middleware(['plan_feature:Customer Feedback & Reviews', 'module:feedback', 'permission:marketing.manage_reviews']);
 
             // Services
             Route::middleware(['plan_feature:Service Management', 'module:services'])->group(function () {
@@ -751,7 +764,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 
     // Customer Routes
     Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->group(function () {
-        Route::get('/dashboard', [CustomerAppointmentController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [CustomerAppointmentController::class, 'dashboard'])->name('dashboard');
         Route::get('/appointments', [CustomerAppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments/{booking}/rate', [CustomerAppointmentController::class, 'rate'])->name('appointments.rate');
         Route::get('/appointments/create', [CustomerAppointmentController::class, 'create'])->name('appointments.create');

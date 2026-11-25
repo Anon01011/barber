@@ -29,17 +29,28 @@ class CheckPlanFeature
             $salon = \App\Models\Salon::where('slug', $request->route('salon_slug'))->first();
         }
 
-        // Active trial bypasses feature restrictions to let user test capabilities
-        if ($salon && method_exists($salon, 'isOnTrial') && $salon->isOnTrial()) {
-            return $next($request);
+        $entitlementService = app(\App\Services\ModuleEntitlementService::class);
+        $moduleKey = $entitlementService->getModuleKeyForFeature($feature);
+
+        // 1. HARD GLOBAL CHECK: If module is disabled globally, deny access immediately
+        if ($moduleKey && !$entitlementService->isGloballyEnabled($moduleKey)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The '{$feature}' module is currently disabled by the system administrator.",
+                    'module_disabled' => true,
+                ], 403);
+            }
+
+            $salonSlug = $request->route('salon_slug') ?? ($salon?->slug);
+            return redirect()->route('admin.dashboard', ['salon_slug' => $salonSlug])
+                ->with('error', "The '{$feature}' module is currently disabled by the system administrator.");
         }
 
-        $subscription = $salon?->activeSubscription;
-        $plan = $subscription?->plan;
+        // 2. Authoritative feature entitlement check
+        $canUse = $salon ? $entitlementService->canUseFeature($salon, $feature) : false;
 
-        $hasFeature = $plan && !$plan->isEmptyFeatures() && $plan->hasFeature($feature);
-
-        if (!$hasFeature) {
+        if (!$canUse) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -51,7 +62,7 @@ class CheckPlanFeature
             return response()->view('errors.feature-locked', [
                 'feature' => $feature,
                 'salon' => $salon,
-                'currentPlan' => $plan,
+                'currentPlan' => $salon?->currentSubscription()?->plan,
             ], 403);
         }
 

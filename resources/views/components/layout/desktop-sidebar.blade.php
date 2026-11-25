@@ -69,6 +69,18 @@
                         <i class="fas fa-calendar-alt sidebar-icon"></i>
                         <span class="sidebar-text">My Appointments</span>
                     </a>
+                    @if(\App\Helpers\ModuleHelper::loyaltyEnabled() && (optional($sidebarUser->salon)->hasLoyaltyProgram() || (method_exists(optional($sidebarUser->salon), 'isOnTrial') && optional($sidebarUser->salon)->isOnTrial())))
+                        @php
+                            $customerRecord = $sidebarUser->customer;
+                            $points = $customerRecord ? ($customerRecord->loyalty_points ?? 0) : 0;
+                        @endphp
+                        <div class="px-3 py-2 my-2 mx-2 rounded-3 text-white" style="background: linear-gradient(135deg, rgba(197,168,128,0.2) 0%, rgba(197,168,128,0.06) 100%); border: 1px solid rgba(197,168,128,0.3);">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="small" style="font-size: 0.75rem; color: #cbd5e1;"><i class="fas fa-coins text-warning me-1"></i> Loyalty Points</span>
+                                <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.75rem;">{{ number_format($points) }}</span>
+                            </div>
+                        </div>
+                    @endif
                     <a href="{{ route('profile.edit') }}"
                         class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}" data-bs-toggle="tooltip"
                         data-bs-placement="right" title="Profile">
@@ -278,6 +290,18 @@
                             @endif
                         @endcan
 
+                        <!-- Customer Feedback & Reviews -->
+                        @if(auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('salon_admin') || auth()->user()->can('marketing.manage_reviews'))
+                            @if(\App\Helpers\ModuleHelper::feedbackEnabled() && (optional(auth()->user()->salon)->hasFeedbackModule() || (method_exists(optional(auth()->user()->salon), 'isOnTrial') && optional(auth()->user()->salon)->isOnTrial())))
+                                <a href="{{ route('admin.feedback.index', ['salon_slug' => $salonSlug]) }}"
+                                    class="sidebar-item {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}"
+                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Feedback & Reviews">
+                                    <i class="fas fa-star sidebar-icon"></i>
+                                    <span class="sidebar-text">Feedback &amp; Reviews</span>
+                                </a>
+                            @endif
+                        @endif
+
                         <!-- Staff & Commissions -->
                         @can('staff.view')
                             @if(optional(auth()->user()->salon)->canUseFeature('Staff Management') && \App\Helpers\ModuleHelper::staffEnabled() && !auth()->user()->hasRole('employee'))
@@ -405,7 +429,7 @@
                                                 <i class="fas fa-user-friends sidebar-icon"></i>
                                                 <span class="sidebar-text">Customer Insights</span>
                                             </a>
-                                            @if(optional(auth()->user()->salon)->canUseFeature('Commission Management'))
+                                            @if(optional(auth()->user()->salon)->canUseFeature('Commission Management') && \App\Helpers\ModuleHelper::isEnabled('commissions'))
                                                 <a href="{{ route('admin.commissions.reports', ['salon_slug' => $salonSlug]) }}"
                                                     class="sidebar-item sub-item {{ request()->routeIs('admin.commissions.reports') ? 'active' : '' }}"
                                                     data-bs-toggle="tooltip" data-bs-placement="right" title="Commissions">

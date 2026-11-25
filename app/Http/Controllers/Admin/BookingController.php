@@ -108,12 +108,20 @@ class BookingController extends Controller
             }
 
             // Apply filters
-            if ($staffId) {
-                if (str_contains($staffId, ',')) {
-                    $query->whereIn('bookings.staff_id', explode(',', $staffId));
-                } else {
-                    $query->where('bookings.staff_id', $staffId);
-                }
+            if ($staffId !== null && $staffId !== '') {
+                $staffIds = is_array($staffId) ? $staffId : explode(',', (string) $staffId);
+                $includeUnassigned = in_array('unassigned', $staffIds, true) || in_array('null', $staffIds, true) || in_array('', $staffIds, true);
+                $numericStaffIds = array_values(array_filter($staffIds, fn($id) => is_numeric($id)));
+
+                $query->where(function ($q) use ($numericStaffIds, $includeUnassigned) {
+                    $hasNumeric = !empty($numericStaffIds);
+                    if ($hasNumeric) {
+                        $q->whereIn('bookings.staff_id', $numericStaffIds);
+                    }
+                    if ($includeUnassigned || !$hasNumeric) {
+                        $q->orWhereNull('bookings.staff_id');
+                    }
+                });
             }
 
             if ($status) {
@@ -898,8 +906,8 @@ class BookingController extends Controller
         }
 
         try {
-            // If changing to completed, require payment information
-            if ($request->status === 'completed' && !in_array($booking->status, ['completed', 'staff_completed'])) {
+            // If changing to completed, require payment information only if not already paid
+            if ($request->status === 'completed' && $booking->payment_status !== 'paid' && !in_array($booking->status, ['completed', 'staff_completed'])) {
                 return response()->json([
                     'success' => false,
                     'requires_payment' => true,
@@ -909,8 +917,8 @@ class BookingController extends Controller
                 ]);
             }
 
-            // If it's already staff_completed and we want to mark as completed, it MUST go through completeWithPayment
-            if ($request->status === 'completed' && $booking->status === 'staff_completed') {
+            // If it's already staff_completed and we want to mark as completed, require payment if not already paid
+            if ($request->status === 'completed' && $booking->status === 'staff_completed' && $booking->payment_status !== 'paid') {
                 return response()->json([
                     'success' => false,
                     'requires_payment' => true,
@@ -931,6 +939,10 @@ class BookingController extends Controller
             $oldStatus = $booking->status;
 
             // Update the main booking status using Eloquent to trigger observer
+            if ($status === 'completed') {
+                $booking->allowFutureCompletion = true;
+                $booking->generateRatingToken();
+            }
             $booking->update(['status' => $status]);
 
             // If this is part of a group, update all bookings in the same group
@@ -1925,8 +1937,20 @@ class BookingController extends Controller
             }
 
             if ($request->has('staff_id') && !empty($request->staff_id)) {
-                $staffIds = explode(',', $request->staff_id);
-                $query->whereIn('staff_id', $staffIds);
+                $staffIds = is_array($request->staff_id) ? $request->staff_id : explode(',', (string) $request->staff_id);
+                $includeUnassigned = in_array('unassigned', $staffIds, true) || in_array('null', $staffIds, true) || in_array('', $staffIds, true);
+                $numericStaffIds = array_values(array_filter($staffIds, fn($id) => is_numeric($id)));
+
+                $query->where(function ($q) use ($numericStaffIds, $includeUnassigned) {
+                    $hasCondition = false;
+                    if (!empty($numericStaffIds)) {
+                        $q->whereIn('staff_id', $numericStaffIds);
+                        $hasCondition = true;
+                    }
+                    if ($includeUnassigned || !$hasCondition) {
+                        $q->orWhereNull('staff_id');
+                    }
+                });
             }
 
             // Fetch color settings
@@ -2029,6 +2053,7 @@ class BookingController extends Controller
                     'title' => $booking->customer->name . ($booking->service ? ' - ' . $booking->service->name : ''),
                     'start' => $booking->start_time->copy()->timezone($salonTimezone)->toIso8601String(),
                     'end' => $booking->end_time->copy()->timezone($salonTimezone)->toIso8601String(),
+                    'resourceId' => $booking->staff_id ? (string)$booking->staff_id : 'unassigned',
                     'className' => 'fc-event ' . $status . ($isUnpaid && $isSignificant ? ' fc-event-unpaid' : ''),
                     'backgroundColor' => $statusColors['background'],
                     'borderColor' => $statusColors['border'],

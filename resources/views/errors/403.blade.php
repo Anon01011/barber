@@ -333,7 +333,7 @@
 
             <!-- Message -->
             <p class="error-desc">
-                {{ $exception->getMessage() ?: 'You do not have sufficient permissions to view this section, or this feature is not included in your active plan.' }}
+                {{ (isset($exception) && method_exists($exception, 'getMessage') ? $exception->getMessage() : null) ?: 'You do not have sufficient permissions to view this section, or this feature is not included in your active plan.' }}
             </p>
 
             <!-- Current Plan Badge (if available) -->

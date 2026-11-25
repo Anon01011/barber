@@ -24,7 +24,19 @@ class BookingCompletedMail extends Mailable
     public function __construct(Booking $booking)
     {
         $this->booking = $booking;
-        $this->ratingUrl = $booking->getRatingUrl();
+
+        $salon = $booking->salon;
+        $feedbackEnabled = \App\Helpers\ModuleHelper::feedbackEnabled() && ($salon?->hasFeedbackModule() || (method_exists($salon, 'isOnTrial') && $salon?->isOnTrial()));
+
+        $autoSend = true;
+        if ($salon) {
+            $settings = app(\App\Services\SettingsService::class)->getAll($salon->id);
+            if (isset($settings['feedback_auto_send_email'])) {
+                $autoSend = (bool)$settings['feedback_auto_send_email'];
+            }
+        }
+
+        $this->ratingUrl = ($feedbackEnabled && $autoSend) ? $booking->getRatingUrl() : null;
     }
 
     /**
