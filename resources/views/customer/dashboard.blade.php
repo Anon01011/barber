@@ -123,7 +123,7 @@
                                 <h6 class="mb-0 text-white fw-bold">
                                     <i class="fas fa-receipt me-1 text-warning"></i> Loyalty Points Transaction History
                                 </h6>
-                                <span class="badge bg-white bg-opacity-20 text-white small" style="font-size: 0.72rem;">
+                                <span class="badge shadow-none" style="background: rgba(255, 255, 255, 0.15) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-size: 0.72rem;">
                                     {{ isset($loyaltyTransactions) ? $loyaltyTransactions->count() : 0 }} Records
                                 </span>
                             </div>
