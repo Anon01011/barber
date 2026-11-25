@@ -45,6 +45,19 @@ class AppointmentController extends Controller
                 ], 403);
             }
 
+            // SECURITY: Verify that this booking is either unassigned, assigned to this employee, or user is an admin/manager
+            if ($booking->staff_id !== null && $booking->staff_id !== $user->id && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+                Log::warning('Employee attempted to access booking assigned to another staff member', [
+                    'user_id' => $user->id,
+                    'booking_staff_id' => $booking->staff_id,
+                    'booking_id' => $booking->id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view another staff member\'s appointment.'
+                ], 403);
+            }
+
             // Now load relationships one by one with error handling
             $data = [
                 'id' => $booking->id,

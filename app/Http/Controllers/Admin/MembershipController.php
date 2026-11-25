@@ -123,11 +123,12 @@ class MembershipController extends Controller
                 $discountValue = $request->input("item_discount_value.{$index}");
                 $membershipPrice = $request->input("membership_price.{$index}");
 
+                $targetSalonId = $salon->id ?? (auth()->user()->salon_id ?? null);
                 if ($itemType === 'service') {
-                    $service = Service::find($itemId);
+                    $service = Service::where('id', $itemId)->where('salon_id', $targetSalonId)->first();
                     if (!$service) {
-                        Log::error('Service not found', ['service_id' => $itemId]);
-                        throw new \Exception("Service with ID {$itemId} not found");
+                        Log::error('Service not found or unauthorized', ['service_id' => $itemId, 'salon_id' => $targetSalonId]);
+                        return redirect()->back()->withInput()->withErrors(['items' => "Selected service is invalid or does not belong to your salon."]);
                     }
                     $servicesData[$itemId] = [
                         'quantity' => $quantity,
@@ -136,10 +137,10 @@ class MembershipController extends Controller
                         'membership_price' => $membershipPrice
                     ];
                 } elseif ($itemType === 'product') {
-                    $item = InventoryItem::find($itemId);
+                    $item = InventoryItem::where('id', $itemId)->where('salon_id', $targetSalonId)->first();
                     if (!$item) {
-                        Log::error('Inventory item not found', ['item_id' => $itemId]);
-                        throw new \Exception("Inventory item with ID {$itemId} not found");
+                        Log::error('Inventory item not found or unauthorized', ['item_id' => $itemId, 'salon_id' => $targetSalonId]);
+                        return redirect()->back()->withInput()->withErrors(['items' => "Selected product is invalid or does not belong to your salon."]);
                     }
                     $inventoryData[$itemId] = [
                         'quantity' => $quantity,
@@ -263,7 +264,12 @@ class MembershipController extends Controller
             $discountValue = $request->input("item_discount_value.{$index}");
             $membershipPrice = $request->input("membership_price.{$index}");
 
+            $targetSalonId = $membership->salon_id;
             if ($itemType === 'service') {
+                $service = Service::where('id', $itemId)->where('salon_id', $targetSalonId)->first();
+                if (!$service) {
+                    return redirect()->back()->withInput()->withErrors(['items' => "Selected service is invalid or does not belong to your salon."]);
+                }
                 $servicesData[$itemId] = [
                     'quantity' => $quantity,
                     'discount_type' => $discountType,
@@ -271,6 +277,10 @@ class MembershipController extends Controller
                     'membership_price' => $membershipPrice
                 ];
             } elseif ($itemType === 'product') {
+                $item = InventoryItem::where('id', $itemId)->where('salon_id', $targetSalonId)->first();
+                if (!$item) {
+                    return redirect()->back()->withInput()->withErrors(['items' => "Selected product is invalid or does not belong to your salon."]);
+                }
                 $inventoryData[$itemId] = [
                     'quantity' => $quantity,
                     'discount_type' => $discountType,

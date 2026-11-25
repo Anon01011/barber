@@ -72,9 +72,9 @@
                     <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-line text-success me-2"></i>Top Products by Profit Margin (%)</h6>
                     <span class="text-muted small">Products delivering highest markup percentage</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body pb-3" style="overflow: visible;">
                     @if(count($chartMarginLabels ?? []) > 0)
-                        <div id="marginChart" style="min-height: 280px;"></div>
+                        <div id="marginChart" style="min-height: 350px;"></div>
                     @else
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-chart-line fa-2x mb-2 d-block opacity-50"></i>
@@ -208,16 +208,16 @@
     const margins = @json($chartMarginValues ?? []);
 
     if (rawLabels.length > 0 && document.querySelector('#marginChart')) {
-        // Shorten labels on the axis to prevent cutting off, while preserving full name for hover
+        // Truncate labels on the axis to keep clean spacing; full product name is displayed in tooltip on hover
         const shortLabels = rawLabels.map(name => {
             if (!name) return '';
-            return name.length > 13 ? name.substring(0, 11) + '…' : name;
+            return name.length > 15 ? name.substring(0, 13) + '…' : name;
         });
 
         const options = {
             chart: {
                 type: 'bar',
-                height: 330,
+                height: 350,
                 toolbar: { show: false },
                 fontFamily: 'inherit',
                 parentHeightOffset: 0
@@ -225,7 +225,7 @@
             plotOptions: {
                 bar: {
                     horizontal: false,
-                    columnWidth: '45%',
+                    columnWidth: '40%',
                     borderRadius: 6,
                     dataLabels: {
                         position: 'top'
@@ -246,19 +246,27 @@
             xaxis: {
                 categories: shortLabels,
                 labels: {
-                    rotate: -25,
+                    rotate: -35,
                     rotateAlways: true,
                     hideOverlappingLabels: false,
-                    trim: false,
-                    maxHeight: 65,
+                    trim: true,
+                    maxHeight: 80,
+                    offsetY: 2,
                     style: {
                         fontSize: '11px',
-                        fontWeight: 500,
+                        fontWeight: 600,
                         colors: '#64748b'
                     }
                 },
                 axisBorder: { show: false },
-                axisTicks: { show: false }
+                axisTicks: { show: false },
+                tooltip: {
+                    enabled: true,
+                    formatter: function(val, opts) {
+                        const idx = opts ? opts.dataPointIndex : -1;
+                        return (idx >= 0 && rawLabels[idx]) ? rawLabels[idx] : val;
+                    }
+                }
             },
             yaxis: {
                 labels: {
@@ -272,7 +280,7 @@
                 borderColor: '#f1f5f9',
                 strokeDashArray: 4,
                 padding: {
-                    bottom: 45,
+                    bottom: 30,
                     left: 15,
                     right: 15,
                     top: 10
@@ -280,18 +288,18 @@
             },
             tooltip: {
                 theme: 'dark',
-                x: {
-                    formatter: function(val, opts) {
-                        const idx = opts.dataPointIndex;
-                        return rawLabels[idx] || val;
-                    }
-                },
-                y: {
-                    formatter: function(v, opts) {
-                        const idx = opts.dataPointIndex;
-                        const fullName = rawLabels[idx] || '';
-                        return parseFloat(v).toFixed(2) + '% Margin (' + fullName + ')';
-                    }
+                custom: function({series, seriesIndex, dataPointIndex, w}) {
+                    const fullName = rawLabels[dataPointIndex] || 'Product';
+                    const val = series[seriesIndex][dataPointIndex];
+                    return `
+                        <div style="padding: 10px 14px; background: #0f172a; border-radius: 8px; color: #fff; font-size: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);">
+                            <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px; color: #f8fafc; max-width: 280px; word-break: break-word; line-height: 1.3;">${fullName}</div>
+                            <div style="display: flex; align-items: center; gap: 8px; color: #34d399; font-weight: 600;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+                                <span>Profit Margin: <strong>${parseFloat(val).toFixed(2)}%</strong></span>
+                            </div>
+                        </div>
+                    `;
                 }
             }
         };

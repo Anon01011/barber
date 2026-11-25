@@ -21,6 +21,13 @@ class BranchController extends Controller
         if (!$salon) {
             abort(500, 'Salon context not available');
         }
+
+        $user = auth()->user();
+        if ($user && !$user->hasRole(['salon_admin', 'super_admin'])) {
+            if ($user->branch_id && $request->branch_id != $user->branch_id) {
+                return redirect()->back()->with('error', 'You are not authorized to switch to this branch.');
+            }
+        }
         
         // Verify branch belongs to current salon
         $branch = Branch::where('id', $request->branch_id)

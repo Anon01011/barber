@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToSalon;
 
 class EmailTemplate extends Model
 {
+    use BelongsToSalon;
     protected $fillable = [
         'salon_id',
         'type',

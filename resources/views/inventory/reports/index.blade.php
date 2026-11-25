@@ -281,7 +281,17 @@
                     </a>
                 </div>
                 <div class="card-body pt-1">
-                    <div id="chartLowStock" style="height: 275px;"></div>
+                    @if(empty($chartLowStock['labels']) || count($chartLowStock['labels']) === 0)
+                        <div class="d-flex flex-column align-items-center justify-content-center py-5 text-center h-100">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3 mb-2 text-success">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <div class="fw-bold text-dark">All Stock Levels Optimal</div>
+                            <small class="text-muted">No items are currently at or below their reorder threshold.</small>
+                        </div>
+                    @else
+                        <div id="chartLowStock" style="height: 275px;"></div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -301,43 +311,43 @@
                             <a href="{{ route('admin.inventory.reports.stock-valuation') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-wallet text-primary me-2"></i>
-                                    <span class="fw-bold text-dark small">Stock Valuation</span>
+                                    <span class="fw-bold text-dark small">Stock Valuation Report</span>
                                 </div>
-                                <span class="text-muted d-block" style="font-size: 0.72rem;">Cost vs retail breakdown &amp; item valuations</span>
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">Total value of inventory at purchase &amp; selling price</span>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ route('admin.inventory.reports.stock-movement') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-exchange-alt text-success me-2"></i>
-                                    <span class="fw-bold text-dark small">Stock Movement</span>
+                                    <span class="fw-bold text-dark small">Stock Movement Report</span>
                                 </div>
-                                <span class="text-muted d-block" style="font-size: 0.72rem;">Full audit log of purchases, sales &amp; transfers</span>
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">Track all inventory transactions over date range</span>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ route('admin.inventory.reports.profit-analysis') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
-                                    <i class="fas fa-percent text-info me-2"></i>
-                                    <span class="fw-bold text-dark small">Profit Margins</span>
+                                    <i class="fas fa-chart-line text-info me-2"></i>
+                                    <span class="fw-bold text-dark small">Profit &amp; Margin Analysis</span>
                                 </div>
-                                <span class="text-muted d-block" style="font-size: 0.72rem;">Analyze margin spread &amp; most profitable products</span>
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">Margin breakdown and profit potential across catalogue</span>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ route('admin.inventory.reports.dead-stock') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-hourglass-end text-warning me-2"></i>
-                                    <span class="fw-bold text-dark small">Dead / Slow Stock</span>
+                                    <span class="fw-bold text-dark small">Dead Stock Report</span>
                                 </div>
-                                <span class="text-muted d-block" style="font-size: 0.72rem;">Identify items with zero movement in 90+ days</span>
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">Identify items with zero movement over specified period</span>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ route('admin.inventory.reports.service-consumption') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-flask text-danger me-2"></i>
-                                    <span class="fw-bold text-dark small">Recipe Usage</span>
+                                    <span class="fw-bold text-dark small">Service Consumables Usage</span>
                                 </div>
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">Backbar usage logged during POS checkouts</span>
                             </a>
@@ -346,7 +356,7 @@
                             <a href="{{ route('admin.inventory.reports.service-profitability') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-balance-scale text-success me-2"></i>
-                                    <span class="fw-bold text-dark small">Service Margins</span>
+                                    <span class="fw-bold text-dark small">Service Profitability &amp; COGS</span>
                                 </div>
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">Net service revenue vs recipe product COGS</span>
                             </a>
@@ -355,7 +365,7 @@
                             <a href="{{ route('admin.inventory.reports.wastage') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-trash-alt text-secondary me-2"></i>
-                                    <span class="fw-bold text-dark small">Wastage &amp; Loss</span>
+                                    <span class="fw-bold text-dark small">Consumables Wastage &amp; Variance</span>
                                 </div>
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">Audit shrinkage, expired bottles and damaged stock</span>
                             </a>
@@ -363,10 +373,10 @@
                         <div class="col-6">
                             <a href="{{ route('admin.inventory.reports.low-stock') }}" class="p-3 rounded-3 border bg-light d-block text-decoration-none hover-lift h-100">
                                 <div class="d-flex align-items-center mb-1">
-                                    <i class="fas fa-bell text-danger me-2"></i>
-                                    <span class="fw-bold text-dark small">Restock Priority</span>
+                                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                    <span class="fw-bold text-dark small">Low Stock Alert Report</span>
                                 </div>
-                                <span class="text-muted d-block" style="font-size: 0.72rem;">Items needing reorder with estimated purchase cost</span>
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">Items at or below designated reorder threshold</span>
                             </a>
                         </div>
                     </div>
@@ -529,7 +539,7 @@
             classChart.render();
         }
 
-        // --- 4. Daily Movement Trends (Area) ---
+        // --- 4. Daily Movement Trends (Grouped Column) ---
         const moveEl = document.querySelector("#chartMovementTrends");
         if (moveEl) {
             moveEl.innerHTML = '';
@@ -539,10 +549,30 @@
 
             const moveOptions = {
                 chart: {
-                    type: 'area',
+                    type: 'bar',
                     height: 275,
                     toolbar: { show: false },
                     fontFamily: 'inherit'
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: trendDates.length <= 2 ? '28%' : (trendDates.length <= 7 ? '45%' : '60%'),
+                        borderRadius: 4,
+                        dataLabels: {
+                            position: 'top'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: trendDates.length <= 14,
+                    formatter: val => Number(val) > 0 ? Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) : '',
+                    offsetY: -18,
+                    style: {
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        colors: ['#0f172a']
+                    }
                 },
                 series: [
                     { name: 'Stock In (Purchases/Returns)', data: trendIn },
@@ -550,7 +580,7 @@
                 ],
                 xaxis: {
                     categories: trendDates,
-                    labels: { style: { colors: '#64748b', fontSize: '10px' } },
+                    labels: { style: { colors: '#64748b', fontSize: '10px', fontWeight: 600 } },
                     axisBorder: { show: false },
                     axisTicks: { show: false }
                 },
@@ -561,18 +591,9 @@
                     }
                 },
                 colors: ['#10b981', '#ef4444'],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.35,
-                        opacityTo: 0.05,
-                        stops: [0, 95, 100]
-                    }
-                },
-                stroke: { width: 2.2, curve: 'smooth' },
+                stroke: { show: true, width: 2, colors: ['transparent'] },
                 grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
-                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px' },
+                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 600 },
                 tooltip: {
                     theme: 'dark',
                     y: {
@@ -639,59 +660,61 @@
             const currentStock = @json($chartLowStock['current']);
             const reorderPoint = @json($chartLowStock['reorder']);
 
-            const lowOptions = {
-                chart: {
-                    type: 'bar',
-                    height: 275,
-                    toolbar: { show: false },
-                    fontFamily: 'inherit'
-                },
-                series: [
-                    { name: 'Current Stock', data: currentStock },
-                    { name: 'Reorder Level', data: reorderPoint }
-                ],
-                plotOptions: {
-                    bar: {
-                        horizontal: false,
-                        columnWidth: '50%',
-                        borderRadius: 4
-                    }
-                },
-                colors: ['#ef4444', '#f59e0b'],
-                xaxis: {
-                    categories: lowLabels,
-                    labels: {
-                        style: { colors: '#64748b', fontSize: '10px' },
-                        rotate: -25,
-                        rotateAlways: true
-                    }
-                },
-                yaxis: {
-                    labels: {
-                        formatter: val => Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
-                        style: { colors: '#64748b', fontSize: '10px' }
-                    }
-                },
-                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px' },
-                grid: {
-                    borderColor: '#f1f5f9',
-                    strokeDashArray: 4,
-                    padding: { bottom: 35, left: 10, right: 10 }
-                },
-                tooltip: {
-                    theme: 'dark',
-                    x: {
-                        formatter: function(val, opts) {
-                            return lowLabels[opts.dataPointIndex] || val;
+            if (lowLabels && lowLabels.length > 0) {
+                const lowOptions = {
+                    chart: {
+                        type: 'bar',
+                        height: 275,
+                        toolbar: { show: false },
+                        fontFamily: 'inherit'
+                    },
+                    series: [
+                        { name: 'Current Stock', data: currentStock },
+                        { name: 'Reorder Level', data: reorderPoint }
+                    ],
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '50%',
+                            borderRadius: 4
                         }
                     },
-                    y: {
-                        formatter: val => Number(val).toLocaleString(undefined, { minimumFractionDigits: 1 }) + ' units'
+                    colors: ['#ef4444', '#f59e0b'],
+                    xaxis: {
+                        categories: lowLabels,
+                        labels: {
+                            style: { colors: '#64748b', fontSize: '10px' },
+                            rotate: -25,
+                            rotateAlways: true
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: val => Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+                            style: { colors: '#64748b', fontSize: '10px' }
+                        }
+                    },
+                    legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px' },
+                    grid: {
+                        borderColor: '#f1f5f9',
+                        strokeDashArray: 4,
+                        padding: { bottom: 35, left: 10, right: 10 }
+                    },
+                    tooltip: {
+                        theme: 'dark',
+                        x: {
+                            formatter: function(val, opts) {
+                                return lowLabels[opts.dataPointIndex] || val;
+                            }
+                        },
+                        y: {
+                            formatter: val => Number(val).toLocaleString(undefined, { minimumFractionDigits: 1 }) + ' units'
+                        }
                     }
-                }
-            };
-            const lowChart = new ApexCharts(lowEl, lowOptions);
-            lowChart.render();
+                };
+                const lowChart = new ApexCharts(lowEl, lowOptions);
+                lowChart.render();
+            }
         }
     }
 

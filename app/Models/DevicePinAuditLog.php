@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToSalon;
 
 class DevicePinAuditLog extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToSalon;
 
     protected $table = 'device_pin_audit_logs';
 

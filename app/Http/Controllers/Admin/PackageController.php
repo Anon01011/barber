@@ -50,6 +50,8 @@ class PackageController extends Controller
             'user_id' => auth()->id()
         ]);
 
+        $salonId = app()->bound('current_salon') ? app('current_salon')->id : (auth()->user()->salon_id ?? null);
+
         $validator = \Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -61,7 +63,10 @@ class PackageController extends Controller
             'validity_unit' => 'required|in:days,weeks,months,years',
             'validity_description' => 'nullable|string|max:500',
             'services' => 'required|array|min:1',
-            'services.*' => 'exists:services,id',
+            'services.*' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('services', 'id')->where('salon_id', $salonId),
+            ],
             'quantity.*' => 'nullable|integer|min:1|max:10',
             'is_active' => 'nullable|boolean',
             'service_limit' => 'nullable|integer|min:1',
