@@ -78,6 +78,7 @@ HTTP Request -> IdentifySalon Middleware -> Route & Auth Middleware -> Controlle
 | **IDOR-03** | Cross-Tenant Service Injection in Package Creation | **High** | Packages | `app/Http/Controllers/Admin/PackageController.php:64` | **RESOLVED & VERIFIED** |
 | **BRANCH-01** | Unauthorized Branch Context Switching for Staff | **High** | Salon & Branch | `app/Http/Controllers/BranchController.php:25` | **RESOLVED & VERIFIED** |
 | **TENANT-01** | Missing `BelongsToSalon` Trait on Scoped Models | **Medium** | Core Database | `app/Models/DevicePinAuditLog.php`, `app/Models/EmailTemplate.php` | **RESOLVED & VERIFIED** |
+| **RATE-01** | Missing Dedicated Rate Limiting on POS Checkout | **Medium** | POS & Checkout | `routes/web.php:320` | Audit Verified (General 60/min active) |
 | **SEC-01** | Flat Public Storage Layout for Uploaded Media | **Low** | Media / Uploads | `app/Models/InventoryItem.php:120` | Hardening Recommended |
 
 ---
@@ -211,12 +212,11 @@ The primary tenant isolation mechanism in the application is the `App\Traits\Bel
 
 #### Scanned Models Summary:
 - **Models with Active Global Scope (32 Models):** `Appointment`, `Booking`, `Branch`, `Category`, `Commission`, `Customer`, `CustomerNote`, `Expense`, `InventoryItem`, `Invoice`, `LoyaltyPoint`, `Membership`, `Package`, `Payment`, `Product`, `PurchaseOrder`, `Service`, `StaffSchedule`, `StockMovement`, `Supplier`, `TaxRate`, `Transaction`, `Wastage`, etc.
-- **Models with `salon_id` but Missing Global Scope (4 Models):**
-  - `App\Models\DevicePinAuditLog`
-  - `App\Models\EmailTemplate`
-  - `App\Models\SaasPayment` (Intentional: Central SaaS platform model)
-  - `App\Models\SystemNotification`
-- **Recommendation:** Add `BelongsToSalon` trait to `DevicePinAuditLog` and `EmailTemplate` to guarantee zero-leakage tenant scoping.
+- **Models with `salon_id` Scoping Audit:**
+  - `App\Models\DevicePinAuditLog`: **Resolved** — `BelongsToSalon` attached.
+  - `App\Models\EmailTemplate`: **Resolved** — `BelongsToSalon` attached with `$allowNullSalon = true` and `withoutGlobalScope` on system fallback to support platform default templates alongside tenant overrides.
+  - `App\Models\SaasPayment`: Central SaaS platform billing model (intentionally global for super-admin audit).
+  - `App\Models\SystemNotification`: Central platform announcement model using `target_salon_id` (nullable for broadcast to all salons) and filtered via `scopeForSalon($salonId)`. Intentionally maintained as a platform-wide model without `BelongsToSalon` to prevent filtering out central system broadcasts.
 
 ---
 
@@ -265,32 +265,33 @@ The primary tenant isolation mechanism in the application is the `App\Traits\Bel
 
 ---
 
-## 10. FIX IMPLEMENTATION PLAN & APPROVAL MATRIX
+## 10. FIX IMPLEMENTATION & VERIFICATION MATRIX
 
-Per Master Project Instructions (`RULE[user_global]`), no production code has been modified without prior review. The following remediations are prepared for approval:
+The approved remediations have been systematically implemented, verified, and synchronized across workspaces:
 
-| Step | Action / Target File | Description | Risk Level |
-|---|---|---|---|
-| **Fix 1** | `app/Models/StockAdjustment.php` | Add missing `use Illuminate\Database\Eloquent\Factories\HasFactory;` | Low (Zero regression risk) |
-| **Fix 2** | `app/Http/Controllers/Employee/AppointmentController.php` | Restrict appointment access to assigned staff or salon managers (`IDOR-01`) | Low (Enhances security) |
-| **Fix 3** | `app/Http/Controllers/Admin/MembershipController.php` | Add tenant validation for `items.*` (`IDOR-02`) | Low |
-| **Fix 4** | `app/Http/Controllers/Admin/PackageController.php` | Add tenant scope to `services.*` validation in `store()` (`IDOR-03`) | Low |
-| **Fix 5** | `app/Http/Controllers/BranchController.php` | Enforce employee branch assignment checks on branch switch (`BRANCH-01`) | Medium (Protects branch boundaries) |
-| **Fix 6** | `app/Models/DevicePinAuditLog.php`, `EmailTemplate.php` | Attach `BelongsToSalon` trait (`TENANT-01`) | Low |
+| Step / Finding | Target File | Remediated Action | Status | Verification Evidence |
+|---|---|---|---|---|
+| **Fix 1 (BUG-01)** | `app/Models/StockAdjustment.php:6` | Added `use Illuminate\Database\Eloquent\Factories\HasFactory;` | **RESOLVED & VERIFIED** | Verified via Tinker: `new StockAdjustment()` instantiates with status OK. |
+| **Fix 2 (IDOR-01)** | `app/Http/Controllers/Employee/AppointmentController.php:48` | Restricted `show()` to assigned staff (`staff_id === user->id`) with normalized integer casting; denies ordinary staff access to unassigned bookings (`staff_id === null`) | **RESOLVED & VERIFIED** | Verified cross-staff access returns 403; unassigned booking details hidden from unauthorized staff. |
+| **Fix 3 (IDOR-02)** | `app/Http/Controllers/Admin/MembershipController.php:126, 267` | Enforced tenant ownership verification (`where('salon_id', $targetSalonId)`) on `store()` and `update()` for services and products; resolved `$salon` from `current_salon` context | **RESOLVED & VERIFIED** | Validated with foreign IDs; request aborts with error and preserves tenant boundary. |
+| **Fix 4 (IDOR-03)** | `app/Http/Controllers/Admin/PackageController.php:53, 90` | Added `Rule::exists('services', 'id')->where('salon_id', $salonId)` on `store()`; unified `$salon` and `$salonId` context resolution with plan limits | **RESOLVED & VERIFIED** | Foreign service creation attempts fail validation; plan package limit check verified. |
+| **Fix 5 (BRANCH-01)**| `app/Http/Controllers/BranchController.php:25` | Enforced role check (`salon_admin`, `super_admin`) or assigned branch match (`user->branch_id`) on public switch route | **RESOLVED & VERIFIED** | Non-admin staff attempting switch to foreign branch redirected with authorization error. |
+| **Fix 6 (TENANT-01)**| `app/Models/DevicePinAuditLog.php`, `EmailTemplate.php` | Attached `BelongsToSalon` trait. Added `$allowNullSalon = true` and `withoutGlobalScope` on system defaults in `EmailTemplate` | **RESOLVED & VERIFIED** | Tenant queries automatically scoped; system default templates remain accessible when no override exists. |
 
 ---
 
 ## 11. PRODUCTION HARDENING & DEPLOYMENT CHECKLIST
 
-- [x] Verified PHP 8.2 compatibility and syntax.
+- [x] Verified PHP 8.2 compatibility and syntax across all modified controllers and models (`php -l`).
 - [x] Validated multi-tenant route binding (`IdentifySalon`).
 - [x] Tested inventory Excel/CSV exports for 0-byte prevention.
-- [x] Polished dashboard chart layout and tooltip responsiveness.
-- [ ] Implement approved security patches (Fixes 1 through 6).
+- [x] Polished dashboard chart layout and tooltip responsiveness (HTML-escaped tooltips).
+- [x] Implemented approved security patches (Fixes 1 through 6).
+- [x] Synchronized all patched files to mirror workspace `c:\Ketan\projects\salon-cms-master`.
+- [x] Purged compiled views and verified fresh rendering (`php artisan view:clear`).
 - [ ] Add regression unit tests for IDOR endpoints.
 - [ ] Update `tests/TestCase.php` with tenant test fixtures.
 - [ ] Run database migration for recipe index optimization.
-- [ ] Synchronize all patches to mirror workspace `salon-cms-master`.
 
 ---
 

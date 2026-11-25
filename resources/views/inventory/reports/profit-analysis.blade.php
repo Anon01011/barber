@@ -208,6 +208,13 @@
     const margins = @json($chartMarginValues ?? []);
 
     if (rawLabels.length > 0 && document.querySelector('#marginChart')) {
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         // Truncate labels on the axis to keep clean spacing; full product name is displayed in tooltip on hover
         const shortLabels = rawLabels.map(name => {
             if (!name) return '';
@@ -289,7 +296,7 @@
             tooltip: {
                 theme: 'dark',
                 custom: function({series, seriesIndex, dataPointIndex, w}) {
-                    const fullName = rawLabels[dataPointIndex] || 'Product';
+                    const fullName = escapeHtml(rawLabels[dataPointIndex] || 'Product');
                     const val = series[seriesIndex][dataPointIndex];
                     return `
                         <div style="padding: 10px 14px; background: #0f172a; border-radius: 8px; color: #fff; font-size: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);">

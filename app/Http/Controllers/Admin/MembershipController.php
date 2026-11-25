@@ -103,8 +103,11 @@ class MembershipController extends Controller
 
         Log::info('Validation passed', ['validated_data' => $validated]);
 
+        // Resolve salon context (supports both current_salon binding and user salon fallback)
+        $salon = app()->bound('current_salon') ? app('current_salon') : (auth()->user()->salon ?? null);
+        $targetSalonId = $salon ? $salon->id : (auth()->user()->salon_id ?? null);
+
         // Enforce membership limit based on salon plan
-        $salon = auth()->user()->salon;
         if ($salon && !$salon->canAddMembership()) {
             return redirect()->back()->withInput()->with('error', 'Membership limit reached for your current plan. Please upgrade to add more memberships.');
         }
@@ -123,7 +126,6 @@ class MembershipController extends Controller
                 $discountValue = $request->input("item_discount_value.{$index}");
                 $membershipPrice = $request->input("membership_price.{$index}");
 
-                $targetSalonId = $salon->id ?? (auth()->user()->salon_id ?? null);
                 if ($itemType === 'service') {
                     $service = Service::where('id', $itemId)->where('salon_id', $targetSalonId)->first();
                     if (!$service) {

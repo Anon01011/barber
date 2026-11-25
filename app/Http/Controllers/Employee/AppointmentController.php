@@ -45,16 +45,18 @@ class AppointmentController extends Controller
                 ], 403);
             }
 
-            // SECURITY: Verify that this booking is either unassigned, assigned to this employee, or user is an admin/manager
-            if ($booking->staff_id !== null && $booking->staff_id !== $user->id && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
-                Log::warning('Employee attempted to access booking assigned to another staff member', [
+            // SECURITY: Verify that this booking is assigned to this employee, or the user is an admin/manager.
+            // If the appointment is unassigned (staff_id is null) or assigned to another staff member, ordinary barbers are denied access.
+            $isAssignedToUser = $booking->staff_id !== null && ((int)$booking->staff_id === (int)$user->id);
+            if (!$isAssignedToUser && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+                Log::warning('Employee attempted to access unassigned booking or booking assigned to another staff member', [
                     'user_id' => $user->id,
                     'booking_staff_id' => $booking->staff_id,
                     'booking_id' => $booking->id
                 ]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not have permission to view another staff member\'s appointment.'
+                    'message' => 'You do not have permission to view this appointment.'
                 ], 403);
             }
 
@@ -319,7 +321,7 @@ class AppointmentController extends Controller
             }
 
             // SECURITY: Verify that this booking is either unassigned, assigned to this employee, or the user is an admin/manager
-            if ($booking->staff_id !== null && $booking->staff_id !== $user->id && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+            if ($booking->staff_id !== null && (int)$booking->staff_id !== (int)$user->id && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
                 DB::rollBack();
                 Log::warning('Employee attempted to reject booking assigned to another staff member', [
                     'user_id' => $user->id,
@@ -422,7 +424,7 @@ class AppointmentController extends Controller
             }
 
             // Verify the booking belongs to this staff member
-            if ($booking->staff_id !== auth()->id()) {
+            if ((int)$booking->staff_id !== (int)auth()->id()) {
                 throw new \Exception('You are not assigned to this appointment.');
             }
 

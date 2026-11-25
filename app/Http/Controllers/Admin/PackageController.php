@@ -50,7 +50,8 @@ class PackageController extends Controller
             'user_id' => auth()->id()
         ]);
 
-        $salonId = app()->bound('current_salon') ? app('current_salon')->id : (auth()->user()->salon_id ?? null);
+        $salon = app()->bound('current_salon') ? app('current_salon') : (auth()->user()->salon ?? null);
+        $salonId = $salon ? $salon->id : (auth()->user()->salon_id ?? null);
 
         $validator = \Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -87,7 +88,6 @@ class PackageController extends Controller
         \Log::info('Validation passed', ['validated_data' => $validated]);
 
         // Enforce package limit based on salon plan
-        $salon = auth()->user()->salon;
         if ($salon && !$salon->canAddPackage()) {
             return redirect()->back()->withInput()->with('error', 'Package limit reached for your current plan. Please upgrade to add more packages.');
         }

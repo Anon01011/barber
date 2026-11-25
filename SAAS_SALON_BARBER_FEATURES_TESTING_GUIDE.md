@@ -132,14 +132,15 @@ The inventory suite features 8 specialized reporting dashboards, each accessible
 #### Key Capabilities:
 1. **Multi-Staff Calendar:** Day, Week, and Resource views showing barber availability, scheduled appointments, and walk-ins.
 2. **Conflict Prevention:** Database-level slot locking prevents double bookings for the same stylist or chair.
-3. **Staff Security Isolation:** Barbers can only inspect customer details and private notes for appointments assigned to themselves (`IDOR-01` verified).
+3. **Staff Security Isolation:** Barbers can only inspect customer details and private notes for appointments explicitly assigned to themselves (`IDOR-01` verified). Unassigned appointments (`staff_id === null`, such as online guest bookings awaiting assignment or rejected slots) are protected by the same server-side guard and deny ordinary barbers access to customer telephone numbers and private notes.
 4. **Guest & Client Booking:** Public booking portal (`/{salon_slug}/booking`) allowing clients to select services, pick preferred barbers, and choose open slots.
 
 #### QA Test Cases:
 | Test ID | Test Scenario | Steps | Expected Result |
 |---|---|---|---|
 | **APT-01** | Create Booking with Conflict | Book Barber A for 10:00 - 10:45 AM; attempt booking same Barber for 10:30 - 11:00 AM | System rejects conflicting booking with "Staff member is unavailable" alert. |
-| **APT-02** | Cross-Staff Booking IDOR | As Barber 1, request `GET /{slug}/employee/appointments/{id}` where booking is assigned to Barber 2 | Access denied with 403 "You do not have permission to view another staff member's appointment". |
+| **APT-02** | Cross-Staff Booking IDOR | As Barber 1, request `GET /{slug}/employee/appointments/{id}` where booking is assigned to Barber 2 | Access denied with 403 "You do not have permission to view this appointment". |
+| **APT-02b** | Unassigned Booking Guard | As Barber 1, request `GET /{slug}/employee/appointments/{id}` where booking has `staff_id = null` | Access denied with 403; customer telephone number and private notes are protected. |
 
 ---
 

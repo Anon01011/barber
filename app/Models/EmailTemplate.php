@@ -9,6 +9,13 @@ use App\Traits\BelongsToSalon;
 class EmailTemplate extends Model
 {
     use BelongsToSalon;
+
+    /**
+     * Allow null salon_id in SalonScope so system templates can be retrieved
+     * alongside salon-specific templates.
+     */
+    public $allowNullSalon = true;
+
     protected $fillable = [
         'salon_id',
         'type',
@@ -50,7 +57,8 @@ class EmailTemplate extends Model
         }
 
         // Fall back to system default (salon_id = null)
-        return self::whereNull('salon_id')
+        return self::withoutGlobalScope(\App\Scopes\SalonScope::class)
+            ->whereNull('salon_id')
             ->where('type', $type)
             ->where('is_active', true)
             ->first();
@@ -76,7 +84,7 @@ class EmailTemplate extends Model
      */
     public function scopeSystem($query)
     {
-        return $query->whereNull('salon_id');
+        return $query->withoutGlobalScope(\App\Scopes\SalonScope::class)->whereNull('salon_id');
     }
 
     /**
