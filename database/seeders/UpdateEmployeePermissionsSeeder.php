@@ -13,18 +13,17 @@ class UpdateEmployeePermissionsSeeder extends Seeder
         // Get the employee role
         $employeeRole = Role::where('name', 'employee')->firstOrFail();
 
-        // Define the permissions to assign to employee
+        // Define the permissions to assign to employee (matches PermissionService template)
         $permissions = [
-            'bookings.view',
-            'bookings.create',
-            'bookings.edit',
-            'appointments.view',
-            'appointments.create',
-            'appointments.edit',
-            'customers.view',
-            'services.view',
-            'staff.view',
             'system.view_dashboard',
+            'bookings.view',
+            'appointments.view',
+            'services.view',
+            'pos.view',
+            'pos.create_sale',
+            'pos.manage_payment',
+            'customers.view',
+            'customers.create',
         ];
 
         // Sync the permissions with the employee role

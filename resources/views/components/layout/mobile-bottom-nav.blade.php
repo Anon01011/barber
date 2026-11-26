@@ -14,7 +14,7 @@
                     $portalContext = 'customer';
                 } elseif ($navUser && $navUser->hasRole('customer') && $navUser->customer()->exists() && !$navUser->employee()->exists()) {
                     $portalContext = 'customer';
-                } elseif ($navUser && $navUser->hasRole('employee')) {
+                } elseif ($navUser && ($navUser->hasRole('employee') || $navUser->hasRole('staff'))) {
                     $portalContext = 'employee';
                 } elseif ($navUser && $navUser->hasRole('customer')) {
                     $portalContext = 'customer';

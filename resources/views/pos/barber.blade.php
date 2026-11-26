@@ -1324,7 +1324,7 @@
                     placeholder: 'Search customers by name or phone...',
                     allowClear: true,
                     width: '100%',
-                    data: {!! json_encode($customersJson) !!},
+                    data: @json($customersJson),
                     ajax: {
                         url: '{{ route("admin.pos.customer.mobile.search") }}',
                         dataType: 'json',

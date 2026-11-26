@@ -25,7 +25,7 @@ Route::prefix('v1/{salon_slug}')->middleware(['check.salon.slug'])->group(functi
 });
 
 // Admin API routes
-Route::group(['prefix' => 'admin/api', 'middleware' => ['auth', 'api']], function () {
+Route::group(['prefix' => 'admin/api', 'middleware' => ['auth', 'api', 'role:super_admin|salon_admin|manager|employee|staff']], function () {
     // Booking routes
     Route::get('/bookings', [BookingController::class, 'getBookings']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);

@@ -584,6 +584,7 @@
                 const apptId = $('#appointment_id').val();
                 if (apptId) {
                     try {
+                        localStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
                         sessionStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
                     } catch(e) {}
                 }
@@ -592,7 +593,7 @@
 
         @if(!empty($pendingFeedbackBooking))
             const feedbackDismissKey = 'feedback_modal_dismissed_{{ $pendingFeedbackBooking->id }}';
-            if (!sessionStorage.getItem(feedbackDismissKey)) {
+            if (!localStorage.getItem(feedbackDismissKey) && !sessionStorage.getItem(feedbackDismissKey)) {
                 setTimeout(function () {
                     showRatingModal({{ $pendingFeedbackBooking->id }});
                 }, 800);
@@ -601,12 +602,18 @@
     });
 
     function showRatingModal(appointmentId) {
-        $('#appointment_id').val(appointmentId);
         $('#ratingForm')[0].reset();
+        $('#appointment_id').val(appointmentId);
         $('.rating input').prop('checked', false);
         $('#ratingError').addClass('d-none');
 
-        var ratingModal = new bootstrap.Modal(document.getElementById('ratingModal'));
+        try {
+            localStorage.setItem('feedback_modal_dismissed_' + appointmentId, '1');
+            sessionStorage.setItem('feedback_modal_dismissed_' + appointmentId, '1');
+        } catch(e) {}
+
+        const modalEl = document.getElementById('ratingModal');
+        var ratingModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         ratingModal.show();
     }
 
@@ -621,6 +628,7 @@
         }
 
         try {
+            localStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
             sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
         } catch(e) {}
 

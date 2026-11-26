@@ -8,17 +8,18 @@ function showRatingModal(bookingId) {
     const ratingForm = document.getElementById('ratingForm');
     const ratingError = document.getElementById('ratingError');
 
-    if (apptInput) apptInput.value = bookingId;
     if (ratingForm) ratingForm.reset();
+    if (apptInput) apptInput.value = bookingId;
     if (ratingError) ratingError.classList.add('d-none');
 
     try {
+        localStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
         sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
     } catch(e) {}
 
     const modalEl = document.getElementById('ratingModal');
     if (modalEl && typeof bootstrap !== 'undefined') {
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         modal.show();
     }
 }
@@ -40,6 +41,7 @@ function submitRating() {
     }
 
     try {
+        localStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
         sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
     } catch(e) {}
 
@@ -109,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const apptId = document.getElementById('appointment_id')?.value;
             if (apptId) {
                 try {
+                    localStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
                     sessionStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
                 } catch(e) {}
             }
@@ -120,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (pendingBookingId) {
         try {
             const feedbackDismissKey = 'feedback_modal_dismissed_' + pendingBookingId;
-            if (!sessionStorage.getItem(feedbackDismissKey)) {
+            if (!localStorage.getItem(feedbackDismissKey) && !sessionStorage.getItem(feedbackDismissKey)) {
                 setTimeout(function () {
                     showRatingModal(pendingBookingId);
                 }, 800);

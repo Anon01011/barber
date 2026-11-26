@@ -293,8 +293,9 @@ class InventoryItem extends Model
             // Delete old image if exists
             $this->deleteImage();
 
-            // Generate a unique filename
-            $filename = 'item_' . $this->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            // Generate a unique filename using server-verified extension
+            $extension = $image->extension() ?: 'jpg';
+            $filename = 'item_' . $this->id . '_' . time() . '.' . $extension;
 
             // Store the new image
             $path = $image->storeAs('inventory', $filename, 'public');

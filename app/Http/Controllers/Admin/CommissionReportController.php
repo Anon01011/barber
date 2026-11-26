@@ -16,8 +16,8 @@ class CommissionReportController extends Controller
     public function __construct(CommissionService $commissionService)
     {
         $this->commissionService = $commissionService;
-        // Add middleware if needed, e.g., permission checks
-        // $this->middleware('permission:reports.view');
+        $this->middleware('permission:commissions.view_reports')->only(['index', 'byStaff', 'pending', 'payouts']);
+        $this->middleware('permission:commissions.manage')->only(['revert', 'bulkApprove', 'bulkPay']);
     }
 
     /**

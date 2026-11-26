@@ -367,13 +367,14 @@
             }
 
             function showRatingModal(appointmentId) {
-                $('#appointment_id').val(appointmentId);
-                // Reset form
+                // Reset form first, then set hidden input value
                 $('#ratingForm')[0].reset();
+                $('#appointment_id').val(appointmentId);
                 $('.rating input').prop('checked', false);
 
                 // Show modal
-                var ratingModal = new bootstrap.Modal(document.getElementById('ratingModal'));
+                const modalEl = document.getElementById('ratingModal');
+                var ratingModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 ratingModal.show();
             }
 

@@ -9,12 +9,16 @@
     border-radius: 10px;
     font-size: 15px;
     flex-shrink: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.purpose-icon-badge.bg-primary  { background: #2563eb !important; color: #fff !important; }
-.purpose-icon-badge.bg-emerald  { background: #059669 !important; color: #fff !important; }
-.purpose-icon-badge.bg-amber    { background: #d97706 !important; color: #fff !important; }
+.purpose-icon-badge.bg-primary  { background: #2563eb !important; color: #fff !important; box-shadow: 0 2px 8px rgba(37,99,235,0.35); }
+.purpose-icon-badge.bg-emerald  { background: #059669 !important; color: #fff !important; box-shadow: 0 2px 8px rgba(5,150,105,0.35); }
+.purpose-icon-badge.bg-amber    { background: #d97706 !important; color: #fff !important; box-shadow: 0 2px 8px rgba(217,119,6,0.35); }
 
+/* Card label as flex column */
 .purpose-card {
+    display: flex !important;
+    flex-direction: column !important;
     border: 1.5px solid #e2e8f0 !important;
     border-radius: 10px !important;
     background: #fff !important;
@@ -25,7 +29,10 @@
 .purpose-card:hover {
     border-color: #94a3b8 !important;
     background: #f8fafc !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+.purpose-card:hover .purpose-icon-badge {
+    transform: translateY(-1px);
 }
 
 /* Retail — blue accent when selected */

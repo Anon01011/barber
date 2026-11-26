@@ -9,12 +9,16 @@
     border-radius: 10px;
     font-size: 15px;
     flex-shrink: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.purpose-icon-badge.bg-primary  { background: #2563eb !important; color: #fff !important; }
-.purpose-icon-badge.bg-emerald  { background: #059669 !important; color: #fff !important; }
-.purpose-icon-badge.bg-amber    { background: #d97706 !important; color: #fff !important; }
+.purpose-icon-badge.bg-primary  { background: #2563eb !important; color: #fff !important; box-shadow: 0 2px 8px rgba(37,99,235,0.35); }
+.purpose-icon-badge.bg-emerald  { background: #059669 !important; color: #fff !important; box-shadow: 0 2px 8px rgba(5,150,105,0.35); }
+.purpose-icon-badge.bg-amber    { background: #d97706 !important; color: #fff !important; box-shadow: 0 2px 8px rgba(217,119,6,0.35); }
 
+/* Card label as flex column so icon+title sits on top, description below */
 .purpose-card {
+    display: flex !important;
+    flex-direction: column !important;
     border: 1.5px solid #e2e8f0 !important;
     border-radius: 10px !important;
     background: #fff !important;
@@ -25,7 +29,10 @@
 .purpose-card:hover {
     border-color: #94a3b8 !important;
     background: #f8fafc !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+.purpose-card:hover .purpose-icon-badge {
+    transform: translateY(-1px);
 }
 
 /* Retail — blue accent when selected */
@@ -656,25 +663,18 @@
 
     /* Purpose Card Selection */
     .purpose-card {
-        border: 1.5px solid #cbd5e1;
-        background: #ffffff;
-        border-radius: 10px;
-        transition: all 0.2s ease;
+        border: 1.5px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         cursor: pointer;
     }
     .purpose-card:hover {
-        border-color: #94a3b8;
-        transform: translateY(-1px);
+        border-color: #94a3b8 !important;
+        background: #f8fafc !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07) !important;
     }
-    .purpose-icon-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        font-size: 11px;
-    }
+    /* icon badge — 36px canonical size, do NOT re-define below */
     .bg-emerald {
         background-color: #059669 !important;
     }
@@ -684,19 +684,19 @@
 
     /* Purpose Radios Active States */
     .btn-check:checked + .purpose-btn-retail {
-        border-color: #0f172a !important;
-        background: #f8fafc !important;
-        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.15);
+        border-color: #2563eb !important;
+        background: #eff6ff !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
     }
     .btn-check:checked + .purpose-btn-backbar {
         border-color: #059669 !important;
-        background: #f0fdf4 !important;
-        box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+        background: #ecfdf5 !important;
+        box-shadow: 0 0 0 3px rgba(5,150,105,0.15) !important;
     }
     .btn-check:checked + .purpose-btn-dual {
         border-color: #d97706 !important;
         background: #fffbeb !important;
-        box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.15);
+        box-shadow: 0 0 0 3px rgba(217,119,6,0.15) !important;
     }
 
     /* Buttons */

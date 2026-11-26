@@ -84,7 +84,7 @@ Route::middleware(['auth', 'verified'])->prefix('saas/errors')->name('saas.error
 });
 
 // Exit Impersonation: Must be accessible to any authenticated user who is currently impersonated (not restricted by role:super_admin)
-Route::match(['GET', 'POST'], '/admin/salons/stop-impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'stopImpersonate'])
+Route::post('/admin/salons/stop-impersonate', [App\Http\Controllers\SuperAdmin\SalonManagementController::class, 'stopImpersonate'])
     ->middleware(['auth'])
     ->name('admin.salons.stop-impersonate');
 
@@ -247,8 +247,8 @@ Route::middleware('auth')->group(function () {
     // Notification routes
     Route::get('/notifications/unread', [\App\Http\Controllers\NotificationController::class, 'getUnread'])->name('notifications.unread');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::match(['GET', 'POST'], '/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
-    Route::match(['GET', 'POST'], '/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 // Public Customer Rating & Feedback Routes (Tokenized)
@@ -418,6 +418,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                 Route::get('/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit')->middleware('permission:bookings.edit');
                 Route::put('/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update')->middleware('permission:bookings.edit');
                 Route::post('/bookings/{booking}/assign', [BookingController::class, 'assign'])->name('bookings.assign')->middleware('permission:bookings.edit');
+                Route::post('/bookings/{booking}/complete-payment', [BookingController::class, 'completeWithPayment'])->name('bookings.complete-payment')->middleware('permission:bookings.edit');
                 Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status.update')->middleware('permission:bookings.edit');
                 Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy')->middleware('permission:bookings.delete');
 
@@ -467,8 +468,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                 Route::post('services/categories/{category}/bulk-staff', [\App\Http\Controllers\Admin\ServiceCategoryController::class, 'bulkStaffAssignment'])->name('services.categories.bulk-staff')->middleware('permission:services.edit');
 
                 Route::resource('services/categories', \App\Http\Controllers\Admin\ServiceCategoryController::class)
-                    ->names(['index' => 'services.categories.index', 'create' => 'services.categories.create', 'store' => 'services.categories.store', 'show' => 'services.categories.show', 'edit' => 'services.categories.edit', 'update' => 'services.categories.update', 'destroy' => 'services.categories.destroy'])
-                    ->middleware(['permission:services.view']);
+                    ->names(['index' => 'services.categories.index', 'create' => 'services.categories.create', 'store' => 'services.categories.store', 'show' => 'services.categories.show', 'edit' => 'services.categories.edit', 'update' => 'services.categories.update', 'destroy' => 'services.categories.destroy']);
 
                 // Packages
                 Route::middleware(['plan_feature:Packages', 'module:packages'])->group(function () {
@@ -612,20 +612,20 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
             // Commissions
             Route::middleware(['plan_feature:Commission Management', 'module:commissions'])->group(function () {
                 Route::prefix('commissions')->name('commissions.')->group(function () {
-                    Route::get('/', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'index'])->name('index');
-                    Route::get('/create', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'create'])->name('create');
-                    Route::post('/', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'store'])->name('store');
-                    Route::get('/{profile}/edit', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'edit'])->name('edit');
-                    Route::put('/{profile}', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'update'])->name('update');
-                    Route::delete('/{profile}', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'destroy'])->name('destroy');
-                    Route::get('/reports', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'reports'])->name('reports');
-                    Route::post('/approve', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'approveCommissions'])->name('approve');
-                    Route::post('/mark-paid', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'markAsPaid'])->name('mark-paid');
+                    Route::get('/', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'index'])->name('index')->middleware('permission:commissions.view');
+                    Route::get('/create', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'create'])->name('create')->middleware('permission:commissions.manage');
+                    Route::post('/', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'store'])->name('store')->middleware('permission:commissions.manage');
+                    Route::get('/{profile}/edit', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'edit'])->name('edit')->middleware('permission:commissions.manage');
+                    Route::put('/{profile}', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'update'])->name('update')->middleware('permission:commissions.manage');
+                    Route::delete('/{profile}', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'destroy'])->name('destroy')->middleware('permission:commissions.manage');
+                    Route::get('/reports', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'reports'])->name('reports')->middleware('permission:commissions.view_reports');
+                    Route::post('/approve', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'approveCommissions'])->name('approve')->middleware('permission:commissions.manage');
+                    Route::post('/mark-paid', [\App\Http\Controllers\Admin\CommissionProfileController::class, 'markAsPaid'])->name('mark-paid')->middleware('permission:commissions.manage');
                 });
             });
 
             // AI Copilot & Autonomous Workflows
-            Route::middleware(['plan_feature:AI Insights & Automation', 'module:ai'])->prefix('ai')->name('ai.')->group(function () {
+            Route::middleware(['plan_feature:AI Insights & Automation', 'module:ai', 'role:super_admin|salon_admin|manager'])->prefix('ai')->name('ai.')->group(function () {
                 Route::get('/hub', [\App\Http\Controllers\Admin\AiAutomationController::class, 'index'])->name('hub');
                 Route::post('/copilot', [\App\Http\Controllers\Admin\AiAutomationController::class, 'chat'])->name('copilot');
                 Route::post('/automation', [\App\Http\Controllers\Admin\AiAutomationController::class, 'runAutomation'])->name('automation');
@@ -693,13 +693,13 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 
                     // Commission Reports
                     Route::prefix('commissions')->name('commissions.')->group(function () {
-                        Route::get('/', [\App\Http\Controllers\Admin\CommissionReportController::class, 'index'])->name('index');
-                        Route::get('/staff', [\App\Http\Controllers\Admin\CommissionReportController::class, 'byStaff'])->name('by-staff');
-                        Route::get('/pending', [\App\Http\Controllers\Admin\CommissionReportController::class, 'pending'])->name('pending');
-                        Route::get('/payouts', [\App\Http\Controllers\Admin\CommissionReportController::class, 'payouts'])->name('payouts');
-                        Route::post('/revert/{commission}', [\App\Http\Controllers\Admin\CommissionReportController::class, 'revert'])->name('revert');
-                        Route::post('/bulk-approve', [\App\Http\Controllers\Admin\CommissionReportController::class, 'bulkApprove'])->name('bulk-approve');
-                        Route::post('/bulk-pay', [\App\Http\Controllers\Admin\CommissionReportController::class, 'bulkPay'])->name('bulk-pay');
+                        Route::get('/', [\App\Http\Controllers\Admin\CommissionReportController::class, 'index'])->name('index')->middleware('permission:commissions.view_reports');
+                        Route::get('/staff', [\App\Http\Controllers\Admin\CommissionReportController::class, 'byStaff'])->name('by-staff')->middleware('permission:commissions.view_reports');
+                        Route::get('/pending', [\App\Http\Controllers\Admin\CommissionReportController::class, 'pending'])->name('pending')->middleware('permission:commissions.view_reports');
+                        Route::get('/payouts', [\App\Http\Controllers\Admin\CommissionReportController::class, 'payouts'])->name('payouts')->middleware('permission:commissions.view_reports');
+                        Route::post('/revert/{commission}', [\App\Http\Controllers\Admin\CommissionReportController::class, 'revert'])->name('revert')->middleware('permission:commissions.manage');
+                        Route::post('/bulk-approve', [\App\Http\Controllers\Admin\CommissionReportController::class, 'bulkApprove'])->name('bulk-approve')->middleware('permission:commissions.manage');
+                        Route::post('/bulk-pay', [\App\Http\Controllers\Admin\CommissionReportController::class, 'bulkPay'])->name('bulk-pay')->middleware('permission:commissions.manage');
                     });
                 });
             });
@@ -825,10 +825,6 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
         Route::patch('/profile', [App\Http\Controllers\Staff\ProfileController::class, 'update'])->name('employee.profile.update');
         Route::delete('/profile', [App\Http\Controllers\Staff\ProfileController::class, 'destroy'])->name('employee.profile.destroy');
     });
-
-    // Common routes
-    Route::post('/admin/bookings/{booking}/assign', [\App\Http\Controllers\Admin\BookingController::class, 'assign'])->name('admin.bookings.assign');
-    Route::post('/admin/bookings/{booking}/complete-payment', [\App\Http\Controllers\Admin\BookingController::class, 'completeWithPayment'])->name('admin.bookings.complete-payment');
 });
 // Stripe Webhook (must be outside auth middleware)
 Route::post('/stripe/webhook', [App\Http\Controllers\SaaS\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');

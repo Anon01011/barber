@@ -51,6 +51,16 @@ class DashboardController extends Controller
             return $this->customerDashboard($user);
         }
 
+        if ($user->hasRole('pos_staff') && !$user->hasAnyRole(['salon_admin', 'admin', 'manager', 'super_admin'])) {
+            $slug = optional($user->salon)->slug ?? request()->route('salon_slug') ?? 'demo-salon';
+            return redirect()->route('admin.pos.index', ['salon_slug' => $slug]);
+        }
+
+        if ($user->hasRole('inventory_staff') && !$user->hasAnyRole(['salon_admin', 'admin', 'manager', 'super_admin'])) {
+            $slug = optional($user->salon)->slug ?? request()->route('salon_slug') ?? 'demo-salon';
+            return redirect()->route('admin.inventory.index', ['salon_slug' => $slug]);
+        }
+
         // Default to Admin/Manager Dashboard
         return $this->adminDashboard($user, $request);
     }
@@ -331,7 +341,7 @@ class DashboardController extends Controller
             $data = array_merge($data, $this->getManagerData($user, $startDate, $endDate));
         }
 
-        if ($user->can('system.view_dashboard')) {
+        if ($user->can('reports.sales') || $user->can('finance.view')) {
             $data = array_merge($data, $this->getAnalyticsData($user, $startDate, $endDate));
         }
 

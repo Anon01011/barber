@@ -140,7 +140,7 @@ class AppointmentController extends Controller
             // Services for Quick Book
             $services = Service::where('salon_id', $salonId)->where('status', 'active')->get();
 
-            // Check for completed unrated appointment to trigger popup modal
+            // Check for completed unrated appointment to trigger popup modal (completed within last 14 days)
             $pendingFeedbackBooking = null;
             if ($hasFeedback) {
                 $pendingFeedbackBooking = $customer->bookings()
@@ -148,16 +148,17 @@ class AppointmentController extends Controller
                     ->where('status', 'completed')
                     ->where('is_rated', false)
                     ->whereNull('rating')
+                    ->where('start_time', '>=', now()->subDays(14))
                     ->latest('start_time')
                     ->first();
             }
 
-            // Loyalty transactions
+            // Loyalty transactions (recent 5 on dashboard)
             $loyaltyTransactions = collect();
             if ($hasLoyalty && class_exists(\App\Models\LoyaltyTransaction::class)) {
                 $loyaltyTransactions = \App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
                     ->latest()
-                    ->take(10)
+                    ->take(5)
                     ->get();
             }
 
@@ -327,7 +328,7 @@ class AppointmentController extends Controller
             $minPointsToRedeem = (int)($loyaltySettings['min_points_to_redeem'] ?? 50);
             $loyaltyExpiryMonths = (int)($loyaltySettings['points_expiry_months'] ?? 12);
 
-            // Check for completed unrated appointment to trigger popup modal
+            // Check for completed unrated appointment to trigger popup modal (completed within last 14 days)
             $pendingFeedbackBooking = null;
             if ($hasFeedback) {
                 $pendingFeedbackBooking = $customer->bookings()
@@ -335,6 +336,7 @@ class AppointmentController extends Controller
                     ->where('status', 'completed')
                     ->where('is_rated', false)
                     ->whereNull('rating')
+                    ->where('start_time', '>=', now()->subDays(14))
                     ->latest('start_time')
                     ->first();
             }

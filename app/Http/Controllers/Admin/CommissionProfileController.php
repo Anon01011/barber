@@ -21,6 +21,9 @@ class CommissionProfileController extends Controller
     public function __construct(CommissionService $commissionService)
     {
         $this->commissionService = $commissionService;
+        $this->middleware('permission:commissions.view')->only(['index']);
+        $this->middleware('permission:commissions.view_reports')->only(['reports']);
+        $this->middleware('permission:commissions.manage')->only(['create', 'store', 'edit', 'update', 'destroy', 'approveCommissions', 'markAsPaid']);
     }
 
     /**

@@ -153,7 +153,7 @@ class SalonBackupController extends Controller
         }
 
         $request->validate([
-            'backup_file' => 'required|file|max:51200', // Max 50MB uploaded file
+            'backup_file' => 'required|file|mimes:json,txt|max:51200', // Max 50MB JSON backup file
         ]);
 
         $file = $request->file('backup_file');

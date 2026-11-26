@@ -1019,8 +1019,8 @@ class PosController extends Controller
                             $quantityPerBooking = count($itemBookingIds) > 0 ? $item['quantity'] / count($itemBookingIds) : $item['quantity'];
 
                             if ($item['type'] === 'product') {
-                                // Lock the product row for update to prevent race conditions
-                                $product = InventoryItem::lockForUpdate()->findOrFail($item['id']);
+                                // Lock the product row for update to prevent race conditions (scoped to salon)
+                                $product = InventoryItem::where('salon_id', $salonId)->lockForUpdate()->findOrFail($item['id']);
 
                                 // Validate stock availability
                                 if ($product->quantity_in_stock < $item['quantity']) {
@@ -1216,8 +1216,8 @@ class PosController extends Controller
                                 $totalItemDiscount += $lineDiscount;
                                 $totalTax += $lineTax;
                             } else {
-                                // Handle service items
-                                $service = Service::findOrFail($item['id']);
+                                // Handle service items (scoped to salon)
+                                $service = Service::where('salon_id', $salonId)->findOrFail($item['id']);
 
                                 // Check if this service is linked to an already-paid booking
                                 $isBookingPaid = false;

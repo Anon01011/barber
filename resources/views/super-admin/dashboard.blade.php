@@ -780,8 +780,8 @@
     @push('scripts')
         <script>
             window.saasDashboardConfig = {
-                revenueTrend: {!! json_encode($revenueTrend ?? ['labels' => [], 'data' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                planDistribution: {!! json_encode($planDistribution ?? ['labels' => [], 'data' => [], 'colors' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}
+                revenueTrend: @json($revenueTrend ?? ['labels' => [], 'data' => []]),
+                planDistribution: @json($planDistribution ?? ['labels' => [], 'data' => [], 'colors' => []])
             };
         </script>
         <script src="{{ asset('js/saas-dashboard.js') }}"></script>

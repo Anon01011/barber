@@ -13,6 +13,10 @@ class ServiceCategoryController extends Controller
     public function __construct()
     {
         $this->middleware(['auth', 'role:super_admin|salon_admin|manager']);
+        $this->middleware('permission:services.view')->only(['index', 'show']);
+        $this->middleware('permission:services.create')->only(['create', 'store']);
+        $this->middleware('permission:services.edit')->only(['edit', 'update', 'bulkStaffAssignment']);
+        $this->middleware('permission:services.delete')->only(['destroy']);
     }
 
     /**

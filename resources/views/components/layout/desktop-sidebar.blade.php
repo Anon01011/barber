@@ -37,7 +37,7 @@
                         $portalContext = 'customer';
                     } elseif ($sidebarUser->hasRole('customer') && $sidebarUser->customer()->exists() && !$sidebarUser->employee()->exists()) {
                         $portalContext = 'customer';
-                    } elseif ($sidebarUser->hasRole('employee')) {
+                    } elseif ($sidebarUser->hasRole('employee') || $sidebarUser->hasRole('staff')) {
                         $portalContext = 'employee';
                     } elseif ($sidebarUser->hasRole('customer')) {
                         $portalContext = 'customer';
@@ -408,52 +408,64 @@
                                                     <span class="badge bg-purple text-white ms-auto" style="font-size: 0.65rem;">AI</span>
                                                 </a>
                                             @endif
-                                            <a href="{{ route('admin.reports.sales', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.sales') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Sales Reports">
-                                                <i class="fas fa-chart-line sidebar-icon"></i>
-                                                <span class="sidebar-text">Sales Reports</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.appointments', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.appointments') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Appointment Reports">
-                                                <i class="fas fa-calendar-alt sidebar-icon"></i>
-                                                <span class="sidebar-text">Appointment Reports</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.staff', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.staff') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Performance">
-                                                <i class="fas fa-users sidebar-icon"></i>
-                                                <span class="sidebar-text">Staff Performance</span>
-                                            </a>
-                                            <a href="{{ route('admin.reports.customers', ['salon_slug' => $salonSlug]) }}"
-                                                class="sidebar-item sub-item {{ request()->routeIs('admin.reports.customers') ? 'active' : '' }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Customer Insights">
-                                                <i class="fas fa-user-friends sidebar-icon"></i>
-                                                <span class="sidebar-text">Customer Insights</span>
-                                            </a>
+                                            @can('reports.sales')
+                                                <a href="{{ route('admin.reports.sales', ['salon_slug' => $salonSlug]) }}"
+                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.sales') ? 'active' : '' }}"
+                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Sales Reports">
+                                                    <i class="fas fa-chart-line sidebar-icon"></i>
+                                                    <span class="sidebar-text">Sales Reports</span>
+                                                </a>
+                                            @endcan
+                                            @can('reports.appointments')
+                                                <a href="{{ route('admin.reports.appointments', ['salon_slug' => $salonSlug]) }}"
+                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.appointments') ? 'active' : '' }}"
+                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Appointment Reports">
+                                                    <i class="fas fa-calendar-alt sidebar-icon"></i>
+                                                    <span class="sidebar-text">Appointment Reports</span>
+                                                </a>
+                                            @endcan
+                                            @can('reports.staff')
+                                                <a href="{{ route('admin.reports.staff', ['salon_slug' => $salonSlug]) }}"
+                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.staff') ? 'active' : '' }}"
+                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Performance">
+                                                    <i class="fas fa-users sidebar-icon"></i>
+                                                    <span class="sidebar-text">Staff Performance</span>
+                                                </a>
+                                            @endcan
+                                            @can('customers.view')
+                                                <a href="{{ route('admin.reports.customers', ['salon_slug' => $salonSlug]) }}"
+                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.customers') ? 'active' : '' }}"
+                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Customer Insights">
+                                                    <i class="fas fa-user-friends sidebar-icon"></i>
+                                                    <span class="sidebar-text">Customer Insights</span>
+                                                </a>
+                                            @endcan
                                             @if(optional(auth()->user()->salon)->canUseFeature('Commission Management') && \App\Helpers\ModuleHelper::isEnabled('commissions'))
-                                                <a href="{{ route('admin.commissions.reports', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.commissions.reports') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Commissions">
-                                                    <i class="fas fa-hand-holding-usd sidebar-icon"></i>
-                                                    <span class="sidebar-text">Commissions</span>
-                                                </a>
-                                                <a href="{{ route('admin.reports.commissions.payouts', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.reports.commissions.payouts') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Payouts">
-                                                    <i class="fas fa-wallet sidebar-icon"></i>
-                                                    <span class="sidebar-text">Payouts</span>
-                                                </a>
+                                                @can('commissions.view_reports')
+                                                    <a href="{{ route('admin.commissions.reports', ['salon_slug' => $salonSlug]) }}"
+                                                        class="sidebar-item sub-item {{ request()->routeIs('admin.commissions.reports') ? 'active' : '' }}"
+                                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Commissions">
+                                                        <i class="fas fa-hand-holding-usd sidebar-icon"></i>
+                                                        <span class="sidebar-text">Commissions</span>
+                                                    </a>
+                                                    <a href="{{ route('admin.reports.commissions.payouts', ['salon_slug' => $salonSlug]) }}"
+                                                        class="sidebar-item sub-item {{ request()->routeIs('admin.reports.commissions.payouts') ? 'active' : '' }}"
+                                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Payouts">
+                                                        <i class="fas fa-wallet sidebar-icon"></i>
+                                                        <span class="sidebar-text">Payouts</span>
+                                                    </a>
+                                                @endcan
                                             @endif
 
                                             @if(optional(auth()->user()->salon)->canUseFeature('Inventory Management') && \App\Helpers\ModuleHelper::inventoryEnabled())
-                                                <a href="{{ route('admin.inventory.reports.index', ['salon_slug' => $salonSlug]) }}"
-                                                    class="sidebar-item sub-item {{ request()->routeIs('admin.inventory.reports*') ? 'active' : '' }}"
-                                                    data-bs-toggle="tooltip" data-bs-placement="right" title="Inventory & Consumables">
-                                                    <i class="fas fa-boxes sidebar-icon"></i>
-                                                    <span class="sidebar-text">Inventory Reports</span>
-                                                </a>
+                                                @can('reports.inventory')
+                                                    <a href="{{ route('admin.inventory.reports.index', ['salon_slug' => $salonSlug]) }}"
+                                                        class="sidebar-item sub-item {{ request()->routeIs('admin.inventory.reports*') ? 'active' : '' }}"
+                                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Inventory & Consumables">
+                                                        <i class="fas fa-boxes sidebar-icon"></i>
+                                                        <span class="sidebar-text">Inventory Reports</span>
+                                                    </a>
+                                                @endcan
                                             @endif
                                         </div>
                                     </div>

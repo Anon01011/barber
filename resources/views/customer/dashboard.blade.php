@@ -163,7 +163,7 @@
                                 </h6>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="badge shadow-none" style="background: rgba(255, 255, 255, 0.15) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-size: 0.72rem;">
-                                        {{ isset($loyaltyTransactions) ? $loyaltyTransactions->count() : 0 }} Records
+                                        {{ isset($loyaltyTransactions) ? min(5, $loyaltyTransactions->count()) : 0 }} Recent Records
                                     </span>
                                     <a href="{{ route('customer.points.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-warning btn-xs rounded-pill px-3 py-1 fw-bold text-dark shadow-sm">
                                         <i class="fas fa-external-link-alt me-1"></i> Full History &amp; Logs
@@ -184,7 +184,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($loyaltyTransactions as $trans)
+                                            @foreach($loyaltyTransactions->take(5) as $trans)
                                             <tr class="border-bottom border-white border-opacity-5">
                                                 <td class="ps-3 py-2 text-white-50">{{ format_datetime($trans->created_at) }}</td>
                                                 <td class="py-2">
@@ -202,6 +202,13 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    @if(isset($loyaltyTransactions) && $loyaltyTransactions->count() >= 5)
+                                        <div class="px-3 py-2 text-center border-top border-white border-opacity-10" style="background: rgba(0,0,0,0.2);">
+                                            <a href="{{ route('customer.points.index', ['salon_slug' => $salonSlug]) }}" class="text-warning text-decoration-none small fw-semibold">
+                                                View all loyalty points &amp; complete transaction logs in Loyalty Screen <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             @else
                                 <div class="p-3 rounded-3 text-center mt-2" style="background: rgba(0,0,0,0.2);">
