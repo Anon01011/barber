@@ -452,8 +452,8 @@
     position: relative !important;
     top: auto !important;
     z-index: 10 !important;
-    margin-top: 1.25rem !important;
-    margin-bottom: 1.75rem !important;
+    margin-top: 0 !important;
+    margin-bottom: 1rem !important;
     transition: all 0.3s ease;
 }
 

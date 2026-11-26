@@ -69,6 +69,21 @@
     <link rel="stylesheet" href="<?php echo e(asset('css/impersonation.css')); ?>">
 
     <style>
+        /* Universal Gap Elimination Across All Screens */
+        .main-content {
+            padding-top: 0 !important;
+        }
+
+        .main-content > .container-fluid,
+        .main-content > .container-fluid.py-4,
+        .main-content > .container-fluid.py-3 {
+            padding-top: 0 !important;
+        }
+
+        .filter-wrapper {
+            margin-top: 0 !important;
+        }
+
         /* Force hide sidebar text and chevrons when collapsed */
         .sidebar.collapsed .sidebar-text,
         .sidebar.collapsed .chevron {
@@ -574,9 +589,9 @@
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <div class="container-fluid px-4">
-            <?php if($errors->any()): ?>
-                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <?php if($errors->any()): ?>
+            <div class="container-fluid px-4">
+                <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Please check the form for errors:</strong>
                     <ul class="mb-0 mt-2">
@@ -586,8 +601,8 @@
                     </ul>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
 
         <?php echo $__env->yieldContent('content'); ?>
     </div>
