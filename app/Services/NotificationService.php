@@ -44,13 +44,8 @@ class NotificationService
                 $this->sendBookingConfirmationWhatsapp($booking);
             }
 
-            // 4. Notify staff if assigned
-            if ($booking->staff) {
-                $this->notifyStaffOfNewBooking($booking);
-            }
-
-            // 5. Notify salon admins
-            $this->notifySalonAdmins($booking, 'created');
+            // Note: Staff & Salon Admin creation notifications are dispatched via BookingObserver::created
+            // (afterCommit) to avoid duplicate alerts when BookingCreated event triggers this method.
 
             Log::info('Booking confirmation notifications sent', ['booking_id' => $booking->id]);
         } catch (Exception $e) {
@@ -300,13 +295,8 @@ class NotificationService
                 $this->sendBookingCompletedWhatsapp($booking);
             }
 
-            // System & email notification to staff member who performed the service
-            if ($booking->staff) {
-                \Illuminate\Support\Facades\Notification::send(
-                    $booking->staff,
-                    new \App\Notifications\BookingNotification($booking, 'completed')
-                );
-            }
+            // Note: Staff notification on completion is handled by BookingObserver::updated
+            // to prevent duplicate notification delivery.
 
             Log::info('Booking completed notifications sent', [
                 'booking_id' => $booking->id

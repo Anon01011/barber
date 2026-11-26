@@ -37,6 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             // Security: block direct platform-admin write mutations on tenant routes (Vuln 2)
             'restrict.admin.writes' => \App\Http\Middleware\RestrictPlatformAdminWrites::class,
+            // Database High Availability & Failover Check
+            'db.health' => \App\Http\Middleware\DatabaseHealthCheckMiddleware::class,
+        ]);
+
+        // Append DB failover middleware to web requests
+        $middleware->web(append: [
+            \App\Http\Middleware\DatabaseHealthCheckMiddleware::class,
         ]);
 
         // Exclude Stripe webhook from CSRF protection

@@ -13,6 +13,11 @@ class Kernel extends ConsoleKernel
         Commands\SendDailySummary::class,
         Commands\SalonDailyBackupCommand::class,
         Commands\DatabaseSnapshotCommand::class,
+        // ── HA / Failover / Backup Commands ──────────────────────────────────
+        Commands\DatabaseHealthCheckCommand::class,
+        Commands\DatabaseSyncReplicaCommand::class,
+        Commands\BackupFullCommand::class,
+        Commands\BackupPruneCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -35,6 +40,19 @@ class Kernel extends ConsoleKernel
 
         // Automated Database Snapshot & Replica Maintenance (Daily at 03:00)
         $schedule->command('db:snapshot')->dailyAt('03:00');
+
+        // ── HA / Failover / Backup Schedules ─────────────────────────────────
+        // DB health check every minute — switches to replica if primary fails
+        $schedule->command('db:health-check')->everyMinute()->withoutOverlapping();
+
+        // Sync replica from latest snapshot every hour
+        $schedule->command('db:sync-replica --snapshot')->hourly()->withoutOverlapping();
+
+        // Full backup (mysqldump) daily at 02:00 — same slot as salon:daily-backup
+        $schedule->command('backup:full')->dailyAt('02:30')->withoutOverlapping();
+
+        // Prune backups older than 30 days at 04:00
+        $schedule->command('backup:prune --days=30')->dailyAt('04:00');
     }
 
     protected function commands()

@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class SystemHealthService
 {
@@ -21,6 +23,14 @@ class SystemHealthService
             'logs' => $this->getLogMetrics(),
             'queue' => $this->getQueueMetrics(),
             'activity_trend' => $this->getActivityTrend(),
+            'slow_queries' => $this->getSlowQueryMetrics(),
+            'buffer_pool' => $this->getBufferPoolMetrics(),
+            'failed_jobs' => $this->getFailedJobsMetrics(),
+            'cache_health' => $this->getCacheHealthMetrics(),
+            'smtp_probe' => $this->getSmtpProbeMetrics(),
+            'opcache' => $this->getOpcacheMetrics(),
+            'scheduler' => $this->getSchedulerHealthMetrics(),
+            'business' => $this->getBusinessMetrics(),
         ];
     }
 
@@ -300,5 +310,219 @@ class SystemHealthService
             // Permission or locking fallback
         }
         return $size;
+    }
+
+    /**
+     * Slow Query Metrics.
+     */
+    public function getSlowQueryMetrics(): array
+    {
+        try {
+            $slowQueries = 0;
+            $longQueryTime = 10;
+            $rows = DB::select("SHOW STATUS LIKE 'Slow_queries'");
+            if (!empty($rows)) {
+                $slowQueries = (int) $rows[0]->Value;
+            }
+            $vars = DB::select("SHOW VARIABLES LIKE 'long_query_time'");
+            if (!empty($vars)) {
+                $longQueryTime = (float) $vars[0]->Value;
+            }
+            return [
+                'count' => $slowQueries,
+                'threshold_seconds' => $longQueryTime,
+                'status' => $slowQueries > 50 ? 'warning' : 'healthy',
+            ];
+        } catch (\Throwable $e) {
+            return ['count' => 0, 'threshold_seconds' => 10, 'status' => 'unknown'];
+        }
+    }
+
+    /**
+     * InnoDB Buffer Pool Hit Rate Metrics.
+     */
+    public function getBufferPoolMetrics(): array
+    {
+        try {
+            $reads = 0;
+            $requests = 0;
+            $status = DB::select("SHOW STATUS WHERE Variable_name IN ('Innodb_buffer_pool_reads', 'Innodb_buffer_pool_read_requests')");
+            foreach ($status as $s) {
+                if ($s->Variable_name === 'Innodb_buffer_pool_reads') $reads = (int)$s->Value;
+                if ($s->Variable_name === 'Innodb_buffer_pool_read_requests') $requests = (int)$s->Value;
+            }
+            $hitRate = $requests > 0 ? round((1 - ($reads / $requests)) * 100, 2) : 100.0;
+            return [
+                'hit_rate' => $hitRate,
+                'reads' => $reads,
+                'requests' => $requests,
+                'status' => $hitRate >= 95 ? 'optimal' : ($hitRate >= 80 ? 'good' : 'warning'),
+            ];
+        } catch (\Throwable $e) {
+            return ['hit_rate' => 100.0, 'reads' => 0, 'requests' => 0, 'status' => 'unknown'];
+        }
+    }
+
+    /**
+     * Detailed Failed Jobs Metrics.
+     */
+    public function getFailedJobsMetrics(): array
+    {
+        try {
+            $count = DB::table('failed_jobs')->count();
+            $recent = DB::table('failed_jobs')
+                ->select(['id', 'connection', 'queue', 'failed_at', 'exception'])
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get()
+                ->map(function ($j) {
+                    return [
+                        'id' => $j->id,
+                        'queue' => $j->queue,
+                        'failed_at' => $j->failed_at,
+                        'error' => Str::limit($j->exception, 120),
+                    ];
+                });
+            return [
+                'count' => $count,
+                'recent' => $recent,
+                'status' => $count > 0 ? 'attention' : 'optimal',
+            ];
+        } catch (\Throwable $e) {
+            return ['count' => 0, 'recent' => [], 'status' => 'optimal'];
+        }
+    }
+
+    /**
+     * Cache Health and Latency Probe.
+     */
+    public function getCacheHealthMetrics(): array
+    {
+        try {
+            $start = microtime(true);
+            $key = 'health_probe_' . uniqid();
+            Cache::put($key, 'ok', 5);
+            $val = Cache::get($key);
+            Cache::forget($key);
+            $latencyMs = round((microtime(true) - $start) * 1000, 2);
+
+            return [
+                'driver' => config('cache.default'),
+                'latency_ms' => $latencyMs,
+                'operational' => ($val === 'ok'),
+                'status' => $latencyMs < 50 ? 'fast' : ($latencyMs < 200 ? 'normal' : 'slow'),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'driver' => config('cache.default'),
+                'latency_ms' => 0,
+                'operational' => false,
+                'status' => 'error',
+            ];
+        }
+    }
+
+    /**
+     * SMTP Probe Metrics.
+     */
+    public function getSmtpProbeMetrics(): array
+    {
+        $host = config('mail.mailers.smtp.host', env('MAIL_HOST', '127.0.0.1'));
+        $port = (int) config('mail.mailers.smtp.port', env('MAIL_PORT', 587));
+        $mailer = config('mail.default', 'smtp');
+
+        $reachable = false;
+        $latencyMs = 0;
+
+        if ($mailer === 'smtp' && $host && !in_array($host, ['mailpit', 'mailhog', 'localhost', '127.0.0.1'])) {
+            $t0 = microtime(true);
+            $fp = @fsockopen($host, $port, $errno, $errstr, 2);
+            $latencyMs = round((microtime(true) - $t0) * 1000, 1);
+            if ($fp) {
+                $reachable = true;
+                fclose($fp);
+            }
+        } else {
+            $reachable = true; // local or array/log driver considered reachable
+        }
+
+        return [
+            'mailer' => $mailer,
+            'host' => $host,
+            'port' => $port,
+            'reachable' => $reachable,
+            'latency_ms' => $latencyMs,
+        ];
+    }
+
+    /**
+     * OPcache Metrics.
+     */
+    public function getOpcacheMetrics(): array
+    {
+        if (!function_exists('opcache_get_status')) {
+            return ['enabled' => false];
+        }
+        $status = @opcache_get_status(false);
+        if (!$status || empty($status['opcache_enabled'])) {
+            return ['enabled' => false];
+        }
+        $mem = $status['memory_usage'] ?? [];
+        $stats = $status['opcache_statistics'] ?? [];
+        return [
+            'enabled' => true,
+            'used_memory_mb' => round(($mem['used_memory'] ?? 0) / 1024 / 1024, 2),
+            'free_memory_mb' => round(($mem['free_memory'] ?? 0) / 1024 / 1024, 2),
+            'hit_rate' => round($stats['opcache_hit_rate'] ?? 0, 1),
+            'cached_scripts' => $stats['num_cached_scripts'] ?? 0,
+        ];
+    }
+
+    /**
+     * Scheduled Tasks Health.
+     */
+    public function getSchedulerHealthMetrics(): array
+    {
+        $tasks = [
+            'salon:daily-backup' => 'Daily at 02:00',
+            'backup:full'        => 'Daily at 02:30',
+            'db:snapshot'        => 'Daily at 03:00',
+            'backup:prune'       => 'Daily at 04:00',
+            'db:sync-replica'    => 'Hourly',
+            'db:health-check'    => 'Every Minute',
+        ];
+        $statuses = [];
+        foreach ($tasks as $cmd => $schedule) {
+            $lastRun = Cache::get('scheduler_last_run_' . str_replace([':', ' ', '-'], '_', $cmd));
+            $statuses[] = [
+                'command' => $cmd,
+                'schedule' => $schedule,
+                'last_run' => $lastRun ? Carbon::parse($lastRun)->diffForHumans() : 'Scheduled',
+            ];
+        }
+        return $statuses;
+    }
+
+    /**
+     * Business Vital Metrics.
+     */
+    public function getBusinessMetrics(): array
+    {
+        try {
+            $today = now()->toDateString();
+            return [
+                'bookings_today' => DB::table('bookings')->whereDate('created_at', $today)->count(),
+                'pending_bookings' => DB::table('bookings')->where('status', 'pending')->count(),
+                'active_salons' => DB::table('salons')->where('status', 'active')->count(),
+                'active_subscriptions' => DB::table('salon_subscriptions')->where('status', 'active')->count(),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'bookings_today' => 0,
+                'pending_bookings' => 0,
+                'active_salons' => 0,
+                'active_subscriptions' => 0,
+            ];
+        }
     }
 }

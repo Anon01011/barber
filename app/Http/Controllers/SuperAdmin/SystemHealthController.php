@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Services\SystemHealthService;
 use App\Services\DatabaseBackupService;
+use App\Services\DatabaseFailoverService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -12,11 +13,16 @@ class SystemHealthController extends Controller
 {
     protected SystemHealthService $healthService;
     protected DatabaseBackupService $backupService;
+    protected DatabaseFailoverService $failoverService;
 
-    public function __construct(SystemHealthService $healthService, DatabaseBackupService $backupService)
-    {
-        $this->healthService = $healthService;
-        $this->backupService = $backupService;
+    public function __construct(
+        SystemHealthService $healthService,
+        DatabaseBackupService $backupService,
+        DatabaseFailoverService $failoverService
+    ) {
+        $this->healthService   = $healthService;
+        $this->backupService   = $backupService;
+        $this->failoverService = $failoverService;
     }
 
     /**
@@ -24,11 +30,12 @@ class SystemHealthController extends Controller
      */
     public function index()
     {
-        $metrics = $this->healthService->getMetrics();
-        $tables = $this->healthService->getTableBreakdown(25);
-        $backups = $this->backupService->listBackups();
+        $metrics        = $this->healthService->getMetrics();
+        $tables         = $this->healthService->getTableBreakdown(25);
+        $backups        = $this->backupService->listBackups();
+        $failoverStatus = $this->failoverService->getStatus();
 
-        return view('super-admin.system-health.index', compact('metrics', 'tables', 'backups'));
+        return view('super-admin.system-health.index', compact('metrics', 'tables', 'backups', 'failoverStatus'));
     }
 
     /**
@@ -37,9 +44,10 @@ class SystemHealthController extends Controller
     public function liveMetrics()
     {
         return response()->json([
-            'success' => true,
-            'metrics' => $this->healthService->getMetrics(),
-            'timestamp' => now()->toIso8601String(),
+            'success'         => true,
+            'metrics'         => $this->healthService->getMetrics(),
+            'failover_status' => $this->failoverService->getStatus(),
+            'timestamp'       => now()->toIso8601String(),
         ]);
     }
 
@@ -56,7 +64,7 @@ class SystemHealthController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Database snapshot and replica updated successfully.',
-                    'backup' => $result
+                    'backup'  => $result
                 ]);
             }
 
@@ -100,5 +108,75 @@ class SystemHealthController extends Controller
         }
 
         return redirect()->back()->with('error', 'Cannot delete active replica or file does not exist.');
+    }
+
+    // ── HA Failover Control ───────────────────────────────────────────────────
+
+    /**
+     * Force activate failover to replica DB.
+     */
+    public function activateFailover(Request $request)
+    {
+        try {
+            $result = $this->failoverService->forceFailover();
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Failover activated — application is now using the replica database.', 'result' => $result]);
+            }
+            return redirect()->back()->with('success', 'Failover activated. Now using replica database.');
+        } catch (\Exception $e) {
+            Log::error('SystemHealth activateFailover: ' . $e->getMessage());
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Failover activation failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Force deactivate failover — switch back to primary DB.
+     */
+    public function deactivateFailover(Request $request)
+    {
+        try {
+            $result = $this->failoverService->forcePrimary();
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Primary database restored.', 'result' => $result]);
+            }
+            return redirect()->back()->with('success', 'Primary database connection restored.');
+        } catch (\Exception $e) {
+            Log::error('SystemHealth deactivateFailover: ' . $e->getMessage());
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Failed to restore primary: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Trigger a manual replica sync from latest snapshot.
+     */
+    public function syncReplica(Request $request)
+    {
+        try {
+            $result = $this->failoverService->syncReplicaFromSnapshot();
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Replica sync complete.', 'result' => $result]);
+            }
+            return redirect()->back()->with('success', 'Replica synced from latest snapshot successfully.');
+        } catch (\Exception $e) {
+            Log::error('SystemHealth syncReplica: ' . $e->getMessage());
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Replica sync failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Return current failover status as JSON.
+     */
+    public function failoverStatus()
+    {
+        return response()->json($this->failoverService->getStatus());
     }
 }

@@ -170,6 +170,11 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::post('/system-health/backup', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'createBackup'])->name('system-health.backup.create');
         Route::get('/system-health/backup/download/{filename}', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'downloadBackup'])->name('system-health.backup.download');
         Route::delete('/system-health/backup/{filename}', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'deleteBackup'])->name('system-health.backup.delete');
+        // ── HA Failover Control Routes ────────────────────────────────────────
+        Route::post('/system-health/failover/activate', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'activateFailover'])->name('system-health.failover.activate');
+        Route::post('/system-health/failover/deactivate', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'deactivateFailover'])->name('system-health.failover.deactivate');
+        Route::post('/system-health/replica/sync', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'syncReplica'])->name('system-health.replica.sync');
+        Route::get('/system-health/failover/status', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'failoverStatus'])->name('system-health.failover.status');
 
         // Module Management
         Route::get('/modules', [App\Http\Controllers\SuperAdmin\ModuleManagementController::class, 'index'])->name('modules.index');
