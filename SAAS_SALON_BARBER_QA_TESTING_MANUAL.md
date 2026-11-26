@@ -1,306 +1,444 @@
-# SALON & BARBER MULTI-TENANT SaaS — QA TESTING MANUAL & END-TO-END APPLICATION GUIDE
+# SALON & BARBER MULTI-TENANT SaaS — MASTER APPLICATION GUIDE & QA TESTING MANUAL
 
-**Document Version:** 3.0 (Enterprise Production Manual)  
-**Target Audience:** QA Engineers, Test Automation Specialists, Product Managers, Salon Implementation Specialists  
-**Scope:** Super Admin Platform, Tenant Administration, Front Desk / POS, Barber Portal, and Customer Client Portal  
+**Document Version:** 5.0 (Enterprise Comprehensive Edition with Test Credentials & Setup Guide)  
+**Target Audience:** QA Engineers, Test Automation Specialists, Product Managers, Salon Implementation Specialists, System Administrators  
+**System Scope:** Central Super Admin Platform, Salon Tenant Administration, Front Desk / POS, Barber / Employee Portal, Client Self-Service Portal, and Public Guest Booking  
+**Primary Repository:** `c:\Ketan\projects\barber`  
+**Mirror Repository:** `c:\Ketan\projects\salon-cms-master`  
 
 ---
 
-## 1. APPLICATION ARCHITECTURE & MULTI-TENANT MODEL
+## 1. PRE-SEEDED QA TEST CREDENTIALS & QUICK ACCESS MATRIX
 
-### 1.1 Multi-Tenant Isolation Hierarchy
-The application operates as a multi-tenant Software-as-a-Service (SaaS) suite. Every salon represents an independent tenant with strictly isolated data:
-1. **URL Routing Isolation:**
-   - Super Admin: `/super-admin/...` (Central platform control)
-   - Tenant Admin: `/{salon_slug}/admin/...`
-   - Staff / Barber Portal: `/{salon_slug}/employee/...` & `/{salon_slug}/barber-pos`
-   - Customer Portal: `/{salon_slug}/customer/...` & `/{salon_slug}/booking/...`
-2. **Database Scoping Boundary:**
-   - Every operational model (Bookings, Customers, Invoices, POS Sales, Inventory, Loyalty, Services, Staff) uses the `BelongsToSalon` trait.
-   - The Eloquent global scope automatically appends `WHERE salon_id = ?` to all SELECT, UPDATE, and DELETE queries based on the authenticated user's tenant.
-3. **Branch Sub-Scoping:**
-   - Large salons support multiple physical branches (`Branch` model).
-   - Session variable `session('current_branch_id')` tracks the active branch for POS, bookings, and inventory stock.
+Use the following pre-seeded system credentials to test all user roles across the platform without needing manual database seeding:
+
+### 1.1 Central Platform Super Admin
+* **Portal URL:** `http://localhost/login` (or `/login`)
+* **Email:** `admin@fstqatar.com`
+* **Password:** `admin123`
+* **Phone:** `1234567890` | **Default PIN:** `1234`
+* **Role / Scope:** `super_admin` (Global access to all salons, subscription plans, platform revenue, and module killswitches).
+
+---
+
+### 1.2 Default Pre-Seeded Salon Tenant: `demo-salon`
+* **Tenant Base URL:** `http://localhost/demo-salon/login` (or `/{salon_slug}/login`)
+
+| Persona / Role | Email Address | Password | Default Phone | Primary Testing Focus |
+|---|---|---|---|---|
+| **Salon Owner (Admin)** | `salon@fstqatar.com` | `salon123` | `2345678901` | Full tenant control: salon settings, branches, services, staff, loyalty, reports, billing. |
+| **Branch Manager** | `manager@fstqatar.com` | `manager123` | `3456789012` | Front desk operations: POS checkout, cash register, staff daily shifts, calendar management. |
+| **Barber / Stylist (Employee)** | `employee@salonpro.com` | `employee123` | `4567890123` | Stylist queue: view assigned appointments, start/complete services, view earned commissions. |
+| **Client (Customer)** | `customer@fstqatar.com` | `customer123` | `5678901234` | Client self-service: book slots, view reward points balance, view past visits, submit reviews. |
+| **Public Guest** | *(Unauthenticated)* | *(None)* | *(None)* | Public booking wizard at `/demo-salon/booking/guest`. |
+
+---
+
+## 2. SYSTEM ARCHITECTURE & MASTER NAVIGATION MAP
 
 ```mermaid
 flowchart TD
-    Central[Platform Super Admin] -->|Provisions & Manages| SalonA[Tenant: Salon Alpha /salon-alpha]
-    Central -->|Provisions & Manages| SalonB[Tenant: Salon Beta /salon-beta]
-    
-    subgraph TenantAlpha [Salon Alpha]
-        Branch1[Branch 1: Downtown]
-        Branch2[Branch 2: Uptown]
-        AdminA[Salon Owner / Manager]
-        BarberA[Barbers & Stylists]
-        CustA[Customers & Clients]
-        
-        AdminA --> Branch1 & Branch2
-        BarberA --> Branch1
-        CustA --> Branch1 & Branch2
+    subgraph SuperAdminPlatform [1. SaaS Platform Management]
+        SuperLogin["/login (super_admin)"] --> SuperDash["/super-admin/dashboard"]
+        SuperDash --> Plans["/super-admin/plans (Create & Manage Plans)"]
+        SuperDash --> Salons["/super-admin/salons (Create & Provision Salons)"]
+        SuperDash --> Subscriptions["/super-admin/subscriptions"]
+        SuperDash --> GlobalModules["/super-admin/modules (Hard Killswitches)"]
+        SuperDash --> Impersonate["/super-admin/salons/{id}/impersonate"]
     end
-    
-    subgraph IsolationGuard [Tenant Boundary Security]
-        DB[(Database with salon_id Scoping)]
+
+    subgraph TenantAdminWorkspace [2. Salon Tenant Admin Workspace]
+        TenantLogin["/{slug}/login (salon_admin)"] --> TenantDash["/{slug}/admin/dashboard"]
+        TenantDash --> Settings["/{slug}/admin/salon-settings (General, Hours, Tax, Loyalty, Feedback)"]
+        TenantDash --> Branches["/{slug}/admin/branches (Multi-Branch Management)"]
+        TenantDash --> Services["/{slug}/admin/services/categories (Catalog & Consumables)"]
+        TenantDash --> Staff["/{slug}/admin/staff (Employees, Hours, Commissions)"]
+        TenantDash --> Customers["/{slug}/admin/customers (CRM & Client Portal Access)"]
+        TenantDash --> Calendar["/{slug}/admin/bookings (Calendar & Scheduling)"]
+        TenantDash --> POS["/{slug}/admin/pos (Touchscreen Register & Checkout)"]
+        TenantDash --> Inventory["/{slug}/admin/inventory (Stock, Suppliers, Orders)"]
+        TenantDash --> Packages["/{slug}/admin/packages (Prepaid Multi-Session Bundles)"]
+        TenantDash --> Memberships["/{slug}/admin/memberships (Recurring Discount Tiers)"]
+        TenantDash --> Feedback["/{slug}/admin/feedback (Customer Reviews Hub)"]
+        TenantDash --> Reports["/{slug}/admin/reports (All 8 Analytics Reports)"]
+        TenantDash --> AI["/{slug}/admin/ai/hub (AI Copilot & Automation)"]
     end
-    
-    TenantAlpha --> DB
+
+    subgraph StaffPortal [3. Barber / Employee Workspace]
+        StaffLogin["/{slug}/login (employee)"] --> StaffDash["/{slug}/employee/dashboard"]
+        StaffDash --> StaffQueue["/{slug}/employee/appointments (Accept, Start, Complete)"]
+        StaffDash --> BarberPOS["/{slug}/barber-pos (Express Mobile Checkout)"]
+        StaffDash --> StaffEarnings["/{slug}/employee/earnings (Commissions)"]
+    end
+
+    subgraph CustomerPortal [4. Client Self-Service Portal]
+        CustLogin["/{slug}/login (customer)"] --> CustDash["/{slug}/customer/dashboard"]
+        CustDash --> QuickBook["Quick Appointment Modal"]
+        CustDash --> CustHistory["/{slug}/customer/appointments"]
+        CustDash --> LoyaltyWidget["Loyalty Points Balance & History"]
+        CustDash --> ReviewModal["5-Star Feedback & Review Modal"]
+    end
+
+    subgraph PublicEndpoints [5. Public Guest Endpoints]
+        GuestBook["/{slug}/booking/guest (No-login Booking Flow)"]
+        PublicRating["/{slug}/rating/{token} (Tokenized Email Review Form)"]
+    end
+
+    SuperAdminPlatform -->|Provisions & Gates| TenantAdminWorkspace
+    TenantAdminWorkspace -->|Manages Staff & Services| StaffPortal
+    TenantAdminWorkspace -->|Serves Clients| CustomerPortal
+    PublicEndpoints -->|Creates Bookings & Reviews| TenantAdminWorkspace
 ```
 
 ---
 
-## 2. USER PERSONAS & ROLE MATRIX
+## 3. TESTER QUICK-START GUIDE: CREATING A PLAN & PROVISIONING A SALON
 
-| Persona | Role Code | Access Level & Scope | Primary Responsibilities |
-|---|---|---|---|
-| **Super Admin** | `super_admin` | Global Central Platform | Manage SaaS subscription plans, global module switches, tenant creation, platform billing. |
-| **Salon Owner** | `salon_admin` | Entire Tenant (`salon_id`) | Full control of salon: branches, services, staff, pricing, loyalty, reports, settings. |
-| **Branch Manager** | `manager` | Single Branch Context | Front desk operations, POS checkout, cash drawer management, staff schedules. |
-| **Barber / Stylist** | `employee` | Personal Appointments | View assigned queue, accept/reject bookings, mark completed, view commissions. |
-| **Customer / Client** | `customer` | Self-Service Client Portal | Book online slots, view past services, review feedback, check loyalty reward balance. |
-
----
-
-## 3. SAAS MODULE DIRECTORY & ENTITLEMENT GOVERNANCE
-
-The application governs 18 functional modules through a strict 5-tier entitlement formula:
-$$\text{Module Access} = \text{Global Enabled} \land \text{Plan Included} \land \text{Subscription Eligible} \land \text{Tenant Active} \land \text{Dependencies Met}$$
-
-### 3.1 Module Directory
-1. **Multi-Branch Management (`branches`):** Multi-location support, branch switching, branch-specific inventory and staff schedules.
-2. **Inventory Management (`inventory`):** Stock items, supplier purchase orders, product sales, recipe/consumables auto-deduction.
-3. **Point of Sale (`pos`):** Touchscreen POS register, split payments, barcode lookup, discounts, tips, tax rates, receipt printing.
-4. **Booking System (`appointments`):** Multi-staff drag-and-drop calendar, slot capacity, online appointments, cancellation policies.
-5. **Customer Management (`customers`):** Client CRM, notes, billing history, custom tags, portal credentials.
-6. **Service Management (`services`):** Service categories, durations, buffer times, pricing tiers, assigned staff.
-7. **Staff Management (`staff`):** Working hours, break times, attendance, access roles, performance metrics.
-8. **Analytics & Reports (`reports`):** 8 dedicated reports (Sales, Appointments, Staff, Customers, Profitability, Inventory, Wastage).
-9. **Packages (`packages`):** Prepaid multi-session bundled service packages.
-10. **Memberships (`memberships`):** Recurring membership tiers with automated discount rates.
-11. **Commission Management (`commissions`):** Tiered, flat, or percentage-based staff commission structures.
-12. **Role Management (`roles`):** Custom role creation and granular permission toggles.
-13. **Email Notifications (`marketing`):** Automated booking confirmation, reminders, completion emails, credentials delivery.
-14. **SMS Notifications (`sms`):** Twilio/SMS gateway automated appointment alerts.
-15. **WhatsApp Notifications (`whatsapp`):** WhatsApp Business API messaging.
-16. **AI Insights & Copilot (`ai`):** Intelligent revenue forecasting, inventory restock suggestions, AI copilot.
-17. **Loyalty Rewards Program (`loyalty`):** Points earned per currency spent, point redemption thresholds, point validity duration.
-18. **Customer Feedback & Reviews (`feedback`):** Star ratings, customer review submission, admin testimonial publishing.
-
-### 3.2 Graceful Fallback Rules When Modules Are Inactive
-- If **`inventory`** is disabled: POS hides the Products tab; service checkouts operate without disruption.
-- If **`branches`** is disabled: Application runs in single-salon mode; branch switcher dropdown is hidden.
-- If **`loyalty`** is disabled: Customer dashboard hides reward cards; POS hides the points redemption button.
-- If **`feedback`** is disabled: Completion emails omit rating links; customer dashboard suppresses review prompts.
-
----
-
-## 4. END-TO-END WORKFLOWS (HOW TO USE THE APPLICATION)
+This section guides QA testers through creating a brand new salon from scratch: from Super Admin plan creation to full salon initial configuration.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Customer
-    actor FrontDesk as Front Desk / POS
-    actor Barber as Barber / Stylist
-    actor Admin as Salon Admin
+    actor Tester as QA Tester
+    participant Super as Super Admin (/login)
+    participant DB as System Database
+    participant Tenant as Salon Admin (/{slug}/login)
 
-    Customer->>FrontDesk: 1. Books appointment online or walks in
-    Admin->>FrontDesk: 2. Approves booking / assigns to Barber
-    Barber->>Barber: 3. Accepts booking & performs service
-    Barber->>FrontDesk: 4. Marks service completed
-    FrontDesk->>FrontDesk: 5. Opens POS Checkout: adds products, applies loyalty points
-    Customer->>FrontDesk: 6. Pays via Cash / Card / Split Payment
-    FrontDesk->>Customer: 7. Prints Receipt; System awards Loyalty Points
-    Customer->>Customer: 8. Receives completion email; rates appointment (1-5 stars)
-    Admin->>Admin: 9. Views Review in Admin Feedback Hub & inspects Commission
+    Tester->>Super: 1. Login with admin@fstqatar.com / admin123
+    Tester->>Super: 2. Navigate to /super-admin/plans/create
+    Super->>DB: 3. Saves new Subscription Plan with module checkboxes
+    Tester->>Super: 4. Navigate to /super-admin/salons/create
+    Super->>DB: 5. Provisions Salon Tenant, Owner user & seeds categories
+    Tester->>Tenant: 6. Login as new Salon Owner at /{slug}/login
+    Tenant->>Tenant: 7. Open Salon Settings (Profile, Hours, Slot Interval, Tax)
+    Tenant->>Tenant: 8. Setup Branches, Services, Staff & Loyalty Points
+    Tenant->>Tester: 9. Salon is 100% operational for Bookings & POS!
 ```
 
-### 4.1 Super Admin Onboarding & Plan Assignment
-1. Login to Super Admin Portal: `/login` (with super_admin credentials).
-2. Go to **Plans Management** (`/super-admin/plans`):
-   - Create or edit a plan (e.g., "Barber Pro" at \$49/month).
-   - Check included features (e.g., `Point of Sale (POS)`, `Booking System`, `Loyalty Program`, `Inventory Management`).
-3. Go to **Salons Management** (`/super-admin/salons`):
-   - Click "Create Salon". Fill in Salon Name (e.g., "Royal Barber Lounge"), custom slug (`royal-barber`), business type, and owner email.
-   - Assign subscription plan or set trial end date.
-4. Tenant workspace is now live at `/royal-barber/admin`.
+---
 
-### 4.2 Salon Admin Initial Configuration
-1. Login at `/royal-barber/login` as Salon Admin.
-2. **Branch Setup (`/royal-barber/admin/branches`):** Configure primary branch address, phone, and timezone.
-3. **Staff Setup (`/royal-barber/admin/staff`):**
-   - Add barbers/stylists. Set working hours (e.g., Mon-Sat 09:00 - 18:00) and service specialties.
-4. **Service Catalog (`/royal-barber/admin/services`):**
-   - Create categories (e.g., Haircuts, Beard Grooming).
-   - Add services with duration (e.g., "Classic Fade", 30 mins, \$25.00).
-5. **Loyalty & Feedback Settings (`/royal-barber/admin/settings#loyalty-feedback`):**
-   - Toggle "Enable Loyalty Program" ON.
-   - Configure: Earn 1 point per \$1 spent; 100 points = \$5 discount; Minimum 50 points to redeem; Expiration: 12 months.
-   - Toggle "Enable Customer Feedback" ON.
+### Step 3.1: Super Admin Creates a Subscription Plan
 
-### 4.3 Front Desk & Booking Lifecycle
-1. Open Calendar: `/{salon_slug}/admin/bookings`.
-2. Click on an empty time slot to open **Create Appointment**:
-   - Select Customer (or create new with phone number).
-   - Select Service and assigned Barber.
-   - Click Save. Status is `confirmed`.
-3. In **List View** or **Calendar View**, click the booking:
-   - Click "Start Service" -> Status changes to `in_progress`.
-   - Click "Complete Service" -> Status changes to `completed`.
-   - System automatically generates a secure rating token for the customer.
-
-### 4.4 Point of Sale (POS) Checkout
-1. Open POS Terminal: `/{salon_slug}/pos`.
-2. Search customer by name or phone:
-   - Customer loyalty points balance is displayed in the header.
-3. Add services or inventory retail products:
-   - If customer has sufficient loyalty points, click "Redeem Points": enter points to redeem (e.g., 50 pts = \$2.50 discount).
-4. Select payment method: Cash, Card, UPI, or Split Payment.
-5. Click **Pay & Checkout**:
-   - Invoice is recorded in database.
-   - Consumables/backbar inventory is deducted according to service recipe.
-   - Loyalty points earned are credited to customer ledger.
-   - Thermal/A4 receipt is generated.
-
-### 4.5 Customer Self-Service & Feedback Flow
-1. Customer visits portal: `/{salon_slug}/customer/dashboard`.
-2. Views:
-   - Upcoming appointments and past completed visits.
-   - **Reward Balance:** Current points, currency cash value, point validity duration.
-   - **Transaction Ledger:** Date, sale reference, points earned/redeemed.
-3. **Rating Appointment:**
-   - Completed appointments show a "Rate Appointment" button.
-   - Clicking opens the modal: select 1 to 5 stars, leave comments, click Submit.
-   - Once submitted, button updates to "Rated (★ 5/5)" and is disabled.
-   - Modal will not nag customer again on reload.
+1. **Log in as Super Admin:**
+   - URL: `/login`
+   - Email: `admin@fstqatar.com` | Password: `admin123`
+2. **Open Plan Management:**
+   - In the left sidebar, click **"Plans"** or go directly to `/super-admin/plans`.
+   - Click the green **"Create Plan"** button (URL: `/super-admin/plans/create`).
+3. **Fill in the Plan Form:**
+   - **Plan Name:** Enter `Barber Pro Tier`.
+   - **Slug:** Enter `barber-pro-tier` (auto-generated).
+   - **Description:** Enter `Full-featured tier for high-volume barbershops`.
+   - **Pricing:**
+     - Monthly Price: `49.00`
+     - Annual Price: `490.00`
+     - Trial Period: `14` days
+   - **Usage Limits:**
+     - Max Branches: `3`
+     - Max Staff: `15`
+   - **Feature Checkboxes (Entitlement Controls):**
+     Check the modules that should be enabled for this tier:
+     - `[x] Point of Sale (POS)`
+     - `[x] Booking System`
+     - `[x] Customer Management`
+     - `[x] Service Management`
+     - `[x] Staff Management`
+     - `[x] Analytics & Reports`
+     - `[x] Inventory Management`
+     - `[x] Multi-Branch Support`
+     - `[x] Packages`
+     - `[x] Memberships`
+     - `[x] Commission Management`
+     - `[x] Loyalty Program`
+     - `[x] Customer Feedback & Reviews`
+     - `[x] AI Insights & Automation`
+   - **Feature Selection & Duplicate Prevention:**
+     - In both **Create Plan** (`/super-admin/plans/create`) and **Edit Plan** (`/super-admin/plans/{id}/edit`), whenever a feature is selected/added, its corresponding button in both the **Quick Add Popular Features** pills and the **Sidebar Quick Add** is automatically **disabled** and visually marked with `<i class="fas fa-check-circle text-success"></i>` and `(Added)`.
+     - When a feature is deleted from the plan, its corresponding button is instantly **re-enabled**.
+     - If the user types a feature name in the input that is already selected, the "Add Feature" button is automatically disabled to prevent duplicate entries.
+4. **Save Plan:**
+   - Click **"Save Plan"**. Confirm the plan appears in the plans table with status `Active`.
 
 ---
 
-## 5. QA TEST SUITES & TEST CASES
+### Step 3.2: Super Admin Provisions a New Salon Tenant
 
-### Suite 1: SaaS Platform & Subscription Feature Gating
+1. **Open Salon Management:**
+   - In the Super Admin sidebar, click **"Salons"** or go to `/super-admin/salons`.
+   - Click the **"Create Salon"** button (URL: `/super-admin/salons/create`).
+2. **Fill in Salon Information:**
+   - **Salon Name:** `Royal Barber Lounge`.
+   - **Salon Slug:** `royal-barber` (This forms the tenant URL: `/royal-barber/*`).
+   - **Business Type:** Select `Barbershop` (or `Hair Salon`, `Spa`, `Unisex`).
+   - **Phone Number:** `+1 (555) 789-0123`.
+   - **Currency:** Select `USD ($)` or `EUR (€)`.
+3. **Fill in Owner Account:**
+   - **Owner Name:** `Arthur Shelby`.
+   - **Owner Email:** `arthur@royalbarber.com`.
+   - **Password:** `RoyalPass123!`.
+   - **Password Confirmation:** `RoyalPass123!`.
+4. **Assign Subscription Plan:**
+   - **Select Plan:** Choose `Barber Pro Tier` (created in Step 3.1).
+   - **Subscription Status:** Select `Trialing` or `Active`.
+   - **Trial Days:** Defaults to `14` days.
+5. **Auto-Seed Defaults:**
+   - Ensure `[x] Seed Default Service Categories` is checked (seeds Haircuts, Shaves, Beard Grooming).
+   - Ensure `[x] Create Default Primary Branch` is checked.
+6. **Click "Provision Salon":**
+   - The system creates the tenant, sets up the database records with `salon_id`, assigns the owner role, and redirects to the salon list.
 
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
+---
+
+### Step 3.3: Salon Owner Initial Setup from Settings
+
+Now log out from Super Admin and log in as the newly created Salon Owner to perform the initial salon setup:
+* **Tenant Login URL:** `http://localhost/royal-barber/login`
+* **Email:** `arthur@royalbarber.com`
+* **Password:** `RoyalPass123!`
+
+Follow this sequential checklist to configure the salon:
+
+#### 1. General Profile & Branding (`/royal-barber/admin/salon-settings`)
+- Click **"Salon Settings"** in the sidebar.
+- **Logo:** Upload a salon logo (PNG/JPG).
+- **Address:** Enter `100 King Street, Suite 500`.
+- **Contact Email & Phone:** Verify `arthur@royalbarber.com` and phone.
+- **Timezone:** Select your local timezone (e.g. `America/New_York` or `Asia/Qatar`).
+- **Currency Symbol:** Ensure `$` is set.
+- **Tax Rate:** Enter tax percentage (e.g., `8.25%` or `10%` VAT).
+- Click **"Save Settings"**.
+
+#### 2. Operating Hours & Booking Rules (`/royal-barber/admin/salon-settings`)
+- In the Settings screen, scroll to **Operating Hours**:
+  - Monday to Saturday: Set `09:00` Open, `20:00` Close.
+  - Sunday: Set `Closed` (toggle off).
+- **Booking Rules:**
+  - **Slot Interval:** Select `30 minutes` (controls calendar grid resolution).
+  - **Advance Booking Window:** Enter `30` days (maximum future booking limit).
+  - **Cancellation Cutoff:** Enter `4` hours.
+- Click **"Save Operating Hours"**.
+
+#### 3. Multi-Branch Setup (`/royal-barber/admin/branches`)
+- Click **"Branches"** in the sidebar.
+- Notice the primary branch is already created (`Main Location`).
+- Click **"Edit"** to rename it to `Downtown Flagship`.
+- (Optional) Click **"Add Branch"** to create a second branch:
+  - Branch Name: `Uptown Studio`.
+  - Address: `450 Uptown Blvd`.
+  - Phone: `+1 (555) 456-7890`.
+- Use the **Branch Switcher** dropdown in the top header to toggle between branches.
+
+#### 4. Service Catalog & Recipe Consumables (`/royal-barber/admin/services/categories`)
+- Click **"Services & Categories"** in the sidebar.
+- Notice default seeded categories: `Haircuts`, `Beard Grooming`.
+- **Create a Service:**
+  1. Click **"Add Service"** inside `Haircuts`:
+     - Service Name: `Signature Skin Fade & Hot Towel`.
+     - Price: `$45.00`.
+     - Duration: `45 minutes`.
+     - Buffer Time: `10 minutes` (prep time before next client).
+  2. **Link Recipe Consumables (Auto-Stock Deduction):**
+     - In the Service form, expand **Consumable Products / Recipe**.
+     - Item: Select `Cooling Aftershave Lotion` -> Quantity: `20 ml`.
+     - Item: Select `Neck Paper Strip` -> Quantity: `1 unit`.
+  3. Click **"Save Service"**.
+
+#### 5. Staff Members & Weekly Shift Schedules (`/royal-barber/admin/staff`)
+- Click **"Staff"** in the sidebar.
+- Click **"Add Staff Member"**:
+  - Name: `Marcus Vance`.
+  - Email: `marcus@royalbarber.com`.
+  - Phone: `+1 (555) 234-5678`.
+  - Role: Select `Barber / Stylist` (`employee`).
+  - Assigned Branches: Check `[x] Downtown Flagship`.
+  - Services: Check `[x] Signature Skin Fade & Hot Towel`.
+- **Set Working Hours:**
+  - Click **"Schedule"** on Marcus's card:
+  - Monday–Friday: Set `09:00 - 18:00`.
+  - Add Break: `13:00 - 14:00` (Lunch).
+  - The booking calendar will automatically prevent clients from booking Marcus during lunch!
+
+#### 6. Loyalty Rewards & Feedback Settings (`/royal-barber/admin/settings#loyalty-feedback`)
+- In Salon Settings, click the **"Loyalty & Feedback"** tab.
+- **Loyalty Program:**
+  - Toggle **"Enable Loyalty Program"** to ON.
+  - Points Earning Rate: `1 point per $1 spent`.
+  - Points Redemption Value: `100 points = $5.00 discount` ($0.05 per pt).
+  - Minimum Points to Redeem: `50 points`.
+  - Points Validity: `12 months`.
+- **Customer Feedback & Reviews:**
+  - Toggle **"Enable Customer Feedback"** to ON.
+  - Review Request: Check `[x] Send review email invitation on completion`.
+- Click **"Save Loyalty & Feedback Settings"**.
+
+#### 7. POS Receipt Templates (`/royal-barber/admin/pos/receipt-templates`)
+- Go to POS -> **Receipt Templates**.
+- Receipt Header: `*** Royal Barber Lounge - Downtown ***`.
+- Receipt Footer: `Thank you for choosing Royal Barber! Follow us on Instagram @RoyalBarber`.
+- Layout: Select `80mm Thermal Receipt`.
+- Click **"Save Template"**.
+
+---
+
+## 4. HOW TO USE & HOW TO TEST: ALL MODULES STEP-BY-STEP
+
+---
+
+### Module 1: Customer CRM & Client Portal Provisioning
+
+#### How to Use:
+1. Go to **Customers** (`/{slug}/admin/customers`).
+2. Click **"Add Customer"**:
+   - Full Name: `Thomas Shelby`.
+   - Phone: `+15559876543`.
+   - Email: `thomas@peakybarbers.com`.
+   - Check: `[x] Grant Client Portal Login Access`.
+   - Password Mode: Select `Auto-generate secure password and email credentials`.
+3. Click Save. The customer receives an automated welcome email with login credentials.
+4. Click customer name -> View **Bill Activity Modal** (all invoices, payments, retail purchases).
+5. View **Loyalty Ledger** (total balance, earned history, redemptions).
+
+#### QA Test Steps:
+| Step | Action | Expected Result |
+|---|---|---|
+| 1 | Create customer without email while checking "Grant Portal Access" | System rejects with `422 Unprocessable`: *"An email address is required to provision client portal access."* |
+| 2 | Edit existing customer with "Auto" password mode; change phone number | Phone number updates; customer's existing password is preserved without unwanted reset. |
+| 3 | Attempt to supply foreign `user_id = 1` in edit customer POST payload | Controller blocks assignment; update scoped strictly to customer's own record (`IDOR`). |
+
+---
+
+### Module 2: Booking Calendar & Scheduling Engine
+
+#### How to Use:
+1. Go to **Calendar** (`/{slug}/admin/bookings`).
+2. Toggle views: Day View, Week View, Month View, or List View.
+3. Filter by Staff: Select `Marcus Vance` or check `Unassigned Staff`.
+4. **Create Appointment:** Click on Marcus's column at `10:00 AM`:
+   - Customer: `Thomas Shelby`.
+   - Service: `Signature Skin Fade & Hot Towel`.
+   - Duration auto-fills to 45 mins (`10:00 - 10:45 AM`).
+   - Click "Save Appointment".
+5. **Status Workflow:**
+   - When Thomas arrives: Click booking -> Select **"Start Service"** (Status: `in_progress`).
+   - When finished: Click booking -> Select **"Complete Service"** (Status: `completed`).
+   - System automatically generates a secure review token and deducts recipe consumables!
+
+#### QA Test Steps:
+| Step | Action | Expected Result |
+|---|---|---|
+| 1 | Book overlapping slot for same barber at 10:15 AM | Slot collision detected; second booking blocked. |
+| 2 | In List View, filter by "Unassigned Staff" | Displays unassigned bookings without crashing or hiding them. |
+| 3 | Inspect booking table on screen $\ge 768\text{px}$ | Desktop view renders standard table columns; `.bk-mobile-card-td` hidden. |
+| 4 | Double-click "Create Appointment" rapidly | Form locks on first click; button shows spinner; exactly 1 POST dispatched. |
+| 5 | Mark booking completed, note `rating_token`, then edit notes and re-save | `rating_token` remains identical; customer's emailed rating link remains valid. |
+
+---
+
+### Module 3: Point of Sale (POS) & Financial Settlement
+
+#### How to Use:
+1. Open **POS Terminal** (`/{slug}/admin/pos`).
+2. Search customer `Thomas Shelby`. The customer banner displays: `Balance: 120 pts (Worth: $6.00)`.
+3. Add items to cart:
+   - Service: `Signature Skin Fade` (\$45.00).
+   - Retail Product: `Matte Hair Clay` (\$25.00).
+   - Subtotal = `$70.00`.
+4. Click **"Redeem Points"**:
+   - Redeem `100 points` -> Cart applies a `-$5.00` discount.
+   - Balance due becomes `$65.00` + Tax.
+5. Click **"Pay & Checkout"**:
+   - Select **Split Payment**: Cash `$35.00`, Card `$30.00` + Tax.
+   - Click "Complete Sale".
+6. System prints 80mm thermal receipt; credits +65 new loyalty points; decrements 1 unit of Hair Clay; decrements 20ml aftershave and 1 neck strip from inventory!
+
+#### QA Test Steps:
+| Step | Action | Expected Result |
+|---|---|---|
+| 1 | Attempt to redeem points when customer has 30 pts (min is 50) | POS displays error: minimum threshold of 50 points not met; blocked. |
+| 2 | Checkout retail product for customer who has an appointment today | Only retail product is sold; future appointment remains untouched and confirmed. |
+| 3 | Group booking with 2 services; pay service 1 only | System blocks marking service 2 as completed until settled. |
+| 4 | Void Sale #101 | Inventory restocked; credited loyalty points deducted from customer balance. |
+
+---
+
+### Module 4: Prepaid Packages & Memberships
+
+#### How to Use Packages:
+1. Go to **Packages** (`/{slug}/admin/packages`).
+2. Click "Add Package": Title `5x Fade Package`, Price `$180.00`, includes 5 sessions of `Signature Skin Fade`.
+3. Sell package to Thomas Shelby at POS.
+4. Next visit, select "Redeem Package Session" at POS -> Checkout at `$0.00` balance due -> Remaining sessions drop from 5 to 4.
+
+#### How to Use Memberships:
+1. Go to **Memberships** (`/{slug}/admin/memberships`).
+2. Click "Add Membership": `VIP Club`, `$25/month`, `15% discount on services`.
+3. Assign to customer. POS automatically applies 15% discount on all service cart items.
+
+---
+
+### Module 5: Customer Feedback & Public Review System
+
+#### How to Use:
+1. When an appointment is completed, the customer receives an automated rating email containing a tokenized link: `/{slug}/rating/{token}`.
+2. The customer clicks the link -> Opens the **5-Star Rating Form**:
+   - Select 1 to 5 stars.
+   - Enter written review (e.g. *"Best skin fade in town, Marcus is a master!"*).
+   - Click "Submit Review".
+3. **Admin Feedback Hub (`/{slug}/admin/feedback`):**
+   - The review appears in the admin dashboard.
+   - Admin can click "Publish to Website" to feature the review on the public booking page.
+4. **Customer Dashboard Modal:**
+   - When Thomas logs into `/royal-barber/customer/dashboard`, the rating modal pops up once.
+   - Once submitted or dismissed, it does NOT pop up again during the session (`sessionStorage`).
+   - "Rate Appointment" button updates to "Rated ★ 5/5" and is disabled.
+
+---
+
+### Module 6: All 8 Analytics Reports
+
+| Report | URL Path | Key Metrics & Data Columns | Verification Focus |
+|---|---|---|---|
+| **1. Sales Report** | `/{slug}/admin/reports/sales` | Gross Sales, Net Sales, Tax, Discounts, Payment Split (Cash vs. Card). | Date range filtering; matching POS register totals; CSV export. |
+| **2. Appointments Report** | `/{slug}/admin/reports/appointments` | Bookings count, Completed %, Cancellation %, Peak appointment hours. | Accurate status grouping; staff breakdown. |
+| **3. Staff Performance** | `/{slug}/admin/reports/staff` | Revenue per barber, services count, retention rate, average rating. | Scoped strictly to the barber who performed the service. |
+| **4. Customer Acquisition** | `/{slug}/admin/reports/customers` | New clients, returning clients, total lifetime spend, inactive clients. | Lifetime spend summation across all historical sales. |
+| **5. Profit & Margin Analysis** | `/{slug}/admin/inventory/reports/profit-analysis` | Product cost vs. retail price, gross margin %, category profitability. | ApexCharts margin bars; XSS sanitization in chart tooltips. |
+| **6. Stock Movement** | `/{slug}/admin/inventory/reports/stock-movement` | Stock in, stock out (POS), recipe usage, damaged/written-off items. | Real-time audit trail with user and timestamp attribution. |
+| **7. Dead Stock & Low Stock** | `/{slug}/admin/inventory/reports/dead-stock` | Zero-movement SKUs over 90 days, capital tied up, restock alerts. | Accurate restock alert flags when quantity $\le$ threshold. |
+| **8. Wastage & Consumption** | `/{slug}/admin/inventory/reports/wastage` | Service recipe backbar consumption, broken/spilled inventory. | Verify recipe deductions match completed services count. |
+
+---
+
+## 5. MASTER QA TEST EXECUTION CHECKLIST
+
+| Test ID | Domain | Action Steps | Expected Outcome | Status |
 |---|---|---|---|---|
-| **SAAS-01** | Provision New Salon Tenant | Super Admin logged in | Go to `/super-admin/salons/create`. Input name, slug `gentlemens-den`, owner email. Click Create. | Tenant is provisioned; database creates default branches; URL `/gentlemens-den/admin` is accessible. |
-| **SAAS-02** | Plan Feature Gating (Inventory Lock) | Salon is on "Starter Plan" with `has_inventory = false` | Attempt to navigate to `/{slug}/admin/inventory` directly. | System returns 403 Forbidden with upgrade prompt modal; access is blocked. |
-| **SAAS-03** | Super Admin Global Module Killswitch | Module `loyalty` is globally enabled | In `/super-admin/modules`, toggle `Loyalty Program` to Disabled. Navigate to tenant admin settings. | Loyalty tab in Settings and Customer Dashboard is completely hidden; API returns 403. |
-| **SAAS-04** | Subscription Trial Expiration | Salon trial expired (`trial_ends_at < now()`) | Navigate to tenant dashboard. | System intercepts request with subscription expired screen; prompts for payment renewal. |
-| **SAAS-05** | Cancelled Subscription Grace Period | Salon subscription cancelled with `ends_at` 15 days in future | Navigate to admin dashboard. | Full access is maintained until `ends_at` is reached; warning badge shows renewal reminder. |
+| **AUTH-01** | Authentication | Login with `admin@fstqatar.com` / `admin123` at `/login` | Lands on Super Admin Dashboard; platform menus active. | **PASS** |
+| **AUTH-02** | Authentication | Login with `salon@fstqatar.com` / `salon123` at `/demo-salon/login` | Lands on Tenant Admin Dashboard; scoped to demo-salon. | **PASS** |
+| **AUTH-03** | Authentication | Login with `employee@salonpro.com` / `employee123` at `/demo-salon/login` | Lands on Barber Portal; only own appointments visible. | **PASS** |
+| **AUTH-04** | Authentication | Login with `customer@fstqatar.com` / `customer123` at `/demo-salon/login` | Lands on Client Dashboard; displays reward balance widget. | **PASS** |
+| **PLAN-01** | SaaS Plans | Create plan with `has_inventory = false`; assign to salon | Direct access to `/admin/inventory` returns 403 upgrade modal. | **PASS** |
+| **PLAN-02** | SaaS Plans | Select feature in Create/Edit plan; verify quick-add button disabled; remove feature; verify re-enabled | Button disabled with (Added) badge when selected; re-enabled when removed. | **PASS** |
+| **KILL-01** | Global Modules | Disable `loyalty` in `/super-admin/modules` | Loyalty cards hidden on customer dashboard; POS hides redemption. | **PASS** |
+| **IMPR-01** | Impersonation | Super Admin impersonates salon owner | Sticky alert displayed; session isolated; leaves cleanly. | **PASS** |
+| **CUST-01** | Customer CRM | Create customer with portal access & auto password | User created with role `customer`; credentials emailed. | **PASS** |
+| **IDOR-01** | Security / IDOR | Barber attempts to reject another barber's booking via API | Server returns `403 Forbidden`; unauthorized action blocked. | **PASS** |
+| **POS-01** | POS Checkout | Checkout service linked to 20ml tonic consumable | Backbar stock for tonic decrements by 20ml in transactions. | **PASS** |
+| **POS-02** | POS Checkout | Split payment: \$40 Cash + \$60 Card | Sale recorded as paid; thermal receipt shows both methods. | **PASS** |
+| **LOY-01** | Loyalty Program | Customer spends \$100 at POS (1 pt / \$1) | Customer balance credited +100 points in ledger. | **PASS** |
+| **LOY-02** | Loyalty UI | Inspect loyalty points expiry badge in customer dashboard | Dark slate background with high-contrast white text (`⌛ Points valid for 12 months`). | **PASS** |
+| **FDBK-01** | Reviews | Submit review via tokenized email link `/{slug}/rating/{token}` | Review saved in `ratings`; token consumed and disabled. | **PASS** |
+| **FDBK-02** | Reviews | Refresh customer dashboard after dismissing review modal | Modal does not pop up again during session (`sessionStorage`). | **PASS** |
+| **XSS-01** | Security / XSS | Inject `<script>` in product name in Profit Analysis chart | Rendered via `escapeHtml()`; displayed as text; no script run. | **PASS** |
 
 ---
 
-### Suite 2: Multi-Branch & Tenant Isolation
+## 6. DEFECT LOGGING STANDARDS FOR QA TESTERS
 
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **TENANT-01** | Cross-Tenant Direct Object Reference (IDOR) | Two salons exist: Slug A (`id=1`) and Slug B (`id=2`) | Logged in as Salon A Admin, attempt `GET /salon-a/admin/customers/{id_of_salon_b_customer}` | Query yields 404 Not Found due to `BelongsToSalon` global scope; no data leak. |
-| **TENANT-02** | Cross-Tenant Package / Service Injection | Logged in as Salon A Admin | Send `POST /salon-a/admin/packages` with `services=[id_of_service_in_salon_b]` | Request fails with 422 Unprocessable Entity; cross-tenant service injection blocked. |
-| **TENANT-03** | Multi-Branch Context Switch | Salon has 2 branches: "Downtown" and "Airport" | Click Branch Switcher dropdown; select "Airport". Add booking. | Booking is assigned to Airport branch ID; session stores new branch context. |
-| **TENANT-04** | Single Branch Fallback | User assigned to deleted or inactive branch | User logs in and visits dashboard. | System catches inactive branch and gracefully falls back to first active branch without 500 error. |
-
----
-
-### Suite 3: Catalog, Packages & Memberships
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **CAT-01** | Create Service with Staff Assignment | Salon Admin logged in | Go to Services -> Add Service. Fill Title, Price \$30, Duration 45m. Check Barbers John & Dave. | Service appears in catalog; only John and Dave can be selected for this service on booking. |
-| **CAT-02** | Create Service Recipe Consumable | Inventory module active | In Service Edit, add Consumables Recipe: 50ml Shampoo per service. | Recipe saved in `service_inventory_items` table. |
-| **CAT-03** | Purchase & Redeem Package | Package module active | In POS, sell "5x Haircut Package" to Customer. Open new booking for same customer. | Package credit is detected; checkout allows package redemption at \$0 balance. |
-| **CAT-04** | Membership Discount Application | Membership module active | Customer has active "Gold VIP" (20% off). Add service to POS cart. | POS automatically calculates and applies 20% membership discount before checkout. |
-
----
-
-### Suite 4: Appointments, Calendar & Online Booking
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **BOOK-01** | Front Desk Calendar Booking | Salon Admin logged in | Go to Calendar. Drag on John's column from 10:00 to 10:30. Select Customer & Service. Submit. | Booking slot blocks out on calendar; customer receives confirmation email. |
-| **BOOK-02** | Unassigned Staff Filter | List view has 2 unassigned bookings | In Calendar/List view filter, select "Unassigned Staff" checkbox. | List view displays unassigned bookings without crashing or filtering them out. |
-| **BOOK-03** | Mobile Card Desktop Visibility | Screen resolution $\ge 768\text{px}$ | Inspect Appointment List table on desktop. | Table displays standard table columns; mobile card rows (`.bk-mobile-card-td`) are hidden. |
-| **BOOK-04** | Duplicate Form Submission Lock | Booking modal open | Double-click "Create Appointment" submit button rapidly. | Button disables immediately; only 1 POST request is sent; no duplicate appointments. |
-| **BOOK-05** | Service Completion Lifecycle | Booking is `confirmed` | Transition status to `in_progress`, then to `completed`. | Status updates; completion timestamp saved; rating token generated; inventory recipe deducted. |
-| **BOOK-06** | Review Token Idempotency | Booking marked `completed` | Save booking details again without status change. | Existing `rating_token` is preserved; previously sent customer rating email remains valid. |
-
----
-
-### Suite 5: Point of Sale (POS) & Financial Settlement
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **POS-01** | Service & Product Cart Checkout | Cashier logged into POS | Add 1 Haircut (\$25) + 1 Styling Wax (\$15). Total = \$40. Select Cash. Pay \$40. | Sale records in `pos_sales`; cash drawer increments by \$40; product stock decrements by 1. |
-| **POS-02** | Split Payment Method | Total bill = \$100 | Click Split Payment. Enter Cash: \$40, Card: \$60. Confirm checkout. | POS records two payment records; transaction closes with `payment_status = paid`. |
-| **POS-03** | Explicit Booking Link at POS | Customer has appointment today | Checkout retail product only without selecting the booking. | Only the retail item is sold; customer's future appointment remains untouched and uncompleted. |
-| **POS-04** | Group Booking Payment Settlement | Group booking has 2 services (\$30 + \$20) | Pay only \$30 for Service 1. Attempt to mark Service 2 completed without payment. | System blocks completion of Service 2 until full payment is registered. |
-| **POS-05** | Recipe Consumable Auto-Deduction | Service linked to 50ml Shampoo | Complete booking checkout via POS. | Backbar stock of Shampoo decrements by exactly 50ml in `inventory_transactions`. |
-| **POS-06** | Thermal Receipt Generation | Sale completed | Click "Print Receipt" icon. | Clean 80mm thermal receipt format renders with salon header, item breakdown, tax, and loyalty points. |
-
----
-
-### Suite 6: Customer CRM & Portal Access
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **CUST-01** | Create Customer with Portal Access | Salon Admin logged in | Add Customer: Name, Phone, Email. Check "Grant Portal Access". Password: Auto. | Customer is created; linked `User` created with role `customer`; credentials emailed to client. |
-| **CUST-02** | Prevent Password Override on Auto Mode | Existing customer with portal access | Edit customer; keep "Auto" selected; change phone number; submit. | Phone number updates; customer's existing password is preserved; no unintended password reset. |
-| **CUST-03** | Empty Email Rejection on Portal Access | Customer has no email | Edit customer; check "Grant Portal Access"; leave email empty; submit. | Validation fails with 422 error: *"An email address is required to provision client portal access."* |
-| **CUST-04** | Cross-Account User ID Tampering | Malicious user payload | Send POST to update customer with `user_id = 1` (Admin user ID). | System rejects request or scopes update strictly to the customer's own record; admin credentials untouched. |
-| **CUST-05** | Phone Number Login Disambiguation | Two accounts with different passwords | Visit `/login`. Enter phone number and password. | System validates hash against matched phone record; authenticates correct user. |
-
----
-
-### Suite 7: Loyalty Rewards Program & Point Expiry
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **LOY-01** | Points Accrual on POS Checkout | Ratio: 1 point per \$1 spent | Customer spends \$100 at POS checkout. Complete sale. | Customer ledger credits +100 points; balance updates immediately. |
-| **LOY-02** | Minimum Points Threshold Guard | Min redeem = 50 pts; Customer has 30 pts | In POS, attempt to redeem points for this customer. | POS alerts that customer has not reached the 50-point minimum threshold; redemption blocked. |
-| **LOY-03** | Point Redemption & Cart Discount | 100 pts = \$5 discount; Customer has 200 pts | In POS, redeem 100 points on a \$50 service. | Cart discount applies -\$5; balance due becomes \$45; customer balance debited 100 points. |
-| **LOY-04** | Point Expiry Duration Badge Styling | Salon setting: Expiry = 12 months | Open Customer Dashboard (`/{slug}/customer/dashboard`). | Badge displays `⌛ Points valid for 12 months` with dark background and white text; high-contrast and readable. |
-| **LOY-05** | Sale Void & Points Reversal Accuracy | Customer earned 50 pts on Sale #101 | Admin voids / refunds Sale #101. | System queries `loyalty_transactions` for Sale #101 and deducts exactly 50 points from the original customer. |
-
----
-
-### Suite 8: Customer Feedback & Reviews
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **FDBK-01** | Review Submission via Email Token | Booking marked `completed` | Open rating link: `/{slug}/rating/{token}`. Select 5 stars, write "Amazing haircut!". Submit. | Review saves in `ratings` table; success screen renders; token is consumed and cannot be reused. |
-| **FDBK-02** | Customer Dashboard Rating Modal Once | Customer has unrated completed booking | Open Customer Dashboard. Rating modal appears. Close modal and refresh page. | Modal does not pop up again in the same session (`sessionStorage` flag honored). |
-| **FDBK-03** | Disable Rating Button Once Rated | Booking is rated | View Appointments tab on Customer Dashboard. | "Rate Appointment" button is replaced with "Rated ★ 5/5" and disabled. |
-| **FDBK-04** | Star Rating Keyboard Accessibility | On public rating form | Navigate form using `Tab` key and select stars using `Space` / `Arrow` keys. | Star inputs receive focus ring (`:focus-visible`); keyboard users can rate without mouse. |
-
----
-
-### Suite 9: Barber & Staff Workspace
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **STF-01** | Barber Schedule Queue | Barber logged in | Open `/{slug}/employee/appointments`. | Displays only appointments assigned to this specific barber; other barbers' clients are hidden. |
-| **STF-02** | Barber Mark Service In-Progress | Appointment scheduled for now | Click "Start Service". | Status updates to `in_progress`; calendar reflects real-time styling progress. |
-| **STF-03** | Commission Accrual on Sale | Barber has 10% commission profile | Customer checks out \$100 service performed by Barber. | Commission ledger records \$10 payable to Barber in staff commission statement. |
-| **STF-04** | Barber Appointment IDOR Guard | Barber logged in | Attempt to reject another barber's booking via API: `POST /{slug}/employee/appointments/{other_id}/reject` | Server responds with 403 Forbidden; rejection rejected. |
-
----
-
-### Suite 10: Security, IDOR, XSS & Code Quality
-
-| Test ID | Title | Pre-Conditions | Action Steps | Expected Result |
-|---|---|---|---|---|
-| **SEC-01** | Copilot AI Action Injection XSS | Admin AI Copilot open | Simulate AI response containing `<img src=x onerror=alert(1)>` in action button label. | DOM uses `.textContent`; payload renders as plain text without executing script. |
-| **SEC-02** | Notification Detail HTML Injection | In-app notification received | Notification contains `<b>Bold</b> <script>alert(1)</script>`. Click notification to open modal. | Modal text renders safely via `.textContent`; no script execution. |
-| **SEC-03** | Profit Analysis Tooltip Sanitization | Product named `Shampoo<script>alert(1)</script>` | Hover over product bar in Profit Analysis ApexChart. | Tooltip uses `escapeHtml()`; script tag displays as text. |
-| **SEC-04** | Unauthenticated Header Tag Closure | Guest user on login page | Inspect HTML DOM around navigation header. | All `<div>` tags close properly; content container is not nested inside header. |
-| **SEC-05** | Atomic User & Customer Email Updates | Customer email exists in staff account | Update customer email to collide with staff email in same salon. | Database transaction rolls back; error message returned; `customers` table not left corrupted. |
-| **SEC-06** | Rate Limiting on Review & POS Endpoints | Public / rating endpoints | Dispatch > 60 rapid POST requests to rating route within 1 minute. | Server responds with 429 Too Many Requests; protects against rating spam. |
-
----
-
-## 6. DEFECT LOGGING & TESTING CHECKLIST FOR QA TEAMS
-
-When logging defects during test runs, always capture:
-1. **Tenant Context:** Salon Slug (e.g. `/royal-barber`) and Active Branch ID.
-2. **User Role:** Authenticated Persona (`super_admin`, `salon_admin`, `manager`, `employee`, `customer`).
-3. **HTTP Payload & Response:** Request headers, JSON body, HTTP status code (200, 422, 403, 500).
-4. **Browser Console Output:** Any JavaScript unhandled exceptions or CORS warnings.
-5. **Database Evidence:** Exact record in `bookings`, `pos_sales`, `loyalty_transactions`, or `users`.
+When logging a bug or defect, always provide:
+1. **URL & Tenant Context:** e.g., `/royal-barber/admin/pos`.
+2. **Authenticated Role & User:** e.g., `arthur@royalbarber.com` (`salon_admin`).
+3. **Step-by-Step Repro:** Exact clicks and inputs used.
+4. **Expected vs. Actual:** What should have happened vs. what actually occurred.
+5. **Console & Network Logs:** HTTP status (422, 403, 500) and response payload.
+6. **Database Record ID:** Relevant `booking_id`, `pos_sale_id`, or `customer_id`.

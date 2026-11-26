@@ -41,12 +41,11 @@ class ConfigureSalonMail
                 Config::set('mail.default', 'log');
                 Log::info("Mail configured for salon: {$salon->name} ({$salon->id}) using LOG driver");
             } else {
-                // Salon has NO mail config or invalid config.
-                // explicitly DISABLE mail sending by using 'array' driver.
-                // This prevents falling back to the SaaS platform's .env SMTP credentials.
-                Config::set('mail.default', 'array');
-                Config::set('mail.mailers.smtp', ['transport' => 'array']);
-                Log::info("Mail disabled for salon: {$salon->name} ({$salon->id}) - No SMTP configured");
+                // Salon has NO custom mail config — fall back to the system .env SMTP
+                // so transactional emails (booking completion, status updates) are still delivered.
+                // The 'from' address below will be overridden to the salon's identity.
+                Config::set('mail.default', env('MAIL_MAILER', 'smtp'));
+                Log::info("Mail fallback to system SMTP for salon: {$salon->name} ({$salon->id}) - No custom SMTP configured");
             }
 
             // Always override 'from' address to maintain salon identity

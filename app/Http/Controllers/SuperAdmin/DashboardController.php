@@ -158,11 +158,28 @@ class DashboardController extends Controller
             $activeSessionsCount = 0;
             $dbTableSizes = collect([]);
 
-            // Missing system metrics variables
-            $queueStats = ['pending' => 0, 'failed' => 0];
-            $logStats = ['size' => 0, 'errors' => 0];
-            $dbPerformance = ['connections' => 0, 'uptime' => 0, 'queries' => 0];
-            $storageBreakdown = ['uploads' => 0, 'logs' => 0, 'cache' => 0];
+            // Live system metrics from SystemHealthService
+            $healthService = app(\App\Services\SystemHealthService::class);
+            $healthData = $healthService->getMetrics();
+            $dbTableSizes = $healthService->getTableBreakdown(5);
+
+            $queueStats = $healthData['queue'];
+            $logStats = [
+                'size' => $healthData['logs']['size_mb'],
+                'errors' => $healthData['logs']['error_count'],
+            ];
+            $dbPerformance = [
+                'connections' => $healthData['database']['connections'],
+                'uptime' => $healthData['database']['uptime_hours'] * 3600,
+                'queries' => $healthData['database']['queries_count'],
+                'size_mb' => $healthData['database']['total_size_mb'],
+            ];
+            $storageBreakdown = [
+                'uploads' => $healthData['storage']['uploads_mb'],
+                'logs' => $healthData['storage']['logs_mb'],
+                'cache' => $healthData['storage']['cache_mb'],
+                'backups' => $healthData['storage']['backups_mb'],
+            ];
 
             return view('super-admin.dashboard', compact(
                 'stats',

@@ -876,7 +876,7 @@ class BookingController extends Controller
      */
     public function updateStatus(Request $request, Booking $booking)
     {
-        if ($booking->salon_id !== auth()->user()->salon_id) {
+        if (!auth()->user()->hasRole('super_admin') && $booking->salon_id !== auth()->user()->salon_id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -1016,12 +1016,7 @@ class BookingController extends Controller
                     }
 
                     // Notify salon admins
-                    $admins = User::role(['super_admin', 'salon_admin', 'manager'])
-                        ->where('salon_id', $booking->salon_id)
-                        ->get();
-                    if ($admins->isNotEmpty()) {
-                        Notification::send($admins, new BookingNotification($booking, $request->status));
-                    }
+                    $this->notificationService->notifySalonAdmins($booking, $request->status);
                 } catch (\Exception $e) {
                     Log::error('Failed to send booking status notifications', ['error' => $e->getMessage()]);
                     // Continue execution, do not fail the request
@@ -1056,7 +1051,7 @@ class BookingController extends Controller
      */
     public function completeWithPayment(Request $request, Booking $booking)
     {
-        if ($booking->salon_id !== auth()->user()->salon_id) {
+        if (!auth()->user()->hasRole('super_admin') && $booking->salon_id !== auth()->user()->salon_id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -2382,11 +2377,30 @@ class BookingController extends Controller
             $booking = Booking::with(['customer', 'service', 'staff', 'creator', 'posSaleItem.sale'])->find($id);
 
             if (!$booking) {
+                if (!request()->ajax() && !request()->expectsJson()) {
+                    return redirect()->route('admin.bookings.index')
+                        ->with('error', 'Booking not found.');
+                }
                 return response()->json(['error' => 'Booking not found'], 404);
             }
 
-            if ($booking->salon_id !== auth()->user()->salon_id) {
+            if (!auth()->user()->hasRole('super_admin') && $booking->salon_id !== auth()->user()->salon_id) {
+                if (!request()->ajax() && !request()->expectsJson()) {
+                    abort(403, 'Unauthorized access to this booking.');
+                }
                 return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            // If this is a direct browser navigation (not AJAX / JSON request), redirect to calendar/bookings with modal open
+            if (!request()->ajax() && !request()->expectsJson()) {
+                $salonSlug = request()->route('salon_slug') 
+                    ?? optional($booking->salon)->slug 
+                    ?? optional(auth()->user()->salon)->slug 
+                    ?? 'default';
+                return redirect()->route('admin.bookings.index', [
+                    'salon_slug' => $salonSlug,
+                    'booking_id' => $booking->id
+                ]);
             }
 
             // Fetch all bookings in the same group if it exists
@@ -2471,9 +2485,42 @@ class BookingController extends Controller
                 }
             }
 
+            // Build group booking breakdown if multiple bookings share the group
+            $isGroupBooking = !empty($booking->booking_group_id) && $groupedBookings->count() > 1;
+            $groupBookingsList = [];
+            if ($isGroupBooking) {
+                foreach ($groupedBookings as $gb) {
+                    $groupBookingsList[] = [
+                        'id' => $gb->id,
+                        'service_id' => $gb->service_id,
+                        'service_name' => $gb->service->name ?? 'Service',
+                        'staff_id' => $gb->staff_id,
+                        'staff_name' => $gb->staff ? $gb->staff->name : null,
+                        'start_time' => $gb->start_time ? $gb->start_time->copy()->timezone($salonTimezone)->format('g:i A') : '',
+                        'end_time' => $gb->end_time ? $gb->end_time->copy()->timezone($salonTimezone)->format('g:i A') : '',
+                        'duration' => $gb->service->duration ?? ($gb->duration ?? 30),
+                        'amount' => (float)$gb->amount,
+                        'status' => $gb->status,
+                        'staff_assignment_status' => $gb->staff_assignment_status,
+                    ];
+                }
+            }
+
+            // Active staff list for assignment dropdown
+            $salonStaffList = User::role('employee')
+                ->where('salon_id', $booking->salon_id)
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
             return response()->json([
                 'id' => $booking->id,
                 'booking_group_id' => $booking->booking_group_id,
+                'is_group_booking' => $isGroupBooking,
+                'group_bookings' => $groupBookingsList,
+                'group_services_count' => count($groupBookingsList),
+                'group_total_amount' => $groupedBookings->sum('amount'),
+                'salon_staff_list' => $salonStaffList,
                 'customer_id' => $booking->customer_id,
                 'status' => $booking->status,
                 'notes' => $booking->notes,
@@ -3249,10 +3296,10 @@ class BookingController extends Controller
 
     public function assign(Request $request, Booking $booking)
     {
-        $salonId = auth()->user()->salon_id;
+        $salonId = auth()->user()->salon_id ?? $booking->salon_id;
         $validated = $request->validate([
             'staff_id' => ['required', Rule::exists('users', 'id')->where('salon_id', $salonId)],
-            'assigned_time' => 'required|date_format:Y-m-d H:i:s',
+            'assigned_time' => 'nullable|date_format:Y-m-d H:i:s',
         ]);
 
         // Prevent assigning staff to completed or cancelled bookings
@@ -3265,8 +3312,11 @@ class BookingController extends Controller
 
         try {
             $service = $booking->service;
-            $startTime = \Carbon\Carbon::parse($validated['assigned_time']);
-            $endTime = $startTime->copy()->addMinutes((int) $service->duration);
+            $startTime = !empty($validated['assigned_time']) 
+                ? \Carbon\Carbon::parse($validated['assigned_time']) 
+                : $booking->start_time;
+            $duration = (int) ($service->duration ?? ($booking->duration ?? 30));
+            $endTime = $startTime->copy()->addMinutes($duration);
 
             // Check for conflicts
             $conflict = Booking::where('staff_id', $validated['staff_id'])
@@ -3297,7 +3347,10 @@ class BookingController extends Controller
                 'status' => Booking::STATUS_CONFIRMED,
             ]);
 
-            // Send Confirmation
+            // Ensure relations are freshly loaded for notifications
+            $booking->load(['customer', 'service', 'staff', 'salon']);
+
+            // Send Confirmation & Staff Assignment Notification
             try {
                 $this->notificationService->sendBookingConfirmation($booking);
             } catch (\Exception $e) {

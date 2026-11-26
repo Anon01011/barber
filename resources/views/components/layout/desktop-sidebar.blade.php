@@ -74,12 +74,15 @@
                             $customerRecord = $sidebarUser->customer;
                             $points = $customerRecord ? ($customerRecord->loyalty_points ?? 0) : 0;
                         @endphp
-                        <div class="px-3 py-2 my-2 mx-2 rounded-3 text-white" style="background: linear-gradient(135deg, rgba(197,168,128,0.2) 0%, rgba(197,168,128,0.06) 100%); border: 1px solid rgba(197,168,128,0.3);">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span class="small" style="font-size: 0.75rem; color: #cbd5e1;"><i class="fas fa-coins text-warning me-1"></i> Loyalty Points</span>
-                                <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.75rem;">{{ number_format($points) }}</span>
-                            </div>
-                        </div>
+                        <a href="{{ route('customer.points.index', ['salon_slug' => $custSalonSlug]) }}"
+                            class="sidebar-item {{ request()->routeIs('customer.points.*') ? 'active' : '' }}"
+                            data-bs-toggle="tooltip" data-bs-placement="right" title="My Loyalty Points & Rewards">
+                            <i class="fas fa-coins text-warning sidebar-icon"></i>
+                            <span class="sidebar-text d-flex align-items-center justify-content-between flex-grow-1 me-2">
+                                <span>Loyalty Points</span>
+                                <span class="badge bg-warning text-dark fw-bold px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">{{ number_format($points) }}</span>
+                            </span>
+                        </a>
                     @endif
                     <a href="{{ route('profile.edit') }}"
                         class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}" data-bs-toggle="tooltip"
@@ -327,7 +330,7 @@
 
                         <!-- Catalog (Services, Packages, Memberships, Inventory) -->
                         @can('services.view')
-                            @if(optional(auth()->user()->salon)->canUseFeature('Booking System') && \App\Helpers\ModuleHelper::servicesEnabled())
+                            @if((optional(auth()->user()->salon)->canUseFeature('Service Management') || optional(auth()->user()->salon)->canUseFeature('Booking System')) && \App\Helpers\ModuleHelper::servicesEnabled())
                                 <a href="{{ route('admin.services.categories.index', ['salon_slug' => $salonSlug]) }}"
                                     class="sidebar-item {{ request()->routeIs('admin.services.categories.*') ? 'active' : '' }}"
                                     data-bs-toggle="tooltip" data-bs-placement="right" title="Categories">
@@ -459,7 +462,7 @@
                         @endcan
 
                         <!-- Salon Management -->
-                        @canany(['salon.manage_settings', 'salon.manage_branches'])
+                        @if(auth()->user()->hasAnyRole(['super_admin', 'salon_admin']) || auth()->user()->can('salon.manage_settings') || auth()->user()->can('salon.manage_branches'))
                             <div class="sidebar-section">
                                 <div class="sidebar-section-header">
                                     <i class="fas fa-store sidebar-icon"></i>
@@ -475,6 +478,15 @@
                                         data-bs-toggle="tooltip" data-bs-placement="right" title="Salon Settings">
                                         <i class="fas fa-cogs sidebar-icon"></i>
                                         <span class="sidebar-text">Salon Settings</span>
+                                    </a>
+                                @endif
+
+                                @if(\App\Helpers\ModuleHelper::dataBackupEnabled() && (auth()->user()->hasRole('super_admin') || (auth()->user()->hasRole('salon_admin') && optional(auth()->user()->salon)->canUseFeature('data_backup'))))
+                                    <a href="{{ route('admin.backup.index', ['salon_slug' => $salonSlug]) }}"
+                                        class="sidebar-item {{ request()->routeIs('admin.backup.*') ? 'active' : '' }}"
+                                        data-bs-toggle="tooltip" data-bs-placement="right" title="Data Backup &amp; Restore">
+                                        <i class="fas fa-database sidebar-icon"></i>
+                                        <span class="sidebar-text">Data Backup</span>
                                     </a>
                                 @endif
 
@@ -499,7 +511,7 @@
                                     </a>
                                 @endif
                             </div>
-                        @endcanany
+                        @endif
 
                         <!-- Employee Menu Items -->
                         @role('employee')

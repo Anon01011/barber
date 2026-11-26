@@ -227,24 +227,6 @@
     </div>
 
     @push('styles')
-        <style>
-            .avatar {
-                width: 35px;
-                height: 35px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .avatar-title {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.85rem;
-                font-weight: 600;
-            }
-        </style>
+        <link rel="stylesheet" href="{{ asset('css/staff-dashboard.css') }}">
     @endpush
 @endsection

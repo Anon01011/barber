@@ -187,7 +187,7 @@
         }
 
         // Notification Detail Modal Logic
-        function showNotificationDetail(notification) {
+        window.showNotificationDetail = function(notification) {
             // Populate modal content
             const headerEl = document.getElementById('detailModalHeader');
             const closeBtnEl = document.getElementById('detailModalCloseBtn');
@@ -195,93 +195,171 @@
             const timeEl = document.getElementById('detailModalTime');
             const messageEl = document.getElementById('detailModalMessage');
             const iconEl = document.getElementById('detailModalIcon');
+            const typePipEl = document.getElementById('detailModalTypePip');
             const actionBtnEl = document.getElementById('detailModalActionBtn');
 
-            if (titleEl) titleEl.innerText = notification.title;
+            if (titleEl) titleEl.innerText = notification.title || 'Notification';
 
             // Format date
             if (timeEl) {
-                const date = new Date(notification.created_at);
-                timeEl.innerText = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            }
-
-            // Use innerHTML for rich text content
-            if (messageEl) messageEl.innerHTML = notification.message;
-
-            // Color Map
-            const colorMap = {
-                'info': { bg: 'bg-info', text: 'text-white', icon: 'info-circle' },
-                'success': { bg: 'bg-success', text: 'text-white', icon: 'check-circle' },
-                'warning': { bg: 'bg-warning', text: 'text-dark', icon: 'exclamation-triangle' },
-                'danger': { bg: 'bg-danger', text: 'text-white', icon: 'exclamation-circle' }
-            };
-            const style = colorMap[notification.type] || colorMap['info'];
-
-            // Apply Header Styles
-            if (headerEl) {
-                headerEl.className = `modal-header border-bottom-0 py-3 ${style.bg} ${style.text}`;
-            }
-
-            // Apply Text Styles
-            if (titleEl) titleEl.className = `modal-title fw-bold mb-0 ${style.text}`;
-            if (timeEl) timeEl.className = `small ${style.text === 'text-white' ? 'text-white-50' : 'text-muted'}`;
-
-            // Apply Close Button Style
-            if (closeBtnEl) {
-                if (style.text === 'text-white') {
-                    closeBtnEl.classList.add('btn-close-white');
+                if (notification.created_at) {
+                    const date = new Date(notification.created_at);
+                    timeEl.innerText = !isNaN(date.getTime()) ? date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : notification.created_at;
                 } else {
-                    closeBtnEl.classList.remove('btn-close-white');
+                    timeEl.innerText = 'Just now';
                 }
             }
 
-            // Set icon
+            // Use innerHTML for rich text content (message may contain HTML from BookingNotification)
+            if (messageEl) {
+                messageEl.innerHTML = notification.message || '<p class="text-muted small">No details provided.</p>';
+            }
+
+            // Clean minimal type indicator using left border color and small icon — no colorful header
+            const typeConfig = {
+                'info':    { pip: '#2563eb', icon: 'fas fa-info-circle text-primary' },
+                'primary': { pip: '#2563eb', icon: 'fas fa-info-circle text-primary' },
+                'success': { pip: '#16a34a', icon: 'fas fa-check-circle text-success' },
+                'warning': { pip: '#d97706', icon: 'fas fa-exclamation-triangle text-warning' },
+                'danger':  { pip: '#dc2626', icon: 'fas fa-exclamation-circle text-danger' },
+                'error':   { pip: '#dc2626', icon: 'fas fa-exclamation-circle text-danger' }
+            };
+            const cfg = typeConfig[notification.type] || typeConfig['info'];
+
+            // Apply clean header style (no colored background)
+            if (headerEl) {
+                headerEl.className = 'modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between';
+                headerEl.style.borderLeftWidth = '4px';
+                headerEl.style.borderLeftStyle = 'solid';
+                headerEl.style.borderLeftColor = cfg.pip;
+            }
+
             if (iconEl) {
-                const iconHtml = `<div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-25 ${style.text}" style="width: 40px; height: 40px;">
-                        <i class="fas fa-${style.icon} fa-lg"></i>
-                    </div>`;
-                iconEl.innerHTML = iconHtml;
+                iconEl.innerHTML = `<i class="${cfg.icon}"></i>`;
+            }
+
+            // close button always visible on white background
+            if (closeBtnEl) {
+                closeBtnEl.classList.remove('btn-close-white');
+            }
+
+            // Title text is always dark
+            if (titleEl) {
+                titleEl.className = 'modal-title fw-semibold text-dark mb-0 text-truncate';
+                titleEl.style.fontSize = '0.95rem';
+            }
+            if (timeEl) {
+                timeEl.className = 'text-muted';
+                timeEl.style.fontSize = '0.75rem';
+                timeEl.style.whiteSpace = 'nowrap';
+            }
+
+            // Detect whether current session is customer viewing portal
+            const isCustomerView = window.location.pathname.includes('/customer/') || '{{ auth()->check() && auth()->user()->hasRole("customer") && !auth()->user()->hasAnyRole(["super_admin", "salon_admin", "manager", "employee", "receptionist"]) ? "1" : "" }}' === '1';
+
+            if (isCustomerView && msgEl) {
+                // Ensure internal operational warnings (e.g. Unassigned) are replaced with customer-friendly text
+                msgEl.innerHTML = msgEl.innerHTML
+                    .replace(/<span class=['"]badge bg-warning text-dark['"][^>]*>.*?Unassigned.*?<\/span>/gi, "<span class='text-muted small'>Any Available Stylist</span>")
+                    .replace(/<tr>\s*<td[^>]*>Customer<\/td>\s*<td[^>]*>.*?<\/td>\s*<\/tr>/gi, "");
             }
 
             // Handle Action Button
             if (actionBtnEl) {
-                if (notification.link) {
-                    actionBtnEl.href = notification.link;
-                    actionBtnEl.style.display = 'inline-block';
-                    actionBtnEl.className = `btn btn-${notification.type === 'warning' ? 'warning' : 'primary'}`;
+                let destUrl = notification.link || notification.url;
+                const bId = notification.booking_id || (notification.data && notification.data.booking_id);
+
+                if (isCustomerView) {
+                    const sSlug = (typeof getSalonSlug === 'function' ? getSalonSlug() : '') || 'default';
+                    if (bId) {
+                        destUrl = `/${sSlug}/customer/appointments/${bId}`;
+                    } else {
+                        destUrl = `/${sSlug}/customer/appointments`;
+                    }
+                    actionBtnEl.href = destUrl;
+                    actionBtnEl.style.display = 'inline-flex';
+                    actionBtnEl.innerHTML = '<i class="fas fa-calendar-check me-1"></i> View My Appointment';
+                    actionBtnEl.onclick = function(e) {
+                        window.location.href = destUrl;
+                        return true;
+                    };
                 } else {
-                    actionBtnEl.style.display = 'none';
+                    // Admin / Staff portal view
+                    if (destUrl && destUrl.includes('/admin/bookings/') && !destUrl.includes('booking_id=')) {
+                        destUrl = destUrl.replace(/\/admin\/bookings\/(\d+)/, '/admin/bookings?booking_id=$1');
+                    }
+
+                    if (destUrl) {
+                        actionBtnEl.href = destUrl;
+                        actionBtnEl.style.display = 'inline-flex';
+                        actionBtnEl.innerHTML = '<i class="fas fa-external-link-alt me-1"></i> View Booking Details';
+
+                        actionBtnEl.onclick = function(e) {
+                            // Check if #bookingDetailsModal exists on the current page
+                            const bookingModalEl = document.getElementById('bookingDetailsModal');
+                            if (bookingModalEl && bId && typeof window.openBookingDetailsModal === 'function') {
+                                e.preventDefault();
+                                // Close notification detail modal first
+                                const notifModal = bootstrap.Modal.getInstance(document.getElementById('notificationDetailModal'));
+                                if (notifModal) notifModal.hide();
+                                // Directly open the booking details modal
+                                window.openBookingDetailsModal(bId);
+                                return false;
+                            }
+                        };
+                    } else {
+                        actionBtnEl.style.display = 'none';
+                        actionBtnEl.onclick = null;
+                    }
                 }
             }
 
             // Show modal
             const modalElement = document.getElementById('notificationDetailModal');
             if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
+                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
                 modal.show();
             }
 
-            // Mark as read in localStorage (client-side only for now)
-            let readNotifications = JSON.parse(localStorage.getItem('read_notifications') || '[]');
-            if (!readNotifications.includes(notification.id)) {
-                readNotifications.push(notification.id);
-                localStorage.setItem('read_notifications', JSON.stringify(readNotifications));
+            // Mark as read in background via AJAX
+            if (notification.id) {
+                const itemEl = document.querySelector(`[data-notification-id="${notification.id}"]`);
+                const isAlreadyRead = itemEl && (itemEl.dataset.read === 'true' || itemEl.style.opacity === '0.6');
 
-                // Update badge
-                const badge = document.getElementById('notificationBadge');
-                if (badge) {
-                    const currentCount = parseInt(badge.innerText.trim());
-                    if (!isNaN(currentCount) && currentCount > 1) {
-                        badge.innerText = currentCount - 1;
-                    } else {
-                        badge.style.display = 'none';
-                    }
+                if (!isAlreadyRead) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                    fetch(`/notifications/${notification.id}/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    }).then(res => {
+                        if (!res.ok) throw new Error('Network error');
+                        return res.json();
+                    }).then(data => {
+                        if (data && data.success) {
+                            if (itemEl) {
+                                itemEl.dataset.read = 'true';
+                                itemEl.style.opacity = '0.6';
+                            }
+                            const badge = document.getElementById('notif-unread-badge');
+                            if (badge) {
+                                let currentCount = parseInt(badge.textContent.trim()) || 0;
+                                if (currentCount > 1) {
+                                    badge.textContent = currentCount - 1;
+                                } else {
+                                    badge.style.display = 'none';
+                                }
+                            }
+                        }
+                    }).catch(err => {
+                        // Fail silently
+                    });
                 }
             }
-
-            // Update last seen for auto-popup logic
-            localStorage.setItem('last_seen_notification_id', notification.id);
-        }
+        };
 
         // Mark All as Read functionality
         const markAllReadBtn = document.getElementById('markAllReadBtn');
@@ -320,20 +398,31 @@
         }
     </script>
 
-    <!-- Notification Detail Modal -->
+    <!-- Notification Detail Modal — Clean, Minimal Design -->
     <div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg overflow-hidden">
-                <div id="detailModalHeader" class="modal-header border-bottom-0 py-3">
-                    <h5 class="modal-title fw-bold mb-0" id="detailModalHeading">Notification</h5>
-                    <button type="button" class="btn-close" id="detailModalCloseBtn" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <!-- Clean header: white bg, left accent border, icon + title + time -->
+                <div id="detailModalHeader" class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1 me-2">
+                        <span id="detailModalIcon" class="fs-5 flex-shrink-0"></span>
+                        <h6 class="modal-title fw-semibold text-dark mb-0 text-truncate" id="detailModalHeading" style="font-size:0.95rem;">Notification</h6>
+                    </div>
+                    <div class="d-flex align-items-center gap-2.5 flex-shrink-0">
+                        <small id="detailModalTime" class="text-muted" style="font-size:0.75rem; white-space: nowrap;"></small>
+                        <button type="button" class="btn-close" id="detailModalCloseBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
-                <div class="modal-body p-4 text-center">
-
-                    <div id="detailModalMessage" class="mb-4"></div>
-                    <a href="#" id="detailModalActionBtn" class="btn btn-primary px-4" style="display: none;">View
-                        Details</a>
+                <!-- Body -->
+                <div class="modal-body px-4 py-3 bg-white" style="max-height:60vh; overflow-y:auto;">
+                    <div id="detailModalMessage"></div>
+                </div>
+                <!-- Footer: minimal buttons -->
+                <div class="modal-footer border-top bg-light py-2 px-4 d-flex justify-content-between gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="detailModalActionBtn" class="btn btn-sm btn-dark rounded-pill px-4 fw-semibold" style="display:none;">
+                        <i class="fas fa-arrow-right me-1"></i> View Booking Details
+                    </a>
                 </div>
             </div>
         </div>

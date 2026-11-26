@@ -356,6 +356,10 @@
             --theme-sidebar: {{ $activePalette['sidebar'] }};
             --theme-surface: {{ $activePalette['surface'] }};
             --theme-border: {{ $activePalette['border'] }};
+            --theme-text-on-primary: {{ $activePalette['text_on_primary'] ?? '#ffffff' }};
+            --theme-text-on-accent: {{ $activePalette['text_on_accent'] ?? '#ffffff' }};
+            --theme-gradient-start: {{ $activePalette['gradient_start'] ?? $activePalette['primary'] }};
+            --theme-gradient-end: {{ $activePalette['gradient_end'] ?? $activePalette['sidebar'] }};
         }
 
         /* Dynamic Luxury Button Engine */
@@ -363,9 +367,9 @@
         .btn-luxury {
             background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, var(--theme-accent-hover, #b38e5d) 100%) !important;
             border: 1px solid var(--theme-accent, #c5a880) !important;
-            color: #ffffff !important;
-            box-shadow: 0 2px 4px rgba(197, 168, 128, 0.2);
-            font-weight: 500;
+            color: var(--theme-text-on-accent, #ffffff) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+            font-weight: 600;
         }
         .btn-primary:hover,
         .btn-primary:focus,
@@ -373,8 +377,8 @@
         .btn-luxury:focus {
             background: linear-gradient(135deg, var(--theme-accent-hover, #b38e5d) 0%, #9e7a4b 100%) !important;
             border-color: var(--theme-accent-hover, #b38e5d) !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(197, 168, 128, 0.35);
+            color: var(--theme-text-on-accent, #ffffff) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             transform: translateY(-1px);
         }
         .btn-outline-primary,
@@ -550,6 +554,26 @@
         @yield('content')
     </div>
 
+    <!-- Mobile Floating Book Appointment FAB -->
+    @if(request()->routeIs('customer.*') && !request()->routeIs('customer.appointments.create'))
+        @php
+            $fabSalonSlug = $salonSlug 
+                ?? request()->route('salon_slug') 
+                ?? optional(auth()->user()?->salon)->slug 
+                ?? request()->current_salon->slug 
+                ?? session('current_salon_slug') 
+                ?? 'default';
+        @endphp
+        <a href="{{ route('customer.appointments.create', ['salon_slug' => $fabSalonSlug]) }}" 
+           class="floating-book-fab d-lg-none" 
+           id="floatingBookBtn"
+           aria-label="Book Appointment"
+           title="Book Appointment">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Book Appointment</span>
+        </a>
+    @endif
+
     <!-- Mobile Bottom Navigation Bar -->
     <x-layout.mobile-bottom-nav :salon-slug="$salonSlug" :portal-context="$portalContext" />
 
@@ -559,6 +583,90 @@
     <!-- Scripts -->
     <x-layout.app-scripts />
     @stack('scripts')
+
+    @auth
+        @php
+            $authUser = auth()->user();
+            $authSalon = $authUser->salon;
+            $canSeeExpiryModal = $authUser->hasAnyRole(['super_admin', 'salon_admin', 'manager', 'receptionist', 'admin', 'owner']);
+        @endphp
+
+        @if($authSalon && $canSeeExpiryModal)
+            @php
+                $settingsService = app(\App\Services\SettingsService::class);
+                $days1 = (int) $settingsService->get('email_subscription_expiring_soon_days_1', 7);
+                $days2 = (int) $settingsService->get('email_subscription_expiring_soon_days_2', 3);
+                $notifyThreshold = max($days1, $days2, 1);
+
+                $activeSub = $authSalon->activeSubscription;
+                $isSubExpiring = false;
+                $daysRemaining = null;
+                $expiryDateFormatted = null;
+                $planTitle = 'Subscription';
+
+                if ($activeSub && $activeSub->ends_at && $activeSub->ends_at->isFuture()) {
+                    $daysRemaining = (int) ceil(now()->floatDiffInDays($activeSub->ends_at, false));
+                    if ($daysRemaining <= $notifyThreshold) {
+                        $isSubExpiring = true;
+                        $expiryDateFormatted = $activeSub->ends_at->format('M d, Y');
+                        $planTitle = $activeSub->plan->name ?? 'Subscription';
+                    }
+                } elseif ($authSalon->isOnTrial() && $authSalon->trial_ends_at && $authSalon->trial_ends_at->isFuture()) {
+                    $daysRemaining = (int) ceil(now()->floatDiffInDays($authSalon->trial_ends_at, false));
+                    if ($daysRemaining <= $notifyThreshold) {
+                        $isSubExpiring = true;
+                        $expiryDateFormatted = $authSalon->trial_ends_at->format('M d, Y');
+                        $planTitle = 'Free Trial';
+                    }
+                }
+                $targetRenewalUrl = route('admin.saas.subscription.index', ['salon_slug' => $authSalon->slug]);
+            @endphp
+
+            @if($isSubExpiring)
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const sessionKey = 'salon_expiry_modal_{{ $authSalon->id }}_{{ $daysRemaining }}';
+                        const safePlanTitle = @json($planTitle);
+                        const safeDaysRemaining = @json($daysRemaining);
+                        const safeExpiryDate = @json($expiryDateFormatted);
+                        if (!sessionStorage.getItem(sessionKey)) {
+                            if (window.Swal && typeof window.Swal.fire === 'function') {
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'text-start p-2';
+                                wrapper.innerHTML = `
+                                    <p class="mb-2">Your salon's <strong id="swalPlanTitle"></strong> plan is set to expire in <strong class="text-danger fw-bold">${safeDaysRemaining} day(s)</strong> (on <strong>${safeExpiryDate}</strong>).</p>
+                                    <div class="alert alert-warning py-2 px-3 small border-0 mb-3" style="background-color: #fef3c7; color: #92400e; border-radius: 8px;">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> To prevent any interruption in staff access, customer bookings, and POS operations, please renew your subscription.
+                                    </div>
+                                `;
+                                wrapper.querySelector('#swalPlanTitle').textContent = safePlanTitle;
+
+                                window.Swal.fire({
+                                    title: '⚠️ Subscription Expiring Soon!',
+                                    html: wrapper,
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: '<i class="fas fa-credit-card me-1"></i> Renew Subscription',
+                                    cancelButtonText: 'Remind Me Later',
+                                    confirmButtonColor: '#2563eb',
+                                    cancelButtonColor: '#64748b',
+                                    allowOutsideClick: true,
+                                    customClass: {
+                                        popup: 'swal2-luxury'
+                                    }
+                                }).then((result) => {
+                                    sessionStorage.setItem(sessionKey, 'shown');
+                                    if (result.isConfirmed) {
+                                        window.location.href = "{{ $targetRenewalUrl }}";
+                                    }
+                                });
+                            }
+                        }
+                    });
+                </script>
+            @endif
+        @endif
+    @endauth
 </body>
 
 </html>

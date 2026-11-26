@@ -9,16 +9,29 @@
                 <div class="card border-0 shadow-sm text-white overflow-hidden position-relative" style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 100%); border-radius: 14px; border: 1px solid rgba(197, 168, 128, 0.25) !important;">
                     <div class="card-body p-4 p-md-5 position-relative z-index-2">
                         <div class="row align-items-center">
-                            <div class="col-lg-8">
+                            <div class="col-lg-7">
                                 <span class="badge px-3 py-1 mb-2 rounded-pill fw-semibold text-uppercase" style="background: rgba(197, 168, 128, 0.15); color: #c5a880; font-size: 11px; letter-spacing: 0.5px;">Staff Workspace</span>
                                 <h2 class="display-6 fw-bold mb-2 text-white">Welcome back, {{ Auth::user()->name }}!</h2>
                                 <p class="lead mb-0 opacity-90" style="color: #cbd5e1; font-size: 1rem;">Here is what is scheduled for your day ahead.</p>
                             </div>
-                            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                                <x-btn href="{{ route('employee.appointments.today', ['salon_slug' => optional(auth()->user()->salon)->slug]) }}"
-                                    variant="primary" icon="fas fa-calendar-day" class="rounded-pill px-4 py-2 fw-semibold">
-                                    View My Schedule
-                                </x-btn>
+                            <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+                                @php
+                                    $staffSalonSlug = optional(auth()->user()->salon)->slug ?? request()->route('salon_slug') ?? 'default';
+                                @endphp
+                                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                    <x-btn href="{{ route('employee.appointments.today', ['salon_slug' => $staffSalonSlug]) }}"
+                                        variant="primary" icon="fas fa-calendar-day" class="rounded-pill px-3 py-2 fw-semibold shadow-sm">
+                                        Today's Schedule
+                                    </x-btn>
+                                    <a href="{{ route('employee.appointments.upcoming', ['salon_slug' => $staffSalonSlug]) }}"
+                                        class="btn btn-outline-light btn-sm rounded-pill px-3 py-2 fw-semibold shadow-sm" style="border-color: rgba(255,255,255,0.35);">
+                                        <i class="fas fa-calendar-week me-1"></i> Upcoming
+                                    </a>
+                                    <a href="{{ route('employee.earnings', ['salon_slug' => $staffSalonSlug]) }}"
+                                        class="btn btn-warning btn-sm rounded-pill px-3 py-2 fw-semibold shadow-sm text-dark">
+                                        <i class="fas fa-wallet me-1"></i> My Earnings
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -339,168 +352,16 @@
     </div>
 
     @push('styles')
-        <style>
-            .ls-1 {
-                letter-spacing: 0.5px;
-            }
-
-            .text-xs {
-                font-size: 0.75rem;
-            }
-
-            .bg-primary-subtle {
-                background-color: #e5edff !important;
-                color: #4e73df !important;
-            }
-
-            .bg-success-subtle {
-                background-color: #e6fffa !important;
-                color: #1cc88a !important;
-            }
-
-            .bg-info-subtle {
-                background-color: #e0f2f1 !important;
-                color: #36b9cc !important;
-            }
-
-            .bg-warning-subtle {
-                background-color: #fff3cd !important;
-                color: #f6c23e !important;
-            }
-
-            .bg-gradient-primary {
-                background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-            }
-
-            .opacity-7 {
-                opacity: 0.7;
-            }
-
-            .opacity-10 {
-                opacity: 0.1;
-            }
-
-            .opacity-90 {
-                opacity: 0.9;
-            }
-
-            .transition-hover {
-                transition: all 0.2s ease-in-out;
-            }
-
-            .transition-hover:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-            }
-
-            .hover-lift {
-                transition: transform 0.2s;
-            }
-
-            .hover-lift:hover {
-                transform: translateY(-2px);
-                background-color: #f8f9fc !important;
-            }
-
-            .hover-scale {
-                transition: transform 0.2s;
-            }
-
-            .hover-scale:hover {
-                transform: scale(1.1);
-            }
-        </style>
+        <link rel="stylesheet" href="{{ asset('css/staff-dashboard.css') }}">
     @endpush
 
     @push('scripts')
         <script>
-            const currencySymbol = "{{ $settings->get('currency_symbol', '$', auth()->user()->salon_id) }}";
-
-            function viewAppointment(id) {
-                const modal = new bootstrap.Modal(document.getElementById('viewAppointmentModal'));
-                const modalBody = document.getElementById('appointmentModalBody');
-
-                modalBody.innerHTML = `
-                                <div class="text-center py-5">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <p class="mt-2 text-muted">Loading details...</p>
-                                </div>
-                            `;
-
-                modal.show();
-                const salonSlug = getSalonSlug();
-
-                fetch(`/${salonSlug}/employee/appointments/${id}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (!res.success) throw new Error(res.message || 'Failed to load');
-
-                        const data = res.data;
-                        const serviceName = data.service?.name || 'N/A';
-                        const customerName = data.customer?.name || 'N/A';
-                        const startTime = new Date(data.start_time).toLocaleString();
-
-                        const html = `
-                                    <div class="row g-4">
-                                        <div class="col-12 text-center pb-3 border-bottom">
-                                            <div class="mb-2">
-                                                <span class="badge bg-${getStatusColor(data.status)} rounded-pill fs-6 px-3 py-2">
-                                                    ${data.status.toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <h4 class="mb-0 fw-bold">${serviceName}</h4>
-                                            <p class="text-muted mb-0">${startTime}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-group list-group-flush">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent ps-0">
-                                                    <span class="text-muted small text-uppercase fw-bold">Customer</span>
-                                                    <span class="fw-bold text-dark">${customerName}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent ps-0">
-                                                    <span class="text-muted small text-uppercase fw-bold">Service Time</span>
-                                                    <span class="fw-bold text-dark">${data.service?.duration || 0} mins</span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                             <ul class="list-group list-group-flush">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent ps-0">
-                                                    <span class="text-muted small text-uppercase fw-bold">Price</span>
-                                                    <span class="fw-bold text-dark">${currencySymbol}${parseFloat(data.service?.price || 0).toFixed(2)}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent ps-0">
-                                                    <span class="text-muted small text-uppercase fw-bold">Total</span>
-                                                    <span class="fw-bold text-primary">${currencySymbol}${parseFloat(data.amount || 0).toFixed(2)}</span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                `;
-                        modalBody.innerHTML = html;
-                    })
-                    .catch(err => {
-                        modalBody.innerHTML = `
-                                    <div class="text-center text-danger py-4">
-                                        <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
-                                        <p>Failed to load details. Please try again.</p>
-                                    </div>
-                                `;
-                    });
-            }
-
-            function getStatusColor(status) {
-                const colors = { 'pending': 'warning', 'confirmed': 'success', 'completed': 'info', 'cancelled': 'danger' };
-                return colors[status?.toLowerCase()] || 'secondary';
-            }
+            window.staffDashboardConfig = {
+                salonSlug: @json($staffSalonSlug),
+                currencySymbol: @json($settings->get('currency_symbol', '$', auth()->user()->salon_id))
+            };
         </script>
+        <script src="{{ asset('js/staff-dashboard.js') }}"></script>
     @endpush
 @endsection

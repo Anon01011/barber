@@ -186,6 +186,16 @@ class ModuleHelper
     }
 
     /**
+     * Check if data backup & safety module is enabled
+     *
+     * @return bool
+     */
+    public static function dataBackupEnabled(): bool
+    {
+        return self::isEnabled('data_backup');
+    }
+
+    /**
      * Get all enabled modules
      *
      * @return array

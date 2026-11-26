@@ -83,6 +83,8 @@
         <noscript><img height="1" width="1" style="display:none"
                 src="https://www.facebook.com/tr?id={{ $facebookPixelId }}&ev=PageView&noscript=1" /></noscript>
     @endif
+
+    @stack('styles')
 </head>
 
 <body>
@@ -168,6 +170,13 @@
                     </div>
                 </div>
 
+                <!-- System Health & DB Safety -->
+                <a href="{{ route('admin.system-health.index') }}"
+                    class="sidebar-item {{ request()->routeIs('admin.system-health.*') ? 'active' : '' }}">
+                    <i class="fas fa-heartbeat sidebar-icon"></i>
+                    <span class="sidebar-text">System Health</span>
+                </a>
+
                 <!-- System Notifications -->
                 <a href="{{ route('admin.notifications.index') }}"
                     class="sidebar-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
@@ -207,32 +216,109 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 @auth
-                    <div class="user-dropdown">
-                        <div class="user-dropdown-toggle" id="userDropdownToggle">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
-                                alt="{{ auth()->user()->name }}" class="rounded-circle me-2" style="width: 32px; height: 32px;">
-                            <span class="me-2">{{ auth()->user()->name }}</span>
-                            <i class="fas fa-chevron-down"></i>
+                    <div class="d-flex align-items-center gap-3">
+                        @php
+                            $saUnreadCount = auth()->user()->unreadNotifications()->count();
+                            $saUnreadNotifications = auth()->user()->unreadNotifications()->latest()->take(10)->get();
+                        @endphp
+                        <div class="dropdown">
+                            <a href="#" class="position-relative d-inline-flex align-items-center justify-content-center shadow-sm"
+                               id="saNotificationDropdown" aria-label="Notifications" data-bs-toggle="dropdown" aria-expanded="false"
+                               style="width: 36px; height: 36px; border-radius: 50%; background: #ffffff; border: 1px solid #e2e8f0; text-decoration: none;">
+                                <i class="fas fa-bell" style="font-size: 0.95rem; color: #475569;"></i>
+                                <span id="notif-unread-badge"
+                                    data-unread-count="{{ $saUnreadCount }}"
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                    style="{{ $saUnreadCount === 0 ? 'display:none;' : '' }} font-size: 0.65rem; padding: 0.25em 0.5em;">
+                                    {{ $saUnreadCount > 99 ? '99+' : $saUnreadCount }}
+                                    <span class="visually-hidden">unread notifications</span>
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 shadow-lg p-0"
+                                aria-labelledby="saNotificationDropdown"
+                                style="width: 340px; max-height: 420px; overflow-y: auto; border-radius: 12px;">
+                                <li class="dropdown-header bg-white py-3 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-dark" style="font-size: 0.88rem;">
+                                        <i class="fas fa-bell text-primary me-1"></i> Notifications
+                                    </h6>
+                                    @if($saUnreadCount > 0)
+                                        <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline m-0 p-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link btn-xs text-primary text-decoration-none p-0 fw-semibold" style="font-size: 0.72rem;">
+                                                Mark all as read
+                                            </button>
+                                        </form>
+                                    @endif
+                                </li>
+                                <div id="saNotificationList">
+                                    @forelse($saUnreadNotifications as $notification)
+                                        @php
+                                            $snData = $notification->data ?? [];
+                                            $snType = $snData['type'] ?? 'info';
+                                            $snTitle = $snData['title'] ?? 'Notification';
+                                            $snMsg = $snData['message'] ?? '';
+                                        @endphp
+                                        <li class="border-bottom">
+                                            <form action="{{ route('notifications.mark-read', $notification->id) }}" method="POST" class="m-0 p-0">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item d-flex align-items-start px-3 py-2 text-wrap w-100 text-start bg-transparent border-0" style="white-space: normal;">
+                                                    <div class="me-2 flex-shrink-0 mt-1">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                            style="width: 28px; height: 28px; background: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                                                            <i class="fas fa-{{ $snType === 'danger' || $snType === 'error' ? 'exclamation-circle text-danger' : ($snType === 'success' ? 'check-circle text-success' : ($snType === 'warning' ? 'exclamation-triangle text-warning' : 'info-circle text-primary')) }} fa-xs"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1" style="min-width: 0;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <span class="font-weight-bold text-dark small text-truncate" style="max-width: 170px;">{{ $snTitle }}</span>
+                                                            <small class="text-muted" style="font-size: 0.68rem;">{{ $notification->created_at->diffForHumans(null, true, true) }}</small>
+                                                        </div>
+                                                        <div class="small text-muted text-truncate" style="max-width: 220px; font-size: 0.73rem;">
+                                                            {{ Str::limit(strip_tags($snMsg), 55) }}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </form>
+                                        </li>
+                                    @empty
+                                        <li>
+                                            <div class="dropdown-item text-center small text-muted py-4">
+                                                <i class="far fa-bell-slash fa-2x d-block mb-2 text-muted opacity-50"></i>
+                                                No unread notifications
+                                            </div>
+                                        </li>
+                                    @endforelse
+                                </div>
+                            </ul>
                         </div>
-                        <div class="user-dropdown-menu" id="userDropdownMenu">
-                            <a href="#" class="user-dropdown-item">
-                                <i class="fas fa-user"></i>
-                                Profile
-                            </a>
-                            <a href="#" class="user-dropdown-item">
-                                <i class="fas fa-cog"></i>
-                                Settings
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="{{ route('logout') }}"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                class="user-dropdown-item text-danger">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Logout
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
+
+                        <div class="user-dropdown">
+                            <div class="user-dropdown-toggle" id="userDropdownToggle">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
+                                    alt="{{ auth()->user()->name }}" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                <span class="me-2">{{ auth()->user()->name }}</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="user-dropdown-menu" id="userDropdownMenu">
+                                <a href="#" class="user-dropdown-item">
+                                    <i class="fas fa-user"></i>
+                                    Profile
+                                </a>
+                                <a href="#" class="user-dropdown-item">
+                                    <i class="fas fa-cog"></i>
+                                    Settings
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="{{ route('logout') }}"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                                    class="user-dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </a>
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
+                            </div>
                         </div>
                     </div>
                 @endauth

@@ -248,7 +248,8 @@ class SettingsService
                 }
 
                 // 3. Check System Global Setting (fallback)
-                $setting = Setting::where('key', $key)
+                $setting = Setting::withoutGlobalScopes()
+                    ->where('key', $key)
                     ->whereNull('salon_id')
                     ->whereNull('branch_id')
                     ->first();
@@ -352,7 +353,8 @@ class SettingsService
             }
 
             // 1. Get System Global Settings (no salon/branch)
-            $globalSettings = Setting::whereNull('salon_id')
+            $globalSettings = Setting::withoutGlobalScopes()
+                ->whereNull('salon_id')
                 ->whereNull('branch_id')
                 ->pluck('value', 'key')
                 ->toArray();
@@ -432,64 +434,88 @@ class SettingsService
     {
         $palettes = [
             'luxury' => [
-                'primary'      => '#0b0f17', // Obsidian Black
-                'accent'       => '#c5a880', // Champagne Gold
-                'accent_hover' => '#b38e5d',
-                'accent_light' => 'rgba(197, 168, 128, 0.15)',
-                'sidebar'      => '#0b0f17',
-                'surface'      => '#111724',
-                'border'       => '#1f293d',
-                'name'         => 'Luxury Obsidian & Gold',
+                'primary'         => '#0b0f17', // Obsidian Black
+                'accent'          => '#c5a880', // Champagne Gold
+                'accent_hover'    => '#b38e5d',
+                'accent_light'    => 'rgba(197, 168, 128, 0.15)',
+                'sidebar'         => '#0b0f17',
+                'surface'         => '#111724',
+                'border'          => '#1f293d',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#0b0f17', // High-contrast dark on champagne gold
+                'gradient_start'  => '#0b0f17',
+                'gradient_end'    => '#1a2232',
+                'name'            => 'Luxury Obsidian & Gold',
             ],
             'barber' => [
-                'primary'      => '#B45309', // Amber / Leather
-                'accent'       => '#F59E0B',
-                'accent_hover' => '#D97706',
-                'accent_light' => 'rgba(180, 83, 9, 0.15)',
-                'sidebar'      => '#B45309',
-                'surface'      => '#78350F',
-                'border'       => '#92400E',
-                'name'         => 'Barber Amber',
+                'primary'         => '#78350F', // Amber / Deep Saddle
+                'accent'          => '#F59E0B', // Bright Amber
+                'accent_hover'    => '#D97706',
+                'accent_light'    => 'rgba(245, 158, 11, 0.15)',
+                'sidebar'         => '#B45309',
+                'surface'         => '#451a03',
+                'border'          => '#92400E',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#451a03', // High-contrast dark on bright amber
+                'gradient_start'  => '#78350F',
+                'gradient_end'    => '#B45309',
+                'name'            => 'Barber Amber',
             ],
             'pink' => [
-                'primary'      => '#e83e8c',
-                'accent'       => '#e83e8c',
-                'accent_hover' => '#d63384',
-                'accent_light' => 'rgba(232, 62, 140, 0.15)',
-                'sidebar'      => '#e83e8c',
-                'surface'      => '#ffffff',
-                'border'       => '#f8d7da',
-                'name'         => 'Rose Pink',
+                'primary'         => '#9d174d', // Deep Rose
+                'accent'          => '#ec4899', // Vibrant Rose
+                'accent_hover'    => '#db2777',
+                'accent_light'    => 'rgba(236, 72, 153, 0.15)',
+                'sidebar'         => '#831843',
+                'surface'         => '#500724',
+                'border'          => '#f472b6',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#ffffff',
+                'gradient_start'  => '#831843',
+                'gradient_end'    => '#be185d',
+                'name'            => 'Rose Pink',
             ],
             'purple' => [
-                'primary'      => '#6f42c1',
-                'accent'       => '#6f42c1',
-                'accent_hover' => '#59359a',
-                'accent_light' => 'rgba(111, 66, 193, 0.15)',
-                'sidebar'      => '#6f42c1',
-                'surface'      => '#ffffff',
-                'border'       => '#e2d9f3',
-                'name'         => 'Royal Purple',
+                'primary'         => '#4c1d95', // Deep Violet
+                'accent'          => '#8b5cf6', // Royal Purple
+                'accent_hover'    => '#7c3aed',
+                'accent_light'    => 'rgba(139, 92, 246, 0.15)',
+                'sidebar'         => '#3b0764',
+                'surface'         => '#2e1065',
+                'border'          => '#a78bfa',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#ffffff',
+                'gradient_start'  => '#3b0764',
+                'gradient_end'    => '#6d28d9',
+                'name'            => 'Royal Purple',
             ],
             'blue' => [
-                'primary'      => '#0d6efd',
-                'accent'       => '#0d6efd',
-                'accent_hover' => '#0b5ed7',
-                'accent_light' => 'rgba(13, 110, 253, 0.15)',
-                'sidebar'      => '#0d6efd',
-                'surface'      => '#ffffff',
-                'border'       => '#cfe2ff',
-                'name'         => 'Sapphire Blue',
+                'primary'         => '#1e3a8a', // Deep Navy
+                'accent'          => '#3b82f6', // Sapphire Blue
+                'accent_hover'    => '#2563eb',
+                'accent_light'    => 'rgba(59, 130, 246, 0.15)',
+                'sidebar'         => '#172554',
+                'surface'         => '#0f172a',
+                'border'          => '#60a5fa',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#ffffff',
+                'gradient_start'  => '#172554',
+                'gradient_end'    => '#1d4ed8',
+                'name'            => 'Sapphire Blue',
             ],
             'green' => [
-                'primary'      => '#198754',
-                'accent'       => '#198754',
-                'accent_hover' => '#157347',
-                'accent_light' => 'rgba(25, 135, 84, 0.15)',
-                'sidebar'      => '#198754',
-                'surface'      => '#ffffff',
-                'border'       => '#d1e7dd',
-                'name'         => 'Emerald Green',
+                'primary'         => '#064e3b', // Deep Forest
+                'accent'          => '#10b981', // Emerald Green
+                'accent_hover'    => '#059669',
+                'accent_light'    => 'rgba(16, 185, 129, 0.15)',
+                'sidebar'         => '#022c22',
+                'surface'         => '#064e3b',
+                'border'          => '#34d399',
+                'text_on_primary' => '#ffffff',
+                'text_on_accent'  => '#ffffff',
+                'gradient_start'  => '#022c22',
+                'gradient_end'    => '#047857',
+                'name'            => 'Emerald Green',
             ],
         ];
 

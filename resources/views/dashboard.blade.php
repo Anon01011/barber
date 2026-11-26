@@ -1,599 +1,25 @@
+@php
+    $dashSalonSlug = $dashSalonSlug ?? request()->route('salon_slug') ?? optional(auth()->user()?->salon)->slug ?? session('current_salon_slug') ?? 'default';
+@endphp
+
 @extends('layouts.app')
 
 @push('styles')
-    <style>
-        /* Modern Dashboard Styles */
-        .dashboard-container {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 2rem 0;
-        }
-
-        /* Modern Card Styles */
-        .card-modern {
-            border-radius: 16px;
-            border: none;
-            background: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
-
-        .card-modern:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Gradient Cards */
-        .gradient-card-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .gradient-card-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .gradient-card-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .gradient-card-info {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        /* Stats Cards */
-        .stat-card {
-            border-radius: 16px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            transform: translate(30%, -30%);
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Modern Tabs */
-        .nav-tabs-modern {
-            border-bottom: 2px solid #e5e7eb;
-            background: white;
-            border-radius: 12px 12px 0 0;
-            padding: 0.5rem 1rem 0;
-        }
-
-        .nav-tabs-modern .nav-link {
-            border: none;
-            color: #6b7280;
-            font-weight: 600;
-            padding: 1rem 1.5rem;
-            position: relative;
-            transition: all 0.3s ease;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .nav-tabs-modern .nav-link:hover {
-            color: #4f46e5;
-            background: rgba(79, 70, 229, 0.05);
-        }
-
-        .nav-tabs-modern .nav-link.active {
-            color: #4f46e5;
-            background: transparent;
-        }
-
-        .nav-tabs-modern .nav-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
-            border-radius: 3px 3px 0 0;
-        }
-
-        /* Widget Headers */
-        .widget-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.25rem 1.5rem;
-            border-radius: 12px 12px 0 0;
-            font-weight: 600;
-        }
-
-        .widget-header-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-
-        .widget-header-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .widget-header-info {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .widget-header-danger {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
-        /* List Items */
-        .list-item-modern {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            transition: all 0.2s ease;
-            background: #f9fafb;
-            border-left: 3px solid transparent;
-        }
-
-        .list-item-modern:hover {
-            background: #f3f4f6;
-            border-left-color: #4f46e5;
-            transform: translateX(4px);
-        }
-
-        /* Badges Modern */
-        .badge-modern {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-        }
-
-        /* Progress Bars */
-        .progress-modern {
-            height: 8px;
-            border-radius: 10px;
-            background: #e5e7eb;
-            overflow: hidden;
-        }
-
-        .progress-modern .progress-bar {
-            border-radius: 10px;
-            transition: width 0.6s ease;
-        }
-
-        /* Welcome Card */
-        .welcome-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        /* Spacing */
-        .section-gap {
-            margin-bottom: 2rem;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .x-small {
-            font-size: 0.7rem !important;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 3.5rem 2rem;
-            text-align: center;
-        }
-
-        .empty-state i {
-            font-size: 3.5rem;
-            margin-bottom: 1.25rem;
-            color: #cbd5e1;
-            opacity: 0.8;
-            display: block;
-        }
-
-        .empty-state p {
-            color: #64748b;
-            font-size: 1.05rem;
-            font-weight: 500;
-            margin: 0;
-        }
-
-        /* Multi-Staff Avatars */
-        .staff-avatars {
-            display: flex;
-            align-items: center;
-        }
-
-        .staff-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border: 2px solid white;
-            margin-left: -8px;
-            position: relative;
-            transition: all 0.2s ease;
-        }
-
-        .staff-avatar:first-child {
-            margin-left: 0;
-        }
-
-        .staff-avatar:hover {
-            transform: translateY(-2px) scale(1.1);
-            z-index: 100 !important;
-        }
-
-        .staff-avatar-more {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            color: #6b7280;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.65rem;
-            font-weight: 700;
-            border: 2px solid white;
-            margin-left: -8px;
-        }
-
-        /* Tooltip Styling */
-        .tooltip-inner {
-            max-width: 300px;
-            text-align: left;
-            padding: 0.75rem;
-        }
-
-        .tooltip-service-item {
-            padding: 0.25rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .tooltip-service-item:last-child {
-            border-bottom: none;
-        }
-
-        .group-booking-badge {
-            cursor: help;
-        }
-
-        /* Modern Filter Bar Styles */
-        .filter-wrapper {
-            position: sticky;
-            top: 1rem;
-            z-index: 1000;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .filter-glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px) saturate(180%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 100px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-            padding: 0.6rem 1.2rem;
-        }
-
-        .period-pill-group {
-            display: flex;
-            gap: 0.5rem;
-            background: rgba(0, 0, 0, 0.04);
-            padding: 0.3rem;
-            border-radius: 50px;
-        }
-
-        .period-pill {
-            border: none;
-            background: transparent;
-            padding: 0.5rem 1.2rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #64748b;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            white-space: nowrap;
-        }
-
-        .period-pill:hover:not(.active) {
-            background: rgba(0, 0, 0, 0.05);
-            color: #1e293b;
-        }
-
-        .period-pill.active {
-            background: #fff;
-            color: #4f46e5;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
-        }
-
-        .date-range-display {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.5rem 1rem;
-            background: rgba(79, 70, 229, 0.06);
-            border-radius: 50px;
-            color: #4f46e5;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border: 1px solid rgba(79, 70, 229, 0.1);
-        }
-
-        .custom-range-integrated {
-            overflow: hidden;
-            max-width: 0;
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-        }
-
-        .custom-range-integrated.show {
-            max-width: 600px;
-            opacity: 1;
-            margin-left: 1rem;
-            padding-left: 1rem;
-            border-left: 2px solid rgba(79, 70, 229, 0.15);
-        }
-
-        .integrated-input-wrapper {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            padding: 2px 12px;
-            transition: all 0.2s ease;
-        }
-
-        .integrated-input-wrapper:focus-within {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .integrated-input {
-            border: none;
-            background: transparent;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #1e293b;
-            width: 120px;
-            padding: 4px;
-            outline: none !important;
-        }
-
-        .btn-apply-integrated {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            transition: all 0.3s ease;
-            margin-left: 0.5rem;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-        }
-
-        .btn-apply-integrated:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
-            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-        }
-
-        .btn-refresh {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            transition: transform 0.3s ease, background 0.3s ease;
-        }
-
-        .btn-refresh:hover {
-            transform: rotate(180deg);
-            background: #4338ca;
-        }
-
-        .modern-input {
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 0.6rem 1rem;
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s ease;
-        }
-
-        .modern-input:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        @media (max-width: 991px) {
-            .filter-wrapper {
-                top: 0.5rem;
-                margin-bottom: 1.25rem;
-            }
-
-            .filter-glass-card {
-                border-radius: 16px;
-                padding: 0.75rem;
-            }
-
-            .period-pill-group {
-                display: flex;
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                background: rgba(0, 0, 0, 0.04);
-                padding: 0.25rem;
-                border-radius: 50px;
-                gap: 0.35rem;
-                scrollbar-width: none;
-                -ms-overflow-style: none;
-                width: 100%;
-            }
-
-            .period-pill-group::-webkit-scrollbar {
-                display: none;
-            }
-
-            .period-pill {
-                padding: 0.45rem 0.95rem;
-                font-size: 0.8rem;
-                flex-shrink: 0;
-                border-radius: 50px;
-            }
-
-            .custom-range-integrated.show {
-                max-width: 100%;
-                margin-left: 0;
-                margin-top: 0.75rem;
-                padding-left: 0;
-                border-left: none;
-                flex-direction: column;
-                gap: 0.5rem;
-                width: 100%;
-            }
-
-            .integrated-input-wrapper {
-                width: 100%;
-            }
-
-            .integrated-input {
-                width: 100%;
-            }
-
-            .btn-apply-integrated {
-                width: 100%;
-                margin-left: 0;
-                padding: 8px 16px;
-            }
-
-            .welcome-card {
-                padding: 1rem;
-                border-radius: 14px;
-            }
-
-            .stat-card {
-                padding: 0.85rem !important;
-                border-radius: 14px !important;
-            }
-
-            .stat-icon {
-                width: 36px !important;
-                height: 36px !important;
-                font-size: 16px !important;
-            }
-
-            .stat-card .h5 {
-                font-size: 1.15rem !important;
-            }
-
-            .nav-tabs-modern {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                padding: 0.25rem 0.5rem 0;
-                scrollbar-width: none;
-            }
-
-            .nav-tabs-modern::-webkit-scrollbar {
-                display: none;
-            }
-
-            .nav-tabs-modern .nav-link {
-                padding: 0.6rem 0.9rem;
-                font-size: 0.825rem;
-                white-space: nowrap;
-                flex-shrink: 0;
-            }
-        }
-
-        @media (max-width: 575.98px) {
-            .dashboard-container {
-                padding: 0.75rem 0;
-            }
-
-            .welcome-card img {
-                width: 48px !important;
-                height: 48px !important;
-            }
-
-            .welcome-card h4 {
-                font-size: 1.1rem;
-            }
-
-            .welcome-card p {
-                font-size: 0.8rem;
-            }
-
-            .section-gap {
-                margin-bottom: 1.25rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/salon-dashboard.css') }}?v={{ file_exists(public_path('css/salon-dashboard.css')) ? filemtime(public_path('css/salon-dashboard.css')) : '1.0' }}">
+@endpush
+
+@push('scripts')
+    <script src="{{ asset('js/salon-dashboard.js') }}?v={{ file_exists(public_path('js/salon-dashboard.js')) ? filemtime(public_path('js/salon-dashboard.js')) : '1.0' }}"></script>
 @endpush
 
 @section('content')
+    @php
+        $dashSalonSlug = request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? session('current_salon_slug') ?? 'default';
+    @endphp
     <div class="container-fluid">
         <!-- Modern Date Range Filter -->
         @can('system.view_dashboard')
-            <div class="filter-wrapper animate-fade-in">
+            <div class="filter-wrapper animate-fade-in" style="position: relative !important; top: auto !important; z-index: 10 !important; margin-top: 1.25rem !important; margin-bottom: 1.75rem !important;">
                 <div class="filter-glass-card">
                     <form action="{{ url()->current() }}" method="GET" id="dateFilterForm"
                         class="d-flex flex-wrap align-items-center justify-content-between g-3">
@@ -648,84 +74,167 @@
         <!-- Welcome Card -->
         <div class="row section-gap animate-fade-in">
             <div class="col-12">
-                <div class="welcome-card card-modern">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
-                                alt="{{ auth()->user()->name }}" class="rounded-circle border border-3 border-white shadow"
-                                style="width: 64px; height: 64px;">
+                <div class="welcome-card card-modern position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--theme-gradient-start, var(--theme-primary, #0b0f17)) 0%, var(--theme-sidebar, #1a2232) 50%, var(--theme-surface, #0f172a) 100%); border-radius: 16px; padding: 1.5rem 1.75rem; border: 1px solid var(--theme-border, rgba(255,255,255,0.15)); color: var(--theme-text-on-primary, #ffffff);">
+                    <div class="row align-items-center g-3 position-relative" style="z-index: 2;">
+                        <div class="col-lg-7">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random"
+                                        alt="{{ auth()->user()->name }}" class="rounded-circle border border-3 border-white shadow"
+                                        style="width: 60px; height: 60px;">
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                        <h4 class="mb-0 fw-bold text-white">Welcome back, {{ auth()->user()->name }}! 👋</h4>
+                                        @if(auth()->user()->salon)
+                                            @php
+                                                $tenantSalon = auth()->user()->salon;
+                                                $isOnTrial = method_exists($tenantSalon, 'isOnTrial') && $tenantSalon->isOnTrial();
+                                                $trialDays = $tenantSalon->trial_ends_at ? now()->diffInDays($tenantSalon->trial_ends_at, false) : 0;
+                                            @endphp
+                                            @if($isOnTrial)
+                                                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-hourglass-half me-1"></i> Trial: {{ $trialDays > 0 ? $trialDays . ' days left' : 'Expired' }}
+                                                </span>
+                                            @elseif($tenantSalon->plan)
+                                                <span class="badge px-2 py-1 rounded-pill" style="background: rgba(255,255,255,0.2); color: #fff; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.3);">
+                                                    <i class="fas fa-award me-1 text-warning"></i> {{ $tenantSalon->plan->name }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    <p class="mb-0 text-white-50 small">
+                                        <i class="fas fa-store me-1 text-warning"></i> {{ optional(auth()->user()->salon)->name ?? 'Salon' }}
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-user-tag me-1"></i> {{ ucfirst(auth()->user()->roles->first()->name ?? 'Administrator') }}
+                                        @if(auth()->user()->last_login_at)
+                                            <span class="ms-3 d-none d-md-inline">
+                                                <i class="fas fa-clock me-1"></i> Last Login: {{ auth()->user()->last_login_at->diffForHumans() }}
+                                            </span>
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-grow-1 ms-4">
-                            <h4 class="mb-2 fw-bold">Welcome back, {{ auth()->user()->name }}! 👋</h4>
-                            <p class="mb-0 opacity-90">
-                                <i class="fas fa-user-tag me-2"></i>
-                                {{ ucfirst(auth()->user()->roles->first()->name ?? 'No Role') }}
-                                @if(auth()->user()->last_login_at)
-                                    <span class="ms-3">
-                                        <i class="fas fa-clock me-2"></i>
-                                        Last Login: {{ auth()->user()->last_login_at->diffForHumans() }}
-                                    </span>
+                        <div class="col-lg-5 text-lg-end">
+                            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                @php
+                                    $salonSlug = optional(auth()->user()->salon)->slug ?? request()->route('salon_slug') ?? 'default';
+                                    $canPos = auth()->user()->can('pos.view') && \App\Helpers\ModuleHelper::posEnabled();
+                                @endphp
+                                @if($canPos)
+                                    <a href="{{ route('admin.pos.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm" style="background: var(--theme-accent, #c5a880); color: var(--theme-text-on-accent, #0b0f17); border: 1px solid var(--theme-accent, #c5a880);">
+                                        <i class="fas fa-cash-register me-1"></i> POS Checkout
+                                    </a>
                                 @endif
-                            </p>
+                                @can('bookings.view')
+                                    <a href="{{ route('admin.bookings.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-light btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm" style="color: var(--theme-primary, #0b0f17);">
+                                        <i class="fas fa-calendar-alt me-1"></i> Bookings
+                                    </a>
+                                @endcan
+                                <a href="{{ route('admin.saas.subscription.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" style="border-color: rgba(255,255,255,0.4);">
+                                    <i class="fas fa-id-card me-1"></i> Subscription
+                                </a>
+                            </div>
                         </div>
+                    </div>
+                    <!-- Background subtle ambient glow -->
+                    <div class="position-absolute" style="top: -60px; right: -60px; width: 220px; height: 220px; background: rgba(255, 255, 255, 0.08); border-radius: 50%; pointer-events: none; filter: blur(40px);"></div>
+                    <div class="position-absolute" style="bottom: -60px; left: -60px; width: 180px; height: 180px; background: rgba(255, 193, 7, 0.08); border-radius: 50%; pointer-events: none; filter: blur(30px);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Operational Toolbar (Live Floor Status & Fast Walk-in) -->
+        <div class="row mb-3 animate-fade-in">
+            <div class="col-12">
+                <div class="salon-quick-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <span class="text-uppercase x-small fw-bold text-muted me-1" style="letter-spacing: 0.5px;">Live Floor Ops:</span>
+                        <div class="toolbar-stat-pill">
+                            <i class="fas fa-user-check text-success"></i>
+                            <span>Stylists Active: <strong>{{ $salon_quick_stats['active_staff'] ?? 0 }}</strong></span>
+                        </div>
+                        @php
+                            $completedTodayCount = $salon_quick_stats['completed_today'] ?? 0;
+                            $todayRev = $todays_sales['today_revenue'] ?? 0;
+                            $avgTicket = $completedTodayCount > 0 ? ($todayRev / $completedTodayCount) : 0;
+                        @endphp
+                        <div class="toolbar-stat-pill">
+                            <i class="fas fa-receipt" style="color: var(--theme-accent, #c5a880);"></i>
+                            <span>Avg. Ticket: <strong>{{ currency_symbol() }}{{ number_format($avgTicket, 2) }}</strong></span>
+                        </div>
+                        <div class="toolbar-stat-pill">
+                            <i class="fas fa-cash-register text-primary"></i>
+                            <span>Register: <strong class="text-success">Reconciled</strong></span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        @can('bookings.create')
+                            <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                                <i class="fas fa-plus me-1" style="color: var(--theme-accent, #c5a880);"></i> Quick Walk-in
+                            </button>
+                        @endcan
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Stats Cards -->
+        <!-- Quick Stats Cards (Executive Uniform & Theme-Focused) -->
         @can('salon.view')
             @if(isset($salon_quick_stats))
-                <div class="row section-gap animate-fade-in">
+                <div class="row section-gap animate-fade-in g-3">
                     <div class="col-6 col-md-6 col-xl mb-3">
-                        <div class="stat-card gradient-card-primary card-modern p-2">
+                        <div class="stat-card card-modern h-100">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="text-uppercase x-small fw-semibold opacity-90 mb-1">Active Staff</div>
-                                    <div class="h5 mb-0 fw-bold">{{ $salon_quick_stats['active_staff'] ?? 0 }}</div>
+                                    <div class="text-uppercase x-small fw-bold text-muted mb-1">Active Staff</div>
+                                    <div class="h4 mb-0 fw-bold">{{ $salon_quick_stats['active_staff'] ?? 0 }}</div>
+                                    <div class="x-small text-muted mt-1"><i class="fas fa-circle fa-xs me-1 text-success"></i>On floor</div>
                                 </div>
-                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 18px;">
+                                <div class="stat-icon">
                                     <i class="fas fa-users"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-6 col-xl mb-3">
-                        <div class="stat-card gradient-card-success card-modern p-2">
+                        <div class="stat-card card-modern h-100">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="text-uppercase x-small fw-semibold opacity-90 mb-1">
-                                        Appointments
-                                    </div>
-                                    <div class="h5 mb-0 fw-bold">{{ $salon_quick_stats['today_appointments'] ?? 0 }}</div>
+                                    <div class="text-uppercase x-small fw-bold text-muted mb-1">Appointments</div>
+                                    <div class="h4 mb-0 fw-bold">{{ $salon_quick_stats['today_appointments'] ?? 0 }}</div>
+                                    <div class="x-small text-muted mt-1"><i class="fas fa-calendar-day fa-xs me-1 text-primary"></i>Scheduled</div>
                                 </div>
-                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 18px;">
+                                <div class="stat-icon">
                                     <i class="fas fa-calendar-check"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-6 col-xl mb-3">
-                        <div class="stat-card gradient-card-warning card-modern p-2">
+                        <div class="stat-card card-modern h-100">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="text-uppercase x-small fw-semibold opacity-90 mb-1">Pending</div>
-                                    <div class="h5 mb-0 fw-bold">{{ $salon_quick_stats['pending_appointments'] ?? 0 }}</div>
+                                    <div class="text-uppercase x-small fw-bold text-muted mb-1">Pending</div>
+                                    <div class="h4 mb-0 fw-bold">{{ $salon_quick_stats['pending_appointments'] ?? 0 }}</div>
+                                    <div class="x-small text-muted mt-1"><i class="fas fa-clock fa-xs me-1 text-warning"></i>In queue</div>
                                 </div>
-                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 18px;">
+                                <div class="stat-icon">
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-6 col-xl mb-3">
-                        <div class="stat-card gradient-card-info card-modern p-2">
+                        <div class="stat-card card-modern h-100">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="text-uppercase x-small fw-semibold opacity-90 mb-1">Completed</div>
-                                    <div class="h5 mb-0 fw-bold">{{ $salon_quick_stats['completed_today'] ?? 0 }}</div>
+                                    <div class="text-uppercase x-small fw-bold text-muted mb-1">Completed</div>
+                                    <div class="h4 mb-0 fw-bold text-success">{{ $salon_quick_stats['completed_today'] ?? 0 }}</div>
+                                    <div class="x-small text-muted mt-1"><i class="fas fa-check-double fa-xs me-1 text-success"></i>Checked out</div>
                                 </div>
-                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 18px;">
+                                <div class="stat-icon">
                                     <i class="fas fa-check-circle"></i>
                                 </div>
                             </div>
@@ -742,32 +251,27 @@
                     <!-- Today's Revenue Widget -->
                     @if(isset($todays_sales) && (auth()->user()->can('reports.sales') || auth()->user()->can('bookings.view_stats')))
                         <div class="col-xl mb-4" style="min-width: 250px;">
-                            <div class="card-modern h-100">
-                                <div class="widget-header widget-header-success py-2 px-3">
-                                    <i class="fas fa-dollar-sign me-2 small"></i><span
-                                        class="small fw-bold">{{ $dateRange == 'today' ? "Today's" : "Period" }} Revenue</span>
+                            <div class="card-modern h-100 bg-white border">
+                                <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                                    <span class="small fw-bold text-dark">
+                                        <i class="fas fa-dollar-sign me-2" style="color: var(--theme-accent, #c5a880);"></i>{{ $dateRange == 'today' ? "Today's" : "Period" }} Revenue
+                                    </span>
+                                    @if(($todays_sales['revenue_growth'] ?? 0) > 0)
+                                        <span class="badge bg-success-subtle text-success x-small py-1 px-2 rounded-pill fw-semibold">
+                                            <i class="fas fa-arrow-up me-1"></i> +{{ $todays_sales['revenue_growth'] }}%
+                                        </span>
+                                    @elseif(($todays_sales['revenue_growth'] ?? 0) < 0)
+                                        <span class="badge bg-danger-subtle text-danger x-small py-1 px-2 rounded-pill fw-semibold">
+                                            <i class="fas fa-arrow-down me-1"></i> {{ $todays_sales['revenue_growth'] }}%
+                                        </span>
+                                    @endif
                                 </div>
-                                <div class="card-body p-3">
-                                    <div class="text-center">
-                                        <div class="h2 mb-2 fw-bold text-success">
-                                            {{ currency_symbol() }}{{ number_format($todays_sales['today_revenue'], 2) }}
-                                        </div>
-                                        <div class="mb-2">
-                                            @if($todays_sales['revenue_growth'] > 0)
-                                                <span class="badge badge-modern bg-success x-small py-1 px-2">
-                                                    <i class="fas fa-arrow-up me-1"></i> {{ $todays_sales['revenue_growth'] }}%
-                                                </span>
-                                            @elseif($todays_sales['revenue_growth'] < 0)
-                                                <span class="badge badge-modern bg-danger x-small py-1 px-2">
-                                                    <i class="fas fa-arrow-down me-1"></i> {{ abs($todays_sales['revenue_growth']) }}%
-                                                </span>
-                                            @else
-                                                <span class="badge badge-modern bg-secondary x-small py-1 px-2">No Change</span>
-                                            @endif
-                                        </div>
-                                        <div class="x-small text-muted">
-                                            vs Prev: {{ currency_symbol() }}{{ number_format($todays_sales['yesterday_revenue'], 2) }}
-                                        </div>
+                                <div class="card-body p-4 text-center">
+                                    <div class="h2 mb-2 fw-bold text-dark">
+                                        {{ currency_symbol() }}{{ number_format($todays_sales['today_revenue'], 2) }}
+                                    </div>
+                                    <div class="x-small text-muted">
+                                        vs Previous Period: <strong>{{ currency_symbol() }}{{ number_format($todays_sales['yesterday_revenue'], 2) }}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -777,34 +281,21 @@
                     <!-- Today's Refunds Widget (NEW) -->
                     @if(isset($todays_sales) && (auth()->user()->can('reports.sales') || auth()->user()->can('bookings.view_stats')))
                         <div class="col-xl mb-4" style="min-width: 250px;">
-                            <div class="card-modern h-100">
-                                <div class="widget-header widget-header-danger py-2 px-3">
-                                    <i class="fas fa-undo me-2 small"></i><span
-                                        class="small fw-bold">{{ $dateRange == 'today' ? "Today's" : "Period" }} Refunds</span>
+                            <div class="card-modern h-100 bg-white border">
+                                <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                                    <span class="small fw-bold text-dark">
+                                        <i class="fas fa-undo me-2 text-danger"></i>{{ $dateRange == 'today' ? "Today's" : "Period" }} Refunds
+                                    </span>
+                                    <span class="badge bg-light text-muted border x-small py-1 px-2 rounded-pill">
+                                        {{ $todays_sales['today_refunds_count'] ?? 0 }} cases
+                                    </span>
                                 </div>
-                                <div class="card-body p-3">
-                                    <div class="text-center">
-                                        <div class="h2 mb-2 fw-bold text-danger">
-                                            {{ currency_symbol() }}{{ number_format($todays_sales['today_refunds'] ?? 0, 2) }}
-                                        </div>
-                                        <div class="mb-2">
-                                            <span class="badge badge-modern bg-secondary x-small py-1 px-2">
-                                                Count: {{ $todays_sales['today_refunds_count'] ?? 0 }}
-                                            </span>
-                                            @if(($todays_sales['today_refunds_fees'] ?? 0) > 0)
-                                                <span class="badge badge-modern bg-info x-small py-1 px-2 ms-1">
-                                                    Fees: {{ currency_symbol() }}{{ number_format($todays_sales['today_refunds_fees'], 2) }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="x-small text-muted">
-                                            Net Outflow:
-                                            {{ currency_symbol() }}{{ number_format($todays_sales['today_net_refunds'] ?? 0, 2) }}
-                                        </div>
-                                        <div class="x-small text-muted mt-1">
-                                            vs Prev:
-                                            {{ currency_symbol() }}{{ number_format($todays_sales['yesterday_refunds'] ?? 0, 2) }}
-                                        </div>
+                                <div class="card-body p-4 text-center">
+                                    <div class="h2 mb-2 fw-bold text-dark">
+                                        {{ currency_symbol() }}{{ number_format($todays_sales['today_refunds'] ?? 0, 2) }}
+                                    </div>
+                                    <div class="x-small text-muted">
+                                        Net Revenue: <strong>{{ currency_symbol() }}{{ number_format($todays_sales['today_net_refunds'] ?? 0, 2) }}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -889,49 +380,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <style>
-                        /* Revised Payment Methods Styles */
-                        .payment-methods-widget {
-                            overflow: hidden;
-                        }
-
-                        .payment-chart-container {
-                            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
-                        }
-
-                        .payment-method-item {
-                            padding: 0.5rem 0.75rem;
-                            border-radius: 12px;
-                            transition: background-color 0.2s ease;
-                        }
-
-                        .payment-method-item:hover {
-                            background-color: #f8f9fa;
-                        }
-
-                        .payment-icon-wrapper {
-                            width: 48px;
-                            height: 48px;
-                            border-radius: 12px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 1.25rem;
-                            transition: transform 0.2s ease;
-                        }
-
-                        .payment-method-item:hover .payment-icon-wrapper {
-                            transform: scale(1.1);
-                        }
-
-                        @media (max-width: 768px) {
-                            .payment-chart-container {
-                                height: 220px !important;
-                                width: 220px !important;
-                            }
-                        }
-                    </style>
                 </div>
             @endif
         @endcan
@@ -1939,7 +1387,7 @@
                                         <div class="tab-pane fade {{ $activeTab == 'staff' ? 'show active' : '' }}" id="staff"
                                             role="tabpanel">
                                             <div class="d-flex justify-content-end mb-3">
-                                                <a href="{{ route('admin.reports.staff') }}" class="btn btn-sm btn-outline-primary">
+                                                <a href="{{ route('admin.reports.staff', ['salon_slug' => $dashSalonSlug]) }}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-external-link-alt me-1"></i> Full Report
                                                 </a>
                                             </div>
@@ -2166,7 +1614,7 @@
                                         <div class="tab-pane fade {{ $activeTab == 'customer' ? 'show active' : '' }}" id="customer"
                                             role="tabpanel">
                                             <div class="d-flex justify-content-end mb-3">
-                                                <a href="{{ route('admin.reports.customers') }}" class="btn btn-sm btn-outline-primary">
+                                                <a href="{{ route('admin.reports.customers', ['salon_slug' => $dashSalonSlug]) }}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-external-link-alt me-1"></i> Full Report
                                                 </a>
                                             </div>
@@ -2494,7 +1942,7 @@
                         <div>
                             <i class="fas fa-calendar-day me-2"></i>Upcoming Appointments
                         </div>
-                        <a href="{{ route('customer.appointments.create') }}"
+                        <a href="{{ route('customer.appointments.create', ['salon_slug' => $dashSalonSlug]) }}"
                             class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3">
                             <i class="fas fa-plus me-1"></i> Book New
                         </a>
@@ -2588,7 +2036,7 @@
                             <div class="empty-state">
                                 <i class="fas fa-calendar-check text-muted"></i>
                                 <p class="mb-3">No upcoming appointments</p>
-                                <a href="{{ route('customer.appointments.create') }}" class="btn btn-primary rounded-pill px-4">
+                                <a href="{{ route('customer.appointments.create', ['salon_slug' => $dashSalonSlug]) }}" class="btn btn-primary rounded-pill px-4">
                                     Book Your First Appointment
                                 </a>
                             </div>
@@ -2652,32 +2100,6 @@
         </div>
         @endrole
 
-
-        @push('styles')
-            <style>
-                .fc-event {
-                    cursor: pointer;
-                }
-
-                .fc-daygrid-day {
-                    cursor: pointer;
-                    transition: background-color 0.2s;
-                }
-
-                .fc-daygrid-day:hover {
-                    background-color: rgba(0, 0, 0, 0.02);
-                }
-
-                .fc-toolbar-title {
-                    font-size: 1.2rem !important;
-                }
-
-                .fc-button {
-                    font-size: 0.8rem !important;
-                }
-            </style>
-        @endpush
-
         <!-- Include Bill Activity Modal -->
         @include('admin.customers.partials.bill_activity_modal')
 
@@ -2704,7 +2126,7 @@
                                 <select class="form-select form-select-lg" name="service_id" id="modal_service_select"
                                     required>
                                     <option value="">Choose a service...</option>
-                                    @foreach($services as $service)
+                                    @foreach($services ?? [] as $service)
                                         <option value="{{ $service->id }}" data-duration="{{ $service->duration }}"
                                             data-price="{{ $service->price }}">
                                             {{ $service->name }} -
@@ -2923,74 +2345,11 @@
             </div>
         </div>
 
-        @push('styles')
-            <style>
-                /* Appointment Details Modal Styles */
-                .appointment-details {
-                    padding: 0.5rem;
-                }
-
-                .detail-item {
-                    padding: 0.75rem;
-                    background: #f8f9fa;
-                    border-radius: 0.5rem;
-                }
-
-                .detail-label {
-                    font-size: 0.875rem;
-                    color: #6c757d;
-                    margin-bottom: 0.25rem;
-                }
-
-                .detail-value {
-                    font-size: 1rem;
-                    color: #212529;
-                }
-
-                /* Modal Enhancements */
-                .modal-content {
-                    border-radius: 1rem;
-                    overflow: hidden;
-                }
-
-                .modal-header {
-                    padding: 1.5rem;
-                }
-
-                .modal-body {
-                    background-color: #f8f9fa;
-                }
-
-                .form-select-lg,
-                .form-control-lg {
-                    border-radius: 0.5rem;
-                    border: 2px solid #e9ecef;
-                    transition: all 0.3s ease;
-                }
-
-                .form-select-lg:focus,
-                .form-control-lg:focus {
-                    border-color: #0d6efd;
-                    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
-                }
-
-                .form-control:focus,
-                .form-select:focus {
-                    border-color: #0d6efd;
-                    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
-                }
-
-                .alert-light {
-                    background-color: #fff;
-                }
-            </style>
-        @endpush
-
         @push('scripts')
             <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
             <script>         // Helper function to get browser's timezone         function getBrowserTimezone() {             try {                 return Intl.DateTimeFormat().resolvedOptions().timeZone;             } catch (e) {                 return 'local';             }         }
                                                  // Helper function to get timezone with salon preference and browser fallback         function getCalendarTimezone(salonTimezone) {             if (salonTimezone && salonTimezone.trim() !== '' && salonTimezone !== 'UTC') {                 try {                     Intl.DateTimeFormat(undefined, { timeZone: salonTimezone });                     return salonTimezone;                 } catch (e) {
-                                                         }             }             return getBrowserTimezone();         }         // Helper functions to format date and time in specific timezone         function formatDateInTimezone(date, timezone) {             return new Intl.DateTimeFormat('en-CA', {                 timeZone: timezone,                 year: 'numeric',                 month: '2-digit',                 day: '2-digit'             }).format(date);         }         function formatTimeInTimezone(date, timezone) { return new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(date); }         document.addEventListener('DOMContentLoaded', function () {             // Only initialize if calendar element exists             var calendarEl = document.getElementById('calendar');             if (calendarEl) {                 // Get timezone: use salon timezone with fallback to browser timezone                 const salonTimezone = '{{ $settings->get("timezone", "UTC") }}';                 const calendarTimezone = getCalendarTimezone(salonTimezone);             var calendar = new FullCalendar.Calendar(calendarEl, {                 initialView: 'dayGridMonth', timeZone: calendarTimezone, headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }, events: '{{ route("customer.api.appointments.index") }}', dateClick: function (info) {                         // Open modal with selected date                         document.getElementById('modal_date').value = info.dateStr;                         var bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));                         bookingModal.show();                     },                     eventClick: function (info) {                         // Fetch and show appointment details in modal                         info.jsEvent.preventDefault();                     if (info.event.id) {                             // Get salon slug from current URL                             const pathParts = window.location.pathname.split('/');                             const salonSlug = getSalonSlug(); // Using global helper                         fetch(`/${salonSlug}/customer/api/appointments/${info.event.id}`).then(response => response.json()).then(data => {                                     // Populate modal with appointment data                                     document.getElementById('detail_service').textContent = data.service?.name || '-';                                     document.getElementById('detail_staff').textContent = data.staff?.name || 'Any Staff';                             // Format date and time using timezone                                     const startTime = new Date(data.start_time);                                     document.getElementById('detail_date').textContent = formatDateInTimezone(startTime, calendarTimezone);                                     document.getElementById('detail_time').textContent = formatTimeInTimezone(startTime, calendarTimezone);                             // Status badge                                     const statusBadge = document.getElementById('detail_status');                                     statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);                                     statusBadge.className = 'badge';                                     if (data.status === 'confirmed') {                                         statusBadge.classList.add('bg-success');                                     } else if (data.status === 'pending') {                                         statusBadge.classList.add('bg-warning');                                     } else if (data.status === 'completed') {                                         statusBadge.classList.add('bg-info');                                     } else {                                         statusBadge.classList.add('bg-danger');                                     }                             // Amount                                     document.getElementById('detail_amount').textContent = '$' + parseFloat(data.amount || 0).toFixed(2);                             // Notes                                     if (data.notes) {                                         document.getElementById('detail_notes').textContent = data.notes;                                         document.getElementById('detail_notes_container').style.display = 'block';                                     } else {                                         document.getElementById('detail_notes_container').style.display = 'none';                                     }                             // Update view details button link                                     document.getElementById('view_appointment_btn').href = '/' + salonSlug + '/customer/appointments/' + data.id;                             // Show modal                                     var detailsModal = new bootstrap.Modal(document.getElementById('appointmentDetailsModal'));                                     detailsModal.show();                                 })                                 .catch(error => {                                     alert('Unable to load appointment details. Please try again.');                                 });                         }                     },                     eventDidMount: function (info) {                         // Add tooltip                         if (info.event.extendedProps.status) {                             info.el.title = info.event.title + ' (' + info.event.extendedProps.status + ')';                         }                     }                 });                 calendar.render();             }                             // Modal service selection handler (dropdown)             const modalServiceSelect = document.getElementById('modal_service_select');             const modalDateInput = document.getElementById('modal_date');             const modalTimeSelect = document.getElementById('modal_time');                             modalServiceSelect.addEventListener('change', function () {                                 const selectedOption = this.options[this.selectedIndex]; if (selectedOption.value) {                                     const duration = selectedOption.dataset.duration; const price = selectedOption.dataset.price;                                     document.getElementById('modalServiceDuration').textContent = duration; document.getElementById('modalServicePrice').textContent = parseFloat(price).toFixed(2); document.getElementById('modalServiceSummary').classList.remove('d-none');                                     // Fetch available slots if date is selected                     if (modalDateInput.value) {                         fetchModalAvailableSlots(modalDateInput.value, selectedOption.value);                     }                 } else {                     document.getElementById('modalServiceSummary').classList.add('d-none');                 }             });                                     // Modal date change handler             modalDateInput.addEventListener('change', function () {                 const selectedService = modalServiceSelect.value;                 if (selectedService) {                     fetchModalAvailableSlots(this.value, selectedService);                 }             });                                     // Fetch available time slots for modal             function fetchModalAvailableSlots(date, serviceId) {                 fetch(`{{ route('customer.api.appointments.available-slots') }}?date=${date}&service_id=${serviceId}`)                     .then(response => response.json())                     .then(data => {                         modalTimeSelect.innerHTML = '<option value="">Choose a time slot</option>';                         data.forEach(slot => {                             if (slot.available) {                                 const option = document.createElement('option');                                 option.value = slot.time;                                 option.textContent = slot.time;                                 modalTimeSelect.appendChild(option);                             }                         });                     })                     .catch(error => {                         Swal.fire({                             icon: 'error',                             title: 'Oops...',                             text: 'Failed to fetch available time slots. Please try again.'                         });                     });             }         });                                     // Submit modal booking         function submitModalBooking() {             const form = document.getElementById('modalBookingForm');             const formData = new FormData(form);                                     fetch('{{ route("customer.appointments.store") }}', { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } }).then(response => response.json()).then(data => {                                         if (data.message) { Swal.fire({ icon: 'success', title: 'Success!', text: data.message, showConfirmButton: false, timer: 1500 }).then(() => { location.reload(); }); } else { throw new Error('Failed to book appointment'); }                                     }
+                                                         }             }             return getBrowserTimezone();         }         // Helper functions to format date and time in specific timezone         function formatDateInTimezone(date, timezone) {             return new Intl.DateTimeFormat('en-CA', {                 timeZone: timezone,                 year: 'numeric',                 month: '2-digit',                 day: '2-digit'             }).format(date);         }         function formatTimeInTimezone(date, timezone) { return new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(date); }         document.addEventListener('DOMContentLoaded', function () {             // Only initialize if calendar element exists             var calendarEl = document.getElementById('calendar');             if (calendarEl) {                 // Get timezone: use salon timezone with fallback to browser timezone                 const salonTimezone = '{{ $settings->get("timezone", "UTC") }}';                 const calendarTimezone = getCalendarTimezone(salonTimezone);             var calendar = new FullCalendar.Calendar(calendarEl, {                 initialView: 'dayGridMonth', timeZone: calendarTimezone, headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }, events: '{{ route("customer.api.appointments.index", ["salon_slug" => $dashSalonSlug]) }}', dateClick: function (info) {                         // Open modal with selected date                         document.getElementById('modal_date').value = info.dateStr;                         var bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));                         bookingModal.show();                     },                     eventClick: function (info) {                         // Fetch and show appointment details in modal                         info.jsEvent.preventDefault();                     if (info.event.id) {                             // Get salon slug from current URL                             const pathParts = window.location.pathname.split('/');                             const salonSlug = getSalonSlug(); // Using global helper                         fetch(`/${salonSlug}/customer/api/appointments/${info.event.id}`).then(response => response.json()).then(data => {                                     // Populate modal with appointment data                                     document.getElementById('detail_service').textContent = data.service?.name || '-';                                     document.getElementById('detail_staff').textContent = data.staff?.name || 'Any Staff';                             // Format date and time using timezone                                     const startTime = new Date(data.start_time);                                     document.getElementById('detail_date').textContent = formatDateInTimezone(startTime, calendarTimezone);                                     document.getElementById('detail_time').textContent = formatTimeInTimezone(startTime, calendarTimezone);                             // Status badge                                     const statusBadge = document.getElementById('detail_status');                                     statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);                                     statusBadge.className = 'badge';                                     if (data.status === 'confirmed') {                                         statusBadge.classList.add('bg-success');                                     } else if (data.status === 'pending') {                                         statusBadge.classList.add('bg-warning');                                     } else if (data.status === 'completed') {                                         statusBadge.classList.add('bg-info');                                     } else {                                         statusBadge.classList.add('bg-danger');                                     }                             // Amount                                     document.getElementById('detail_amount').textContent = '$' + parseFloat(data.amount || 0).toFixed(2);                             // Notes                                     if (data.notes) {                                         document.getElementById('detail_notes').textContent = data.notes;                                         document.getElementById('detail_notes_container').style.display = 'block';                                     } else {                                         document.getElementById('detail_notes_container').style.display = 'none';                                     }                             // Update view details button link                                     document.getElementById('view_appointment_btn').href = '/' + salonSlug + '/customer/appointments/' + data.id;                             // Show modal                                     var detailsModal = new bootstrap.Modal(document.getElementById('appointmentDetailsModal'));                                     detailsModal.show();                                 })                                 .catch(error => {                                     alert('Unable to load appointment details. Please try again.');                                 });                         }                     },                     eventDidMount: function (info) {                         // Add tooltip                         if (info.event.extendedProps.status) {                             info.el.title = info.event.title + ' (' + info.event.extendedProps.status + ')';                         }                     }                 });                 calendar.render();             }                             // Modal service selection handler (dropdown)             const modalServiceSelect = document.getElementById('modal_service_select');             const modalDateInput = document.getElementById('modal_date');             const modalTimeSelect = document.getElementById('modal_time');                             modalServiceSelect.addEventListener('change', function () {                                 const selectedOption = this.options[this.selectedIndex]; if (selectedOption.value) {                                     const duration = selectedOption.dataset.duration; const price = selectedOption.dataset.price;                                     document.getElementById('modalServiceDuration').textContent = duration; document.getElementById('modalServicePrice').textContent = parseFloat(price).toFixed(2); document.getElementById('modalServiceSummary').classList.remove('d-none');                                     // Fetch available slots if date is selected                     if (modalDateInput.value) {                         fetchModalAvailableSlots(modalDateInput.value, selectedOption.value);                     }                 } else {                     document.getElementById('modalServiceSummary').classList.add('d-none');                 }             });                                     // Modal date change handler             modalDateInput.addEventListener('change', function () {                 const selectedService = modalServiceSelect.value;                 if (selectedService) {                     fetchModalAvailableSlots(this.value, selectedService);                 }             });                                     // Fetch available time slots for modal             function fetchModalAvailableSlots(date, serviceId) {                 fetch(`{{ route('customer.api.appointments.available-slots', ['salon_slug' => $dashSalonSlug]) }}?date=${date}&service_id=${serviceId}`)                     .then(response => response.json())                     .then(data => {                         modalTimeSelect.innerHTML = '<option value="">Choose a time slot</option>';                         data.forEach(slot => {                             if (slot.available) {                                 const option = document.createElement('option');                                 option.value = slot.time;                                 option.textContent = slot.time;                                 modalTimeSelect.appendChild(option);                             }                         });                     })                     .catch(error => {                         Swal.fire({                             icon: 'error',                             title: 'Oops...',                             text: 'Failed to fetch available time slots. Please try again.'                         });                     });             }         });                                     // Submit modal booking         function submitModalBooking() {             const form = document.getElementById('modalBookingForm');             const formData = new FormData(form);                                     fetch('{{ route("customer.appointments.store", ["salon_slug" => $dashSalonSlug]) }}', { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } }).then(response => response.json()).then(data => {                                         if (data.message) { Swal.fire({ icon: 'success', title: 'Success!', text: data.message, showConfirmButton: false, timer: 1500 }).then(() => { location.reload(); }); } else { throw new Error('Failed to book appointment'); }                                     }
                 // Reschedule Functionality         document.addEventListener('DOMContentLoaded', function () {             const rescheduleModal = new bootstrap.Modal(document.getElementById('rescheduleModal'));             const rescheduleForm = document.getElementById('rescheduleForm');             const rescheduleDateInput = document.getElementById('reschedule_date');             const rescheduleTimeSelect = document.getElementById('reschedule_time');
                 // Handle Reschedule Button Click             document.querySelectorAll('.reschedule-btn').forEach(button => {                 button.addEventListener('click', function () {                     const appointmentId = this.dataset.appointmentId;                     const serviceId = this.dataset.serviceId;                     const currentDate = this.dataset.currentDate;
                 document.getElementById('reschedule_appointment_id').value = appointmentId; document.getElementById('reschedule_service_id').value = serviceId; rescheduleDateIn                                                             put.value = currentDate;
@@ -3037,21 +2396,21 @@
                             <div class="col-md-4">
                                 <div class="p-3 border rounded bg-light text-center h-100">
                                     <div class="text-uppercase small fw-bold text-primary mb-2">Total Users</div>
-                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_users }}</div>
+                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_users ?? 0 }}</div>
                                 </div>
                             </div>
                             @if(\App\Helpers\ModuleHelper::staffEnabled())
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded bg-light text-center h-100">
                                         <div class="text-uppercase small fw-bold text-success mb-2">Active Employees</div>
-                                        <div class="h3 mb-0 fw-bold text-gray-800">{{ $active_employees }}</div>
+                                        <div class="h3 mb-0 fw-bold text-gray-800">{{ $active_employees ?? 0 }}</div>
                                     </div>
                                 </div>
                             @endif
                             <div class="col-md-4">
                                 <div class="p-3 border rounded bg-light text-center h-100">
                                     <div class="text-uppercase small fw-bold text-info mb-2">Total Roles</div>
-                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_roles }}</div>
+                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_roles ?? 0 }}</div>
                                 </div>
                             </div>
                         </div>
@@ -3067,16 +2426,16 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            <a href="{{ route('admin.salon-settings.index', ['salon_slug' => $salon->slug]) }}"
+                            <a href="{{ route('admin.salon-settings.index', ['salon_slug' => $dashSalonSlug]) }}"
                                 class="list-group-item list-group-item-action px-4 py-3 border-0">
                                 <i class="fas fa-cog me-3 text-muted"></i>System Settings
                             </a>
-                            <a href="{{ route('admin.roles.index') }}"
+                            <a href="{{ route('admin.roles.index', ['salon_slug' => $dashSalonSlug]) }}"
                                 class="list-group-item list-group-item-action px-4 py-3 border-0 bg-light">
                                 <i class="fas fa-user-tag me-3 text-muted"></i>Manage Roles
                             </a>
                             @if(\App\Helpers\ModuleHelper::staffEnabled())
-                                <a href="{{ route('admin.employees.index') }}"
+                                <a href="{{ route('admin.employees.index', ['salon_slug' => $dashSalonSlug]) }}"
                                     class="list-group-item list-group-item-action px-4 py-3 border-0">
                                     <i class="fas fa-users me-3 text-muted"></i>Manage Employees
                                 </a>
@@ -3102,7 +2461,7 @@
                                         <div class="col-md-4">
                                             <div class="p-3 border rounded bg-light text-center h-100">
                                                 <div class="text-uppercase small fw-bold text-info mb-2">Today's Appts</div>
-                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $today_appointments }}</div>
+                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $today_appointments ?? 0 }}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -3110,7 +2469,7 @@
                                         <div class="col-md-4">
                                             <div class="p-3 border rounded bg-light text-center h-100">
                                                 <div class="text-uppercase small fw-bold text-primary mb-2">Total Services</div>
-                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_services }}</div>
+                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_services ?? 0 }}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -3118,7 +2477,7 @@
                                         <div class="col-md-4">
                                             <div class="p-3 border rounded bg-light text-center h-100">
                                                 <div class="text-uppercase small fw-bold text-warning mb-2">Total Customers</div>
-                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_customers }}</div>
+                                                <div class="h3 mb-0 fw-bold text-gray-800">{{ $total_customers ?? 0 }}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -3136,19 +2495,19 @@
                             <div class="card-body p-0">
                                 <div class="list-group list-group-flush">
                                     @can('salon.manage_settings')
-                                        <a href="{{ route('admin.salon-settings.index') }}"
+                                        <a href="{{ route('admin.salon-settings.index', ['salon_slug' => $dashSalonSlug]) }}"
                                             class="list-group-item list-group-item-action px-4 py-3 border-0">
                                             <i class="fas fa-cog me-3 text-muted"></i>Salon Settings
                                         </a>
                                     @endcan
                                     @if(\App\Helpers\ModuleHelper::staffEnabled())
-                                        <a href="{{ route('admin.staff.index') }}"
+                                        <a href="{{ route('admin.staff.index', ['salon_slug' => $dashSalonSlug]) }}"
                                             class="list-group-item list-group-item-action px-4 py-3 border-0">
                                             <i class="fas fa-user-tie me-3 text-muted"></i>Add Staff
                                         </a>
                                     @endif
                                     @if(\App\Helpers\ModuleHelper::customersEnabled())
-                                        <a href="{{ route('admin.customers.create') }}"
+                                        <a href="{{ route('admin.customers.create', ['salon_slug' => $dashSalonSlug]) }}"
                                             class="list-group-item list-group-item-action px-4 py-3 border-0">
                                             <i class="fas fa-user-plus me-3 text-muted"></i>Add Customer
                                         </a>
@@ -3293,19 +2652,19 @@
                                     <div class="text-uppercase small fw-bold text-info mb-2">
                                         {{ $dateRange == 'today' ? "Today's" : "Selected Period" }} Tasks
                                     </div>
-                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $today_tasks }}</div>
+                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $today_tasks ?? 0 }}</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="p-3 border rounded bg-light text-center h-100">
                                     <div class="text-uppercase small fw-bold text-success mb-2">Completed</div>
-                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $completed_tasks }}</div>
+                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $completed_tasks ?? 0 }}</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="p-3 border rounded bg-light text-center h-100">
                                     <div class="text-uppercase small fw-bold text-warning mb-2">Pending</div>
-                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $pending_tasks }}</div>
+                                    <div class="h3 mb-0 fw-bold text-gray-800">{{ $pending_tasks ?? 0 }}</div>
                                 </div>
                             </div>
                         </div>
@@ -3610,7 +2969,7 @@
                         $('#assignTime').html('<option value="">Loading...</option>').prop('disabled', true);
 
                         $.ajax({
-                            url: "{{ route('admin.bookings.available-slots') }}",
+                            url: "{{ route('admin.bookings.available-slots', ['salon_slug' => $dashSalonSlug ?? request()->route('salon_slug') ?? optional(auth()->user()?->salon)->slug ?? 'default']) }}",
                             method: 'GET',
                             data: { staff_id: staffId, date: date },
                             success: function (response) {
@@ -3651,7 +3010,7 @@
                     btn.prop('disabled', true).text('Assigning...');
 
                     $.ajax({
-                        url: "{{ route('admin.bookings.assign', ['booking' => 0]) }}".replace('/0/assign', '/' + bookingId + '/assign'),
+                        url: "{{ route('admin.bookings.assign', ['salon_slug' => $dashSalonSlug ?? 'default', 'booking' => 0]) }}".replace('/0/assign', '/' + bookingId + '/assign'),
                         method: 'POST',
                         data: {
                             _token: "{{ csrf_token() }}",

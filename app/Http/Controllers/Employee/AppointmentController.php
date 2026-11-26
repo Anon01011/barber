@@ -45,11 +45,11 @@ class AppointmentController extends Controller
                 ], 403);
             }
 
-            // SECURITY: Verify that this booking is assigned to this employee, or the user is an admin/manager.
-            // If the appointment is unassigned (staff_id is null) or assigned to another staff member, ordinary barbers are denied access.
+            // SECURITY: Verify that this booking is assigned to this employee, is available for claim/assignment, or the user is an admin/manager.
             $isAssignedToUser = $booking->staff_id !== null && ((int)$booking->staff_id === (int)$user->id);
-            if (!$isAssignedToUser && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
-                Log::warning('Employee attempted to access unassigned booking or booking assigned to another staff member', [
+            $isAvailableForClaim = $booking->staff_id === null && in_array($booking->staff_assignment_status, ['pending', 'rejected']) && $booking->status === 'pending';
+            if (!$isAssignedToUser && !$isAvailableForClaim && !$user->hasAnyRole(['super_admin', 'salon_admin', 'manager'])) {
+                Log::warning('Employee attempted to access booking assigned to another staff member', [
                     'user_id' => $user->id,
                     'booking_staff_id' => $booking->staff_id,
                     'booking_id' => $booking->id
@@ -267,6 +267,17 @@ class AppointmentController extends Controller
 
             DB::commit();
 
+            // Notify salon admins that an appointment was rejected and is awaiting reassignment
+            try {
+                $booking->load(['customer', 'service', 'salon']);
+                app(\App\Services\NotificationService::class)->notifySalonAdmins(
+                    $booking, 
+                    'updated'
+                );
+            } catch (\Exception $ne) {
+                Log::warning('Could not notify salon admins of appointment rejection: ' . $ne->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Appointment accepted successfully.',
@@ -369,6 +380,17 @@ class AppointmentController extends Controller
             ]);
 
             DB::commit();
+
+            // Notify salon admins that an appointment was rejected and is awaiting reassignment
+            try {
+                $booking->load(['customer', 'service', 'salon']);
+                app(\App\Services\NotificationService::class)->notifySalonAdmins(
+                    $booking, 
+                    'updated'
+                );
+            } catch (\Exception $ne) {
+                Log::warning('Could not notify salon admins of appointment rejection: ' . $ne->getMessage());
+            }
 
             return response()->json([
                 'success' => true,

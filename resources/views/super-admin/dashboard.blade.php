@@ -1,29 +1,76 @@
 @extends('layouts.super-admin')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/saas-dashboard.css') }}?v={{ file_exists(public_path('css/saas-dashboard.css')) ? filemtime(public_path('css/saas-dashboard.css')) : '1.0' }}">
+@endpush
+
 @section('content')
     <div class="container-fluid py-3">
         <!-- Command Center Header -->
-        <div class="row align-items-center mb-4 g-3">
+        <div class="row align-items-center mb-3 g-3">
             <div class="col-md-4">
-                <h1 class="h4 mb-0 text-gray-800 font-weight-bold">Command Center</h1>
-                <p class="text-muted x-small mb-0">Strategic control and real-time operations.</p>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-sm bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h1 class="h4 mb-0 text-gray-800 font-weight-bold">Command Center</h1>
+                        <p class="text-muted x-small mb-0">Platform oversight, analytics &amp; multi-tenant administration.</p>
+                    </div>
+                </div>
             </div>
             <div class="col-md-5">
-                <form action="{{ route('admin.salons.index') }}" method="GET" class="input-group input-group-sm shadow-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search salons, owners, or license keys..." value="{{ request('search') }}">
-                    <button class="btn btn-primary px-3" type="submit">Search</button>
+                <form action="{{ route('admin.salons.index') }}" method="GET" class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden border">
+                    <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-0 ps-1" placeholder="Search salons, owners, license keys, or emails..." value="{{ request('search') }}">
+                    <button class="btn btn-primary px-3 rounded-0 fw-semibold" type="submit">Search</button>
                 </form>
             </div>
             <div class="col-md-3 text-end">
                 <div class="d-flex gap-2 justify-content-end">
-                    <button onclick="window.location.reload()" class="btn btn-white btn-xs shadow-sm border px-3">
+                    <button onclick="window.location.reload()" class="btn btn-white btn-xs shadow-sm border px-3 rounded-pill fw-semibold">
                         <i class="fas fa-sync-alt fa-sm text-primary me-1"></i> Refresh
                     </button>
-                    <a href="{{ route('admin.saas.reports.index') }}" class="btn btn-primary btn-xs shadow-sm border-0 px-3">
+                    <a href="{{ route('admin.saas.reports.index') }}" class="btn btn-primary btn-xs shadow-sm border-0 px-3 rounded-pill fw-semibold">
                         <i class="fas fa-chart-pie fa-sm me-1"></i> Reports
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Quick Navigation Toolbar -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 py-2 px-3 bg-white rounded-3 shadow-sm border">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-muted text-uppercase fw-bold x-small me-1"><i class="fas fa-compass me-1 text-primary"></i> Quick Access:</span>
+                <a href="{{ route('admin.plans.index') }}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill quick-action-pill text-dark text-decoration-none">
+                    <i class="fas fa-tags text-primary me-1"></i> Subscription Plans
+                </a>
+                <a href="{{ route('admin.salons.index') }}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill quick-action-pill text-dark text-decoration-none">
+                    <i class="fas fa-store text-success me-1"></i> Salon Tenants
+                </a>
+                <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill quick-action-pill text-dark text-decoration-none">
+                    <i class="fas fa-id-card text-info me-1"></i> Active Subscriptions
+                </a>
+                <a href="{{ route('admin.payments.index') }}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill quick-action-pill text-dark text-decoration-none">
+                    <i class="fas fa-receipt text-amber-accessible me-1"></i> Payment Approvals
+                    @if(!empty($stats['pending_payments']) && $stats['pending_payments'] > 0)
+                        <span class="badge badge-warning-accessible ms-1 rounded-pill" style="font-size: 0.65rem;">{{ $stats['pending_payments'] }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.system-settings.index') }}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill quick-action-pill text-dark text-decoration-none">
+                    <i class="fas fa-sliders-h text-secondary me-1"></i> System Settings
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('admin.salons.create') }}" class="btn btn-sm btn-outline-success py-1 px-3 rounded-pill fw-semibold">
+                    <i class="fas fa-plus me-1"></i> Add Salon
+                </a>
+                <a href="{{ route('admin.plans.create') }}" class="btn btn-sm btn-primary py-1 px-3 rounded-pill fw-semibold shadow-sm">
+                    <i class="fas fa-plus me-1"></i> New Plan
+                </a>
+                <span class="badge bg-success-light text-success fw-bold px-2 py-1 rounded-pill x-small">
+                    <i class="fas fa-circle fa-xs me-1 text-success"></i> SaaS Live
+                </span>
             </div>
         </div>
 
@@ -69,7 +116,7 @@
                 <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                     <div class="card-body p-2 p-md-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase">Trial Conv.</div>
+                            <div class="text-xs font-weight-bold text-amber-accessible text-uppercase">Trial Conv.</div>
                             <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Percentage of trial users who upgraded to a paid plan within the last 90 days."></i>
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($trialConversionRate, 1) }}%</div>
@@ -90,14 +137,14 @@
                 </div>
             </div>
             <div class="col-6 col-md-4 col-xl-2">
-                <div class="card border-0 shadow-sm h-100 overflow-hidden text-white" style="border-radius: 12px; background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 12px; border-left: 3px solid #4e73df !important;">
                     <div class="card-body p-2 p-md-3 position-relative">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div class="text-xs font-weight-bold text-uppercase opacity-75">Forecast</div>
-                            <i class="fas fa-info-circle text-white-50 x-small" data-bs-toggle="tooltip" title="Projected total revenue for the current month based on historical trends and current growth."></i>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase">Forecast</div>
+                            <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Projected total revenue for the current month based on historical trends and current growth."></i>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold">{{ system_currency_symbol() }}{{ number_format($stats['forecasted_revenue'] ?? 0, 2) }}</div>
-                        <i class="fas fa-magic position-absolute" style="right: -5px; bottom: -5px; font-size: 2.5rem; opacity: 0.1;"></i>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ system_currency_symbol() }}{{ number_format($stats['forecasted_revenue'] ?? 0, 2) }}</div>
+                        <div class="mt-1 x-small text-primary font-weight-bold"><i class="fas fa-magic me-1"></i> Projected MTD</div>
                     </div>
                 </div>
             </div>
@@ -107,9 +154,9 @@
         <div class="row g-3 mb-3">
             <!-- Pending Approvals -->
             <div class="col-lg-3">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #f6c23e !important;">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #d97706 !important;">
                     <div class="card-header bg-transparent border-0 py-2">
-                        <h6 class="m-0 font-weight-bold text-warning small d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-amber-accessible small d-flex justify-content-between align-items-center">
                             Pending Approvals
                             <i class="fas fa-info-circle text-muted opacity-50" data-bs-toggle="tooltip" title="Payments waiting for manual verification and approval by a super-admin."></i>
                         </h6>
@@ -119,7 +166,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['pending_payments'] }}</div>
                             <div class="x-small text-muted">{{ system_currency_symbol() }}{{ number_format($stats['pending_amount'], 2) }} Pending</div>
                         </div>
-                        <a href="{{ route('admin.payments.index') }}?status=pending" class="btn btn-xs btn-warning text-white font-weight-bold">Review</a>
+                        <a href="{{ route('admin.payments.index') }}?status=pending" class="btn btn-xs btn-warning-accessible">Review</a>
                     </div>
                 </div>
             </div>
@@ -137,7 +184,7 @@
                         <div class="row text-center g-0">
                             <div class="col-4 border-end"><div class="small font-weight-bold text-gray-800">{{ $subscriptionHealth['paid'] }}</div><div class="x-small text-muted">Paid</div></div>
                             <div class="col-4 border-end"><div class="small font-weight-bold text-gray-800">{{ $subscriptionHealth['trial'] }}</div><div class="x-small text-muted">Trial</div></div>
-                            <div class="col-4"><div class="small font-weight-bold text-warning">{{ $subscriptionHealth['expiring_soon'] }}</div><div class="x-small text-muted">Expiring</div></div>
+                            <div class="col-4"><div class="small font-weight-bold text-amber-accessible">{{ $subscriptionHealth['expiring_soon'] }}</div><div class="x-small text-muted">Expiring</div></div>
                         </div>
                     </div>
                 </div>
@@ -266,9 +313,9 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="p-3 rounded bg-light border-start border-warning">
+                                        <div class="p-3 rounded bg-light border-start" style="border-left: 4px solid #d97706 !important;">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <div class="text-xs font-weight-bold text-warning text-uppercase">Pending Approvals</div>
+                                                <div class="text-xs font-weight-bold text-amber-accessible text-uppercase">Pending Approvals</div>
                                                 <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Payments waiting for manual verification and approval."></i>
                                             </div>
                                             <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $stats['pending_payments'] }}</div>
@@ -280,7 +327,7 @@
                                             <div class="text-xs font-weight-bold text-gray-800 text-uppercase">Quick Actions</div>
                                             <div class="d-flex gap-1">
                                                 <a href="{{ route('admin.salons.create') }}" class="btn btn-xs btn-primary" title="Add Salon"><i class="fas fa-plus"></i></a>
-                                                <a href="{{ route('admin.payments.index') }}?status=pending" class="btn btn-xs btn-warning text-white" title="Approve"><i class="fas fa-check"></i></a>
+                                                <a href="{{ route('admin.payments.index') }}?status=pending" class="btn btn-xs btn-warning-accessible" title="Approve"><i class="fas fa-check"></i></a>
                                                 <a href="{{ route('admin.system-settings.index') }}" class="btn btn-xs btn-light border" title="Settings"><i class="fas fa-cog"></i></a>
                                             </div>
                                         </div>
@@ -330,7 +377,7 @@
                                     </div>
                                     <div class="col-lg-3">
                                         <h6 class="font-weight-bold text-gray-800 mb-3 d-flex justify-content-between align-items-center">
-                                            <span><i class="fas fa-hourglass-half text-warning me-2"></i> Expiring Soon</span>
+                                            <span><i class="fas fa-hourglass-half text-amber-accessible me-2"></i> Expiring Soon</span>
                                             <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Subscriptions ending within the next 30 days that require renewal attention."></i>
                                         </h6>
                                         <div class="table-responsive">
@@ -341,7 +388,7 @@
                                                         <tr>
                                                             <td class="font-weight-bold">{{ $sub->salon->name }}</td>
                                                             <td><span class="badge bg-info-light text-info">{{ $sub->plan->name }}</span></td>
-                                                            <td class="text-end text-warning font-weight-bold">{{ $sub->ends_at->diffForHumans() }}</td>
+                                                            <td class="text-end text-amber-accessible font-weight-bold">{{ $sub->ends_at->diffForHumans() }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr><td colspan="3" class="text-center py-4 text-muted">No subscriptions expiring soon.</td></tr>
@@ -400,9 +447,9 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="p-3 rounded bg-light border-start border-warning">
+                                        <div class="p-3 rounded bg-light border-start" style="border-left: 4px solid #d97706 !important;">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <div class="text-xs font-weight-bold text-warning text-uppercase">Trending Plan</div>
+                                                <div class="text-xs font-weight-bold text-amber-accessible text-uppercase">Trending Plan</div>
                                                 <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="The subscription plan with the highest number of new sign-ups in the last 30 days."></i>
                                             </div>
                                             <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $topGrowingPlans->first()->name ?? 'N/A' }}</div>
@@ -478,9 +525,9 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="p-3 rounded bg-light border-start border-warning">
+                                        <div class="p-3 rounded bg-light border-start" style="border-left: 4px solid #d97706 !important;">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <div class="text-xs font-weight-bold text-warning text-uppercase">Expiring Trials (7d)</div>
+                                                <div class="text-xs font-weight-bold text-amber-accessible text-uppercase">Expiring Trials (7d)</div>
                                                 <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Trial subscriptions ending in the next 7 days - high priority for conversion."></i>
                                             </div>
                                             <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $expiringTrials->count() }}</div>
@@ -521,7 +568,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
-                                        <h6 class="font-weight-bold text-warning mb-3 d-flex justify-content-between align-items-center">
+                                        <h6 class="font-weight-bold text-amber-accessible mb-3 d-flex justify-content-between align-items-center">
                                             <span><i class="fas fa-hourglass-half me-2"></i> Expiring Trials</span>
                                             <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Detailed list of salons whose trials are ending soon."></i>
                                         </h6>
@@ -532,8 +579,8 @@
                                                     @forelse($expiringTrials as $trial)
                                                         <tr>
                                                             <td class="font-weight-bold">{{ $trial->salon->name }}</td>
-                                                            <td class="text-warning font-weight-bold">{{ $trial->trial_ends_at->diffForHumans() }}</td>
-                                                            <td class="text-end"><a href="{{ route('admin.salons.show', $trial->salon ?? $trial->salon_id) }}" class="btn btn-xs btn-outline-warning">Convert</a></td>
+                                                            <td class="text-amber-accessible font-weight-bold">{{ $trial->trial_ends_at->diffForHumans() }}</td>
+                                                            <td class="text-end"><a href="{{ route('admin.salons.show', $trial->salon ?? $trial->salon_id) }}" class="btn btn-xs btn-warning-accessible">Convert</a></td>
                                                         </tr>
                                                     @empty
                                                         <tr><td colspan="3" class="text-center py-3 text-muted">No trials expiring soon.</td></tr>
@@ -561,7 +608,7 @@
                                                     @foreach($lowRatingSalons as $salon)
                                                         <tr>
                                                             <td class="font-weight-bold text-danger">{{ $salon->name }}</td>
-                                                            <td><span class="badge bg-warning-light text-warning">Low Rating</span></td>
+                                                            <td><span class="badge badge-warning-accessible">Low Rating</span></td>
                                                             <td class="text-end"><a href="{{ route('admin.salons.show', $salon) }}" class="btn btn-xs btn-light rounded-circle"><i class="fas fa-chevron-right"></i></a></td>
                                                         </tr>
                                                     @endforeach
@@ -574,6 +621,33 @@
 
                             <!-- TAB 4: SYSTEM & AUDIT (Deep Tech Infrastructure) -->
                             <div class="tab-pane fade" id="hub-system">
+                                <!-- System Health & Database Safety Banner -->
+                                <div class="p-3 mb-4 rounded-3 border bg-white shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="saas-avatar saas-avatar-green" style="width: 44px; height: 44px;">
+                                            <i class="fas fa-heartbeat fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h6 class="mb-0 fw-bold text-dark">System Health &amp; Runtime Database Safety</h6>
+                                                <span class="chip-pill chip-pill-success"><i class="fas fa-check-circle"></i> Standby Replica Active</span>
+                                            </div>
+                                            <p class="text-muted x-small mb-0">Total DB Size: <strong>{{ number_format($dbPerformance['size_mb'] ?? 0, 2) }} MB</strong> &bull; Log File: <strong>{{ $logStats['size'] ?? 0 }} MB</strong> &bull; Total Tables: <strong>{{ $systemHealth['storage_usage']['tables'] ?? 68 }}</strong></p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <form action="{{ route('admin.system-health.backup.create') }}" method="POST" class="d-inline m-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                                <i class="fas fa-database me-1"></i> Create DB Snapshot Now
+                                            </button>
+                                        </form>
+                                        <a href="{{ route('admin.system-health.index') }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm">
+                                            <i class="fas fa-chart-line me-1"></i> Dedicated System Health Page &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+
                                 <!-- Infrastructure Health Row -->
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-3">
@@ -593,11 +667,11 @@
                                         <div class="p-3 rounded bg-light border-start border-info">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <div class="text-xs font-weight-bold text-info text-uppercase">Log Monitoring</div>
-                                                <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Current size of system logs and count of errors/exceptions in the last 500 lines."></i>
+                                                <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Current size of system logs and count of errors/exceptions in the log file."></i>
                                             </div>
                                             <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $logStats['size'] }} MB</div>
                                             <div class="x-small text-{{ $logStats['errors'] > 0 ? 'warning' : 'muted' }} font-weight-bold">
-                                                <i class="fas fa-bug me-1"></i> {{ $logStats['errors'] }} Errors detected (last 500 lines)
+                                                <i class="fas fa-bug me-1"></i> {{ $logStats['errors'] }} Errors detected in latest log
                                             </div>
                                         </div>
                                     </div>
@@ -607,17 +681,17 @@
                                                 <div class="text-xs font-weight-bold text-success text-uppercase">DB Performance</div>
                                                 <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Real-time database connection count and total system uptime."></i>
                                             </div>
-                                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $dbPerformance['connections'] }} Connections</div>
-                                            <div class="x-small text-muted">Uptime: {{ round($dbPerformance['uptime'] / 3600, 1) }} Hours</div>
+                                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $dbPerformance['connections'] ?? 0 }} Connections ({{ number_format($dbPerformance['size_mb'] ?? 0, 2) }} MB)</div>
+                                            <div class="x-small text-muted">Uptime: {{ round(($dbPerformance['uptime'] ?? 0) / 3600, 1) }} Hours</div>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="p-3 rounded bg-light border-start border-warning">
+                                        <div class="p-3 rounded bg-light border-start" style="border-left: 4px solid #d97706 !important;">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <div class="text-xs font-weight-bold text-warning text-uppercase">Active Sessions</div>
+                                                <div class="text-xs font-weight-bold text-amber-accessible text-uppercase">Active Sessions</div>
                                                 <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Number of users (admins, staff, customers) active on the platform in the last 2 hours."></i>
                                             </div>
-                                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ number_format($activeSessionsCount) }}</div>
+                                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ number_format($activeSessionsCount ?? 0) }}</div>
                                             <div class="x-small text-muted">Last 2 hours</div>
                                         </div>
                                     </div>
@@ -633,9 +707,9 @@
                                             <table class="table table-hover align-middle x-small">
                                                 <thead class="bg-light"><tr><th>Directory</th><th class="text-end">Size</th></tr></thead>
                                                 <tbody>
-                                                    <tr><td><i class="fas fa-upload text-muted me-2"></i> Public Uploads</td><td class="text-end font-weight-bold">{{ $storageBreakdown['uploads'] }} MB</td></tr>
-                                                    <tr><td><i class="fas fa-file-alt text-muted me-2"></i> System Logs</td><td class="text-end font-weight-bold">{{ $storageBreakdown['logs'] }} MB</td></tr>
-                                                    <tr><td><i class="fas fa-bolt text-muted me-2"></i> Framework Cache</td><td class="text-end font-weight-bold">{{ $storageBreakdown['cache'] }} MB</td></tr>
+                                                    <tr><td><i class="fas fa-upload text-muted me-2"></i> Public Uploads</td><td class="text-end font-weight-bold">{{ $storageBreakdown['uploads'] ?? 0 }} MB</td></tr>
+                                                    <tr><td><i class="fas fa-file-alt text-muted me-2"></i> System Logs</td><td class="text-end font-weight-bold">{{ $storageBreakdown['logs'] ?? 0 }} MB</td></tr>
+                                                    <tr><td><i class="fas fa-bolt text-muted me-2"></i> Framework Cache</td><td class="text-end font-weight-bold">{{ $storageBreakdown['cache'] ?? 0 }} MB</td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -648,10 +722,10 @@
                                             <table class="table table-hover align-middle x-small">
                                                 <thead class="bg-light"><tr><th>Table Name</th><th class="text-end">Size (MB)</th></tr></thead>
                                                 <tbody>
-                                                    @foreach($dbTableSizes as $table)
+                                                    @foreach($dbTableSizes ?? [] as $table)
                                                         <tr>
-                                                            <td class="font-weight-bold">{{ $table->name }}</td>
-                                                            <td class="text-end font-weight-bold text-info">{{ number_format($table->size, 2) }}</td>
+                                                            <td class="font-weight-bold">{{ $table->name ?? 'N/A' }}</td>
+                                                            <td class="text-end font-weight-bold text-info">{{ number_format($table->size_mb ?? $table->size ?? 0, 2) }}</td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
@@ -663,9 +737,9 @@
                                             <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Core system versions and total database queries executed."></i>
                                         </h6>
                                         <div class="list-group list-group-flush x-small">
-                                            <div class="list-group-item d-flex justify-content-between px-0"><span>PHP Version</span><span class="font-weight-bold">{{ $systemHealth['php_version'] }}</span></div>
-                                            <div class="list-group-item d-flex justify-content-between px-0"><span>Laravel Version</span><span class="font-weight-bold">{{ $systemHealth['laravel_version'] }}</span></div>
-                                            <div class="list-group-item d-flex justify-content-between px-0"><span>Total Queries</span><span class="font-weight-bold">{{ number_format($dbPerformance['queries']) }}</span></div>
+                                            <div class="list-group-item d-flex justify-content-between px-0"><span>PHP Version</span><span class="font-weight-bold">{{ $systemHealth['php_version'] ?? PHP_VERSION }}</span></div>
+                                            <div class="list-group-item d-flex justify-content-between px-0"><span>Laravel Version</span><span class="font-weight-bold">{{ $systemHealth['laravel_version'] ?? app()->version() }}</span></div>
+                                            <div class="list-group-item d-flex justify-content-between px-0"><span>Total Queries</span><span class="font-weight-bold">{{ number_format($dbPerformance['queries'] ?? 0) }}</span></div>
                                         </div>
                                         <form action="{{ route('admin.system-settings.clear-cache') }}" method="POST" class="mt-4">
                                             @csrf
@@ -678,7 +752,7 @@
                                             <i class="fas fa-info-circle text-muted x-small" data-bs-toggle="tooltip" title="Chronological log of all administrative actions performed on the platform."></i>
                                         </h6>
                                         <div class="timeline p-2">
-                                            @forelse($activityFeed as $log)
+                                            @forelse($activityFeed ?? [] as $log)
                                                 <div class="timeline-item pb-3 position-relative">
                                                     <div class="timeline-marker bg-primary"></div>
                                                     <div class="timeline-content ps-4">
@@ -704,109 +778,12 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Bootstrap Tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
-
-            if (typeof Chart === 'undefined') return;
-
-            Chart.defaults.font.family = 'Nunito, -apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
-            Chart.defaults.color = '#858796';
-
-            // Revenue Chart
-            const revenueCtx = document.getElementById('revenueChart');
-            if (revenueCtx) {
-                new Chart(revenueCtx.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: {!! json_encode(collect($revenueTrend)->pluck('month')) !!},
-                        datasets: [{
-                            label: 'Revenue',
-                            data: {!! json_encode(collect($revenueTrend)->pluck('revenue')) !!},
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78, 115, 223, 0.05)',
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#4e73df',
-                            pointHoverRadius: 6,
-                        }]
-                    },
-                    options: {
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, grid: { borderDash: [2], color: '#f8f9fc' }, ticks: { font: { size: 11 } } },
-                            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
-                        }
-                    }
-                });
-            }
-
-            // Plan Chart
-            const planCtx = document.getElementById('planChart');
-            if (planCtx) {
-                const planData = {!! json_encode($planDistribution) !!};
-                const chart = new Chart(planCtx.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: planData.map(p => p.name),
-                        datasets: [{
-                            data: planData.map(p => p.count),
-                            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                            borderWidth: 0,
-                        }]
-                    },
-                    options: {
-                        maintainAspectRatio: false,
-                        cutout: '80%',
-                        plugins: { legend: { display: false } }
-                    }
-                });
-
-                const legendContainer = document.getElementById('planLegend');
-                if (legendContainer) {
-                    planData.forEach((p, i) => {
-                        const color = chart.data.datasets[0].backgroundColor[i];
-                        legendContainer.innerHTML += `<span class="me-2"><i class="fas fa-circle me-1" style="color: ${color}"></i> ${p.name}</span>`;
-                    });
-                }
-            }
-        });
-    </script>
+        <script>
+            window.saasDashboardConfig = {
+                revenueTrend: {!! json_encode($revenueTrend ?? ['labels' => [], 'data' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                planDistribution: {!! json_encode($planDistribution ?? ['labels' => [], 'data' => [], 'colors' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}
+            };
+        </script>
+        <script src="{{ asset('js/saas-dashboard.js') }}"></script>
     @endpush
-
-    <style>
-        .bg-primary-light { background-color: rgba(78, 115, 223, 0.1); }
-        .bg-success-light { background-color: rgba(28, 200, 138, 0.1); }
-        .bg-info-light { background-color: rgba(54, 185, 204, 0.1); }
-        .bg-danger-light { background-color: rgba(231, 74, 59, 0.1); }
-        .bg-warning-light { background-color: rgba(246, 194, 62, 0.1); }
-        .text-purple { color: #6f42c1; }
-
-        .x-small { font-size: 0.75rem; }
-        .btn-xs { padding: 0.2rem 0.5rem; font-size: 0.7rem; border-radius: 4px; }
-        .btn-white { background: #fff; border: 1px solid #e3e6f0; color: #858796; }
-        
-        .custom-data-tabs { border-bottom: 2px solid #f8f9fc; }
-        .custom-data-tabs .nav-link { border: none; color: #858796; font-weight: 700; font-size: 0.85rem; transition: all 0.3s; }
-        .custom-data-tabs .nav-link:hover { background: #f8f9fc; color: #4e73df; }
-        .custom-data-tabs .nav-link.active { color: #4e73df; border-bottom: 3px solid #4e73df; background: transparent; }
-
-        .timeline-item::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1px; background: #e3e6f0; }
-        .timeline-marker { position: absolute; left: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; z-index: 1; border: 2px solid #fff; }
-
-        .card { border: none; }
-        .table thead th { border-top: none; border-bottom: 1px solid #f8f9fc; padding: 0.75rem 0.5rem; color: #858796; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .table td { border-top: 1px solid #f8f9fc; padding: 0.75rem 0.5rem; }
-        
-        .border-start { border-left-width: 3px !important; }
-        
-        .fa-info-circle { cursor: help; opacity: 0.6; transition: opacity 0.2s; }
-        .fa-info-circle:hover { opacity: 1; color: #4e73df !important; }
-    </style>
 @endsection

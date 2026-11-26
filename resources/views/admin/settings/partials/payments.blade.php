@@ -257,6 +257,49 @@
                 </div>
                 <p class="text-muted small mt-1">Manual language switch at checkout.</p>
             </div>
+
+            <!-- Thermal Printer Paper Size Selection -->
+            <div class="col-12 mt-3 pt-3 border-top">
+                <label class="form-label fw-semibold small text-uppercase text-secondary mb-2">
+                    <i class="fas fa-print me-1 text-primary"></i> Default Receipt Printer Paper Size
+                </label>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="card p-3 h-100 cursor-pointer border {{ ($settings['pos_receipt_printer_width'] ?? '80mm') === '80mm' ? 'border-primary bg-primary bg-opacity-10' : '' }}" style="cursor: pointer; border-radius: 12px;">
+                            <div class="d-flex align-items-center">
+                                <input class="form-check-input me-3" type="radio" name="pos_receipt_printer_width" value="80mm" {{ ($settings['pos_receipt_printer_width'] ?? '80mm') === '80mm' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="fw-bold text-dark small">80mm Thermal (Standard)</div>
+                                    <div class="text-muted x-small">Recommended for POS roll printers (Epson, Star, Sunmi, Xprinter)</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="card p-3 h-100 cursor-pointer border {{ ($settings['pos_receipt_printer_width'] ?? '') === '58mm' ? 'border-primary bg-primary bg-opacity-10' : '' }}" style="cursor: pointer; border-radius: 12px;">
+                            <div class="d-flex align-items-center">
+                                <input class="form-check-input me-3" type="radio" name="pos_receipt_printer_width" value="58mm" {{ ($settings['pos_receipt_printer_width'] ?? '') === '58mm' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="fw-bold text-dark small">58mm Thermal (Mini)</div>
+                                    <div class="text-muted x-small">For compact portable / handheld wireless receipt printers</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="card p-3 h-100 cursor-pointer border {{ ($settings['pos_receipt_printer_width'] ?? '') === 'a4' ? 'border-primary bg-primary bg-opacity-10' : '' }}" style="cursor: pointer; border-radius: 12px;">
+                            <div class="d-flex align-items-center">
+                                <input class="form-check-input me-3" type="radio" name="pos_receipt_printer_width" value="a4" {{ ($settings['pos_receipt_printer_width'] ?? '') === 'a4' ? 'checked' : '' }}>
+                                <div>
+                                    <div class="fw-bold text-dark small">A4 Full Page / Office</div>
+                                    <div class="text-muted x-small">Standard laser / inkjet invoice sheet for full page printing</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <p class="text-muted small mt-2 mb-0">Receipt size adapts automatically when printing. You can also switch sizes on the fly from the receipt preview screen.</p>
+            </div>
         </div>
     </div>
 </div>

@@ -446,17 +446,8 @@ class GuestBookingController extends Controller
                         // Send WhatsApp
                         $this->notificationService->sendGroupBookingConfirmation($createdBookings);
 
-                        // Notify Staff/Admin
-                        $admins = User::role(['super_admin', 'salon_admin', 'manager'])
-                            ->where('salon_id', $salon->id)
-                            ->get();
-
-                        // Notify all assigned staff
-                        $assignedStaffIds = collect($createdBookings)->pluck('staff_id')->unique();
-                        $staffMembersToNotify = User::whereIn('id', $assignedStaffIds)->get();
-                        $admins = $admins->merge($staffMembersToNotify)->unique('id');
-
-                        Notification::send($admins, new BookingNotification($mainBooking, 'created'));
+                        // Notify Staff/Admin for this salon
+                        $this->notificationService->notifySalonAdmins($mainBooking, 'created');
                     }
                 } catch (\Exception $e) {
                     Log::warning('Failed to send booking confirmation email/notification', ['error' => $e->getMessage()]);
@@ -925,19 +916,8 @@ class GuestBookingController extends Controller
                 // Mail handled by BookingObserver
 
 
-                // Notify Staff/Admin
-                $admins = User::role(['super_admin', 'salon_admin', 'manager'])
-                    ->where('salon_id', $salon->id)
-                    ->get();
-
-                if ($booking->staff_id) {
-                    $staff = User::find($booking->staff_id);
-                    if ($staff) {
-                        $admins->push($staff);
-                    }
-                }
-
-                Notification::send($admins->unique('id'), new BookingNotification($booking, 'rescheduled'));
+                // Notify Staff/Admin for this salon
+                $this->notificationService->notifySalonAdmins($booking, 'rescheduled');
 
             } catch (\Exception $e) {
                 Log::warning('Failed to send reschedule email', ['error' => $e->getMessage()]);

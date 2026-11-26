@@ -1,0 +1,128 @@
+/**
+ * Customer Portal Dashboard Styles
+ * Fully Responsive for Mobile, Tablet & Desktop screens
+ */
+
+/* Star Rating Interactive Styling */
+.rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    gap: 4px;
+}
+.rating input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.rating input:focus-visible ~ label {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+.rating label {
+    cursor: pointer;
+    color: #e2e8f0;
+    padding: 0 0.2em;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+.rating label:hover {
+    transform: scale(1.2);
+}
+.rating input:checked ~ label,
+.rating label:hover,
+.rating label:hover ~ label {
+    color: #f59e0b !important;
+}
+
+/* Customer Stat Cards */
+.customer-stat-card {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 14px;
+}
+.customer-stat-card h3,
+.customer-stat-card h6 {
+    color: #0f172a !important;
+}
+.customer-stat-card h6.text-muted {
+    color: #64748b !important;
+}
+.customer-stat-card h3.text-success {
+    color: #10b981 !important;
+}
+.customer-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -5px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* White Card Contrast Enforcement (Prevents white text on white surfaces) */
+.card.bg-white,
+.card:not(.text-white):not(.loyalty-hero) {
+    background-color: #ffffff;
+    color: #0f172a;
+}
+.card.bg-white .card-title,
+.card.bg-white h5,
+.card.bg-white h6 {
+    color: #0f172a !important;
+}
+.list-group-item {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Time Slot Radio Cards */
+.slot-radio:checked + label {
+    background-color: var(--theme-accent, #c5a880) !important;
+    color: var(--theme-text-on-accent, #0b0f17) !important;
+    border-color: var(--theme-accent, #c5a880) !important;
+}
+
+/* Points Badge Styles */
+.points-badge-earned {
+    background-color: #d1fae5;
+    color: #065f46;
+    font-weight: 700;
+}
+.points-badge-redeemed {
+    background-color: #fee2e2;
+    color: #991b1b;
+    font-weight: 700;
+}
+.points-badge-adjusted {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    font-weight: 700;
+}
+
+/* Loyalty Hero Banner */
+.loyalty-hero {
+    background: linear-gradient(135deg, var(--theme-gradient-start, #0b0f17) 0%, var(--theme-sidebar, #1a2232) 60%, var(--theme-surface, #0f172a) 100%);
+    border: 1px solid var(--theme-border, rgba(197, 168, 128, 0.25));
+    border-radius: 16px;
+    color: #ffffff;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 575.98px) {
+    .customer-welcome-title {
+        font-size: 1.25rem !important;
+    }
+    .rating label {
+        min-width: 38px;
+        min-height: 38px;
+    }
+    .rating label i {
+        font-size: 1.8rem !important;
+    }
+}

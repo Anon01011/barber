@@ -12,6 +12,11 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         try {
+            if (app()->environment('production')) {
+                Log::warning('Skipping default demo admin seeding in production environment.');
+                return;
+            }
+
             // Super Admin (global, no salon required)
             $superAdmin = User::firstOrCreate(
                 ['email' => 'admin@fstqatar.com'],

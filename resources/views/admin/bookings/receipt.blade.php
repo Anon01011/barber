@@ -1,5 +1,13 @@
 @php
-    $arabicEnabled = $settings->get('pos_receipt_arabic', true, $booking->salon_id);
+    $salonId = $booking->salon_id;
+    $defaultPrinterWidth = $settings->get('pos_receipt_printer_width', '80mm', $salonId);
+    $printerWidth = request()->query('width', $defaultPrinterWidth);
+    if (!in_array($printerWidth, ['80mm', '58mm', 'a4'])) {
+        $printerWidth = '80mm';
+    }
+    $arabicEnabled = request()->has('arabic')
+        ? (bool)request()->query('arabic')
+        : $settings->get('pos_receipt_arabic', true, $salonId);
 
     // Calculate totals
     $subtotal = $bookings->sum('amount');
@@ -19,28 +27,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receipt #{{ $booking->id }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #000000;
-            line-height: 1.4;
-            background: #ffffff;
-            padding: 20px;
+            line-height: 1.35;
+            background: #f1f5f9;
+            padding: 24px 10px;
             margin: 0;
-            font-size: 14px;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
 
         .receipt-wrapper {
             width: 100%;
-            max-width: 600px;
+            @if($printerWidth === '58mm')
+                max-width: 250px;
+                font-size: 11.5px;
+                padding: 14px 10px;
+            @elseif($printerWidth === 'a4')
+                max-width: 680px;
+                font-size: 14px;
+                padding: 30px;
+            @else
+                max-width: 340px;
+                font-size: 12.5px;
+                padding: 18px 14px;
+            @endif
             margin: 0 auto;
-            background: #fff;
-            padding: 0 10px;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            position: relative;
         }
 
         .text-center {
@@ -84,20 +111,20 @@
         }
 
         .logo {
-            max-height: 60px;
+            max-height: 52px;
             width: auto;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             object-fit: contain;
         }
 
         .dashed-line {
-            border-bottom: 1px dashed #000;
-            margin: 15px 0;
+            border-bottom: 1px dashed #333333;
+            margin: 12px 0;
         }
 
         .solid-line {
-            border-bottom: 2px solid #000;
-            margin: 10px 0;
+            border-bottom: 2px solid #000000;
+            margin: 8px 0;
         }
 
         .flex-row {
@@ -110,69 +137,86 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: inherit;
         }
 
         th {
             text-align: left;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 1px solid #000;
             font-weight: 700;
         }
 
         td {
-            padding: 8px 0;
+            padding: 6px 0;
             vertical-align: top;
         }
 
         .dual-display {
             display: flex;
             flex-direction: column;
-            line-height: 1.2;
+            line-height: 1.25;
         }
 
         .dual-display.text-center {
             align-items: center;
+            text-align: center;
         }
 
         .dual-display.text-left {
             align-items: flex-start;
+            text-align: left;
         }
 
         .dual-display.text-right {
             align-items: flex-end;
+            text-align: right;
         }
 
-        .dual-display .ar {
-            font-size: 0.85em;
-            color: #444;
+        .dual-display .ar,
+        .ar-text {
+            font-size: 0.88em;
+            color: #475569;
             margin-top: 1px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Tajawal', 'Inter', Tahoma, sans-serif;
+            direction: rtl !important;
+            unicode-bidi: isolate;
+            text-align: inherit;
+        }
+
+        .dual-display .ar[dir="ltr"] {
+            direction: ltr !important;
+            unicode-bidi: embed;
         }
 
         .no-print {
-            margin-top: 20px;
+            margin-bottom: 18px;
             text-align: center;
         }
 
         .btn {
             display: inline-block;
-            padding: 10px 20px;
+            padding: 8px 18px;
             background: #000;
             color: #fff;
             text-decoration: none;
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 13px;
             font-weight: 600;
             border: none;
             cursor: pointer;
-            margin: 5px;
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: #e5e7eb;
-            color: #000;
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
         }
 
         .unpaid-sticker {
@@ -182,9 +226,9 @@
             transform: translate(-50%, -50%) rotate(-15deg);
             border: 4px solid #ef4444;
             color: #ef4444;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 900;
-            padding: 0.5rem 1rem;
+            padding: 0.4rem 0.8rem;
             text-transform: uppercase;
             opacity: 0.2;
             pointer-events: none;
@@ -192,7 +236,6 @@
             border-radius: 8px;
             letter-spacing: 2px;
             white-space: nowrap;
-            font-family: 'Inter', sans-serif;
         }
 
         @media print {
@@ -203,30 +246,95 @@
             }
 
             body {
-                padding: 0;
-                margin: 0;
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                width: 100% !important;
             }
 
             .receipt-wrapper {
-                max-width: 100%;
-                margin: 0 auto;
-                padding: 0 8mm;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 auto !important;
+                @if($printerWidth === '58mm')
+                    width: 58mm !important;
+                    max-width: 54mm !important;
+                    padding: 2mm 1mm !important;
+                    font-size: 10.5px !important;
+                @elseif($printerWidth === '80mm')
+                    width: 80mm !important;
+                    max-width: 76mm !important;
+                    padding: 2mm 2mm !important;
+                    font-size: 11.5px !important;
+                @else
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    padding: 8mm !important;
+                    font-size: 13px !important;
+                @endif
             }
 
             .no-print {
-                display: none;
+                display: none !important;
             }
 
             @page {
                 margin: 0;
-                size: auto;
+                @if($printerWidth === '58mm')
+                    size: 58mm auto;
+                @elseif($printerWidth === '80mm')
+                    size: 80mm auto;
+                @else
+                    size: auto;
+                @endif
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="receipt-wrapper" style="position: relative;">
+    <!-- Top Action & Paper Format Switcher Toolbar (Screen Only) -->
+    <div class="no-print" style="max-width: 680px; width: 100%; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;">
+        <button onclick="window.print()" class="btn" style="background: #0f172a; color: #ffffff; padding: 7px 18px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+            🖨️ Print Receipt
+        </button>
+
+        <!-- Thermal Paper Width Switcher -->
+        <div style="display: inline-flex; background: #e2e8f0; border-radius: 50px; padding: 3px; gap: 2px;">
+            <a href="?width=80mm{{ request()->has('arabic') ? '&arabic='.request('arabic') : '' }}" 
+               style="padding: 5px 12px; border-radius: 50px; text-decoration: none; font-size: 11.5px; font-weight: 600; color: {{ $printerWidth === '80mm' ? '#ffffff' : '#475569' }}; background: {{ $printerWidth === '80mm' ? '#0f172a' : 'transparent' }};">
+                80mm Thermal
+            </a>
+            <a href="?width=58mm{{ request()->has('arabic') ? '&arabic='.request('arabic') : '' }}" 
+               style="padding: 5px 12px; border-radius: 50px; text-decoration: none; font-size: 11.5px; font-weight: 600; color: {{ $printerWidth === '58mm' ? '#ffffff' : '#475569' }}; background: {{ $printerWidth === '58mm' ? '#0f172a' : 'transparent' }};">
+                58mm Mini
+            </a>
+            <a href="?width=a4{{ request()->has('arabic') ? '&arabic='.request('arabic') : '' }}" 
+               style="padding: 5px 12px; border-radius: 50px; text-decoration: none; font-size: 11.5px; font-weight: 600; color: {{ $printerWidth === 'a4' ? '#ffffff' : '#475569' }}; background: {{ $printerWidth === 'a4' ? '#0f172a' : 'transparent' }};">
+                A4 Sheet
+            </a>
+        </div>
+
+        <!-- Bilingual Toggle -->
+        <div style="display: inline-flex; background: #e2e8f0; border-radius: 50px; padding: 3px; gap: 2px;">
+            <a href="?arabic=1{{ request()->has('width') ? '&width='.request('width') : '' }}" 
+               style="padding: 5px 12px; border-radius: 50px; text-decoration: none; font-size: 11.5px; font-weight: 600; color: {{ $arabicEnabled ? '#ffffff' : '#475569' }}; background: {{ $arabicEnabled ? '#2563eb' : 'transparent' }};">
+                Bilingual (EN+AR)
+            </a>
+            <a href="?arabic=0{{ request()->has('width') ? '&width='.request('width') : '' }}" 
+               style="padding: 5px 12px; border-radius: 50px; text-decoration: none; font-size: 11.5px; font-weight: 600; color: {{ !$arabicEnabled ? '#ffffff' : '#475569' }}; background: {{ !$arabicEnabled ? '#2563eb' : 'transparent' }};">
+                English Only
+            </a>
+        </div>
+
+        <button onclick="window.close()" class="btn btn-secondary" style="padding: 7px 14px;">
+            Close
+        </button>
+    </div>
+
+    <div class="receipt-wrapper">
         @if($outstanding > 0)
             <div class="unpaid-sticker" style="border-color: #f59e0b; color: #f59e0b; opacity: 0.2;">PARTIAL PAYMENT</div>
         @elseif($booking->payment_status !== 'paid')
@@ -400,15 +508,17 @@
             @endif
         </div>
 
-        <div class="no-print">
-            <button onclick="window.print()" class="btn">Print Receipt</button>
-            <button onclick="window.close()" class="btn btn-secondary">Close</button>
+        <div class="no-print" style="margin-top: 15px; text-align: center;">
+            <button onclick="window.print()" class="btn" style="background: #0f172a; color: #fff; padding: 6px 14px; font-size: 12px;">🖨️ Print Receipt</button>
+            <button onclick="window.close()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Close</button>
         </div>
     </div>
     <script>
         window.onload = function () {
-            // Auto print when loaded
-            window.print();
+            // Auto print only if requested
+            if (new URLSearchParams(window.location.search).get('autoprint') === '1') {
+                window.print();
+            }
         }
     </script>
 </body>

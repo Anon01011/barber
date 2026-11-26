@@ -1,32 +1,70 @@
 @extends('layouts.app')
 
+@php
+    $salonSlug = $salonSlug ?? request()->route('salon_slug') ?? $salon?->slug ?? auth()->user()?->salon?->slug ?? session('current_salon_slug') ?? 'default';
+@endphp
+
 @section('content')
     <div class="container-fluid">
+        <!-- Client Portal Welcome Banner -->
+        <div class="row g-4 mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm text-white overflow-hidden position-relative" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.1) !important;">
+                    <div class="card-body p-4 position-relative" style="z-index: 2;">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-7">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge px-2 py-1 rounded-pill fw-semibold text-uppercase me-2" style="background: rgba(197, 168, 128, 0.2); color: #c5a880; font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-user-circle me-1"></i> Client Portal
+                                    </span>
+                                    <span class="text-white-50 small">{{ $salon?->name ?? auth()->user()?->salon?->name ?? 'Salon' }}</span>
+                                </div>
+                                <h3 class="fw-bold mb-1 text-white">Hello, {{ $customer->name ?? auth()->user()?->name ?? 'Customer' }}! 👋</h3>
+                                <p class="text-white-50 small mb-0">Manage your appointments, track loyalty reward points, and book services with ease.</p>
+                            </div>
+                            <div class="col-md-5 text-md-end">
+                                <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                                    <button type="button" class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm text-dark" data-bs-toggle="modal" data-bs-target="#quickBookModal">
+                                        <i class="fas fa-calendar-plus me-1"></i> Quick Book
+                                    </button>
+                                    <a href="{{ route('customer.appointments.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2 rounded-pill shadow-sm" style="border-color: rgba(255,255,255,0.35);">
+                                        <i class="fas fa-calendar-alt me-1"></i> My Appointments
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Background ambient glow -->
+                    <div class="position-absolute" style="top: -40px; right: -40px; width: 180px; height: 180px; background: rgba(197, 168, 128, 0.12); border-radius: 50%; pointer-events: none; filter: blur(35px);"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4">
             <!-- Quick Stats -->
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 customer-stat-card bg-white" style="border-radius: 14px;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
-                                <div class="avatar avatar-lg bg-primary-subtle text-primary rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <div class="avatar avatar-lg bg-primary-subtle text-primary rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; font-size: 1.25rem;">
                                     <i class="fas fa-calendar-check"></i>
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Upcoming</h6>
-                                <h3 class="mb-0 fw-bold">{{ $stats['upcoming'] ?? 0 }}</h3>
+                                <h3 class="mb-0 fw-bold text-dark">{{ $stats['upcoming'] ?? 0 }}</h3>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 customer-stat-card bg-white" style="border-radius: 14px;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
-                                <div class="avatar avatar-lg bg-success-subtle text-success rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <div class="avatar avatar-lg bg-success-subtle text-success rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; font-size: 1.25rem;">
                                     <i class="fas fa-check-double"></i>
                                 </div>
                             </div>
@@ -39,34 +77,34 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 customer-stat-card bg-white" style="border-radius: 14px;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
-                                <div class="avatar avatar-lg bg-warning-subtle text-warning rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <div class="avatar avatar-lg bg-warning-subtle text-warning rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; font-size: 1.25rem;">
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Pending</h6>
-                                <h3 class="mb-0 fw-bold">{{ $stats['pending'] ?? 0 }}</h3>
+                                <h3 class="mb-0 fw-bold text-dark">{{ $stats['pending'] ?? 0 }}</h3>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 customer-stat-card bg-white" style="border-radius: 14px;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
-                                <div class="avatar avatar-lg bg-info-subtle text-info rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <div class="avatar avatar-lg bg-info-subtle text-info rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; font-size: 1.25rem;">
                                     <i class="fas fa-history"></i>
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Total History</h6>
-                                <h3 class="mb-0 fw-bold">{{ $stats['total'] ?? 0 }}</h3>
+                                <h3 class="mb-0 fw-bold text-dark">{{ $stats['total'] ?? 0 }}</h3>
                             </div>
                         </div>
                     </div>
@@ -76,8 +114,8 @@
             {{-- Loyalty Rewards Balance Banner --}}
             @if(!empty($hasLoyalty))
             <div class="col-12">
-                <div class="card border-0 shadow-sm text-white overflow-hidden"
-                    style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); border-radius: 14px; border: 1px solid rgba(197,168,128,0.3) !important;">
+                <div class="card border-0 shadow-sm text-white overflow-hidden loyalty-hero"
+                    style="background: linear-gradient(135deg, #0b0f17 0%, #1a2232 50%, #0f172a 100%) !important; border-radius: 14px; border: 1px solid rgba(197,168,128,0.3) !important;">
                     <div class="card-body p-4">
                         <div class="row align-items-center">
                             <div class="col-md-7">
@@ -98,7 +136,7 @@
                                     @else
                                         <span class="badge bg-secondary text-white-50" style="font-size: 0.7rem;">Min {{ $minPointsToRedeem ?? 50 }} pts to redeem</span>
                                     @endif
-                                    <span class="badge shadow-none" style="background: rgba(15, 23, 42, 0.5) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; font-size: 0.72rem; font-weight: 500;">
+                                    <span class="badge shadow-none" style="background: rgba(0, 0, 0, 0.4) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; font-size: 0.72rem; font-weight: 500; padding: 4px 8px; border-radius: 6px;">
                                         <i class="fas fa-hourglass-half me-1 text-warning"></i>
                                         @if(($loyaltyExpiryMonths ?? 12) > 0)
                                             Points valid for {{ $loyaltyExpiryMonths ?? 12 }} months
@@ -119,18 +157,23 @@
                         </div>
 
                         <div class="mt-4 pt-3 border-top border-white border-opacity-15">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                                 <h6 class="mb-0 text-white fw-bold">
                                     <i class="fas fa-receipt me-1 text-warning"></i> Loyalty Points Transaction History
                                 </h6>
-                                <span class="badge shadow-none" style="background: rgba(255, 255, 255, 0.15) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-size: 0.72rem;">
-                                    {{ isset($loyaltyTransactions) ? $loyaltyTransactions->count() : 0 }} Records
-                                </span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge shadow-none" style="background: rgba(255, 255, 255, 0.15) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-size: 0.72rem;">
+                                        {{ isset($loyaltyTransactions) ? $loyaltyTransactions->count() : 0 }} Records
+                                    </span>
+                                    <a href="{{ route('customer.points.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-warning btn-xs rounded-pill px-3 py-1 fw-bold text-dark shadow-sm">
+                                        <i class="fas fa-external-link-alt me-1"></i> Full History &amp; Logs
+                                    </a>
+                                </div>
                             </div>
 
                             @if(isset($loyaltyTransactions) && $loyaltyTransactions->count() > 0)
-                                <div class="table-responsive rounded-3 mt-2" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);">
-                                    <table class="table table-sm table-borderless text-white align-middle mb-0" style="font-size: 0.82rem;">
+                                <div class="table-responsive rounded-3 mt-2" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);">
+                                    <table class="table table-dark table-sm table-borderless align-middle mb-0" style="background: transparent !important; font-size: 0.82rem;">
                                         <thead>
                                             <tr class="text-white-50 border-bottom border-white border-opacity-10 small">
                                                 <th class="ps-3 py-2">Date &amp; Time</th>
@@ -175,7 +218,7 @@
 
             <!-- Quick Book CTA Banner -->
             <div class="col-12">
-                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%); border: 1px solid #e2e8f0 !important; border-radius: 14px;">
+                <div class="card border-0 shadow-sm bg-white" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important; border: 1px solid #e2e8f0 !important; border-radius: 14px;">
                     <div class="card-body p-4 text-center">
                         <h4 class="fw-bold mb-2 text-dark">Need to book your next appointment?</h4>
                         <p class="text-muted mb-3">Quick and easy booking process — select your preferred service and schedule in seconds!</p>
@@ -190,13 +233,13 @@
             <!-- Left Main Column: Upcoming & Completed Appointments -->
             <div class="col-xl-8">
                 <!-- Upcoming Appointments -->
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                <div class="card border-0 shadow-sm mb-4 bg-white" style="border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0 !important;">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-                        <h5 class="card-title mb-0 fw-bold">
+                        <h5 class="card-title mb-0 fw-bold text-dark">
                             <i class="fas fa-calendar-alt me-2 text-primary"></i>
                             Upcoming Appointments
                         </h5>
-                        <a href="{{ route('customer.appointments.index', ['status' => 'upcoming']) }}" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold">
+                        <a href="{{ route('customer.appointments.index', ['salon_slug' => $salonSlug, 'status' => 'upcoming']) }}" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold">
                             View All <i class="fas fa-chevron-right ms-1 small"></i>
                         </a>
                     </div>
@@ -231,7 +274,7 @@
                                             </div>
                                         </div>
                                         <div class="flex-shrink-0 ms-2">
-                                            <a href="{{ route('customer.appointments.show', $booking->id) }}"
+                                            <a href="{{ route('customer.appointments.show', ['salon_slug' => $salonSlug, 'booking' => $booking->id]) }}"
                                                 class="btn btn-sm btn-outline-secondary">
                                                 View
                                             </a>
@@ -252,10 +295,10 @@
                 </div>
 
                 <!-- Completed Appointments & Reviews -->
-                <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                <div class="card border-0 shadow-sm bg-white" style="border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0 !important;">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
                         <div class="d-flex align-items-center">
-                            <h5 class="card-title mb-0 fw-bold">
+                            <h5 class="card-title mb-0 fw-bold text-dark">
                                 <i class="fas fa-check-double me-2 text-success"></i>
                                 Completed Appointments &amp; Reviews
                             </h5>
@@ -263,7 +306,7 @@
                                 {{ $stats['completed'] ?? 0 }} Completed
                             </span>
                         </div>
-                        <a href="{{ route('customer.appointments.index', ['status' => 'completed']) }}" class="btn btn-sm btn-outline-primary fw-semibold">
+                        <a href="{{ route('customer.appointments.index', ['salon_slug' => $salonSlug, 'status' => 'completed']) }}" class="btn btn-sm btn-outline-primary fw-semibold">
                             Full History <i class="fas fa-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -340,9 +383,9 @@
             <!-- Right Column: Profile Summary & Recent Activity -->
             <div class="col-xl-4">
                 <!-- Client Profile Summary -->
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                <div class="card border-0 shadow-sm mb-4 bg-white" style="border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0 !important;">
                     <div class="card-header bg-white py-3 border-bottom">
-                        <h5 class="card-title mb-0 fw-bold">
+                        <h5 class="card-title mb-0 fw-bold text-dark">
                             <i class="fas fa-user-circle me-2 text-primary"></i>
                             Your Profile
                         </h5>
@@ -350,25 +393,25 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
                             <div class="avatar avatar-lg bg-primary-subtle text-primary rounded-circle fw-bold d-flex align-items-center justify-content-center shadow-sm" style="width: 52px; height: 52px; font-size: 1.3rem;">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'C', 0, 1)) }}
+                                {{ strtoupper(substr(auth()->user()?->name ?? $customer->name ?? 'C', 0, 1)) }}
                             </div>
                             <div class="ms-3">
-                                <h6 class="mb-0 fw-bold text-dark">{{ auth()->user()->name }}</h6>
+                                <h6 class="mb-0 fw-bold text-dark">{{ auth()->user()?->name ?? $customer->name ?? 'Customer' }}</h6>
                                 <span class="badge bg-light text-muted border py-1 px-2 mt-1" style="font-size: 0.72rem;">Customer</span>
                             </div>
                         </div>
                         <ul class="list-unstyled mb-3 small">
                             <li class="py-1 text-muted d-flex align-items-center">
-                                <i class="fas fa-envelope fa-fw me-2 text-secondary"></i> {{ auth()->user()->email }}
+                                <i class="fas fa-envelope fa-fw me-2 text-secondary"></i> {{ auth()->user()?->email ?? $customer->email ?? 'Not set' }}
                             </li>
-                            @if(!empty(auth()->user()->phone) || !empty(auth()->user()->customer?->phone))
+                            @if(!empty(auth()->user()?->phone) || !empty(auth()->user()?->customer?->phone) || !empty($customer->phone))
                             <li class="py-1 text-muted d-flex align-items-center">
-                                <i class="fas fa-phone fa-fw me-2 text-secondary"></i> {{ auth()->user()->customer?->phone ?? auth()->user()->phone }}
+                                <i class="fas fa-phone fa-fw me-2 text-secondary"></i> {{ auth()->user()?->customer?->phone ?? auth()->user()?->phone ?? $customer->phone }}
                             </li>
                             @endif
-                            @if(optional(auth()->user()->salon)->name)
+                            @if(auth()->user()?->salon?->name || $salon?->name)
                             <li class="py-1 text-muted d-flex align-items-center">
-                                <i class="fas fa-store fa-fw me-2 text-secondary"></i> {{ optional(auth()->user()->salon)->name }}
+                                <i class="fas fa-store fa-fw me-2 text-secondary"></i> {{ auth()->user()?->salon?->name ?? $salon?->name }}
                             </li>
                             @endif
                         </ul>
@@ -379,16 +422,16 @@
                 </div>
 
                 <!-- Recent Activity -->
-                <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                <div class="card border-0 shadow-sm bg-white" style="border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0 !important;">
                     <div class="card-header bg-white py-3 border-bottom">
-                        <h5 class="card-title mb-0 fw-bold">
+                        <h5 class="card-title mb-0 fw-bold text-dark">
                             <i class="fas fa-history me-2 text-primary"></i>
                             Recent Activity
                         </h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            @forelse(auth()->user()->customer?->bookings()->with(['service', 'package'])->latest()->take(6)->get() ?? [] as $booking)
+                            @forelse(optional($customer)->bookings ? $customer->bookings()->with(['service', 'package'])->latest()->take(6)->get() : [] as $booking)
                                 <div class="list-group-item p-3">
                                     <div class="d-flex align-items-center">
                                         <div class="flex-shrink-0">
@@ -487,7 +530,7 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="quickBookForm" action="{{ route('customer.appointments.store') }}" method="POST">
+                <form id="quickBookForm" action="{{ route('customer.appointments.store', ['salon_slug' => $salonSlug]) }}" method="POST">
                     @csrf
                     <div class="modal-body p-4">
                         <!-- Customer Details (Auto-filled) -->
@@ -497,14 +540,14 @@
                                 <span class="input-group-text bg-light">
                                     <i class="fas fa-user text-secondary"></i>
                                 </span>
-                                <input type="text" class="form-control" value="{{ auth()->user()->name }}" readonly>
+                                <input type="text" class="form-control" value="{{ auth()->user()?->name ?? $customer->name ?? 'Customer' }}" readonly>
                             </div>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">
                                     <i class="fas fa-phone text-secondary"></i>
                                 </span>
                                 <input type="tel" class="form-control"
-                                    value="{{ auth()->user()->customer?->phone ?? 'Not set' }}" readonly>
+                                    value="{{ auth()->user()?->customer?->phone ?? auth()->user()?->phone ?? $customer->phone ?? 'Not set' }}" readonly>
                             </div>
                         </div>
 
@@ -555,270 +598,18 @@
     </div>
 
     @push('styles')
-        <style>
-            /* Rating stars interactive styling */
-            .rating {
-                display: flex;
-                flex-direction: row-reverse;
-                justify-content: center;
-                gap: 2px;
-            }
-            .rating input {
-                position: absolute;
-                opacity: 0;
-                width: 1px;
-                height: 1px;
-                pointer-events: none;
-            }
-            .rating input:focus-visible ~ label {
-                outline: 2px solid #f59e0b;
-                outline-offset: 2px;
-                border-radius: 4px;
-            }
-            .rating label {
-                cursor: pointer;
-                color: #e2e8f0;
-                padding: 0 0.15em;
-                transition: color 0.15s ease-in-out, transform 0.15s ease-in-out;
-            }
-            .rating label:hover {
-                transform: scale(1.15);
-            }
-            .rating input:checked ~ label,
-            .rating label:hover,
-            .rating label:hover ~ label {
-                color: #f59e0b !important;
-            }
-        </style>
+        <link rel="stylesheet" href="{{ asset('css/customer-dashboard.css') }}">
     @endpush
 
     @push('scripts')
         <script>
-            function showRatingModal(bookingId) {
-                document.getElementById('appointment_id').value = bookingId;
-                document.getElementById('ratingForm').reset();
-                document.getElementById('ratingError').classList.add('d-none');
-                try {
-                    sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
-                } catch(e) {}
-                const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
-                modal.show();
-            }
-
-            function submitRating() {
-                const bookingId = document.getElementById('appointment_id').value;
-                const ratingRadio = document.querySelector('input[name="rating"]:checked');
-                const rating = ratingRadio ? ratingRadio.value : null;
-                const comment = document.getElementById('comment').value;
-
-                if (!rating) {
-                    document.getElementById('ratingError').classList.remove('d-none');
-                    return;
-                }
-
-                try {
-                    sessionStorage.setItem('feedback_modal_dismissed_' + bookingId, '1');
-                } catch(e) {}
-
-                const submitBtn = document.getElementById('submitRatingBtn');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
-                document.getElementById('ratingError').classList.add('d-none');
-
-                const rateUrlTemplate = "{{ route('customer.appointments.rate', ['salon_slug' => request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? 'default', 'booking' => ':id']) }}";
-                const targetUrl = rateUrlTemplate.replace(':id', bookingId);
-
-                fetch(targetUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        rating: rating,
-                        comment: comment
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const modalEl = document.getElementById('ratingModal');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
-
-                    if (window.notifications) {
-                        window.notifications.show('Thank you! Your rating and review have been submitted.', 'success');
-                    } else if (window.showModalAlert) {
-                        window.showModalAlert('Thank you! Your rating and review have been submitted.', 'success');
-                    } else {
-                        alert('Thank you! Your rating and review have been submitted.');
-                    }
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1200);
-                })
-                .catch(error => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Rating';
-                    document.getElementById('ratingError').classList.remove('d-none');
-                    document.getElementById('ratingError').textContent = error.message || 'Error submitting rating. Please try again.';
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                {{-- Dismiss listener to prevent repeat popup when modal closed without rating --}}
-                const ratingModalEl = document.getElementById('ratingModal');
-                if (ratingModalEl) {
-                    ratingModalEl.addEventListener('hidden.bs.modal', function () {
-                        const apptId = document.getElementById('appointment_id')?.value;
-                        if (apptId) {
-                            try {
-                                sessionStorage.setItem('feedback_modal_dismissed_' + apptId, '1');
-                            } catch(e) {}
-                        }
-                    });
-                }
-
-                {{-- Automatically show rating modal once per session after appointment is done and pending review --}}
-                @if(!empty($pendingFeedbackBooking))
-                const feedbackDismissKey = 'feedback_modal_dismissed_{{ $pendingFeedbackBooking->id }}';
-                if (!sessionStorage.getItem(feedbackDismissKey)) {
-                    setTimeout(function () {
-                        showRatingModal({{ $pendingFeedbackBooking->id }});
-                    }, 800);
-                }
-                @endif
-
-                const quickBookForm = document.getElementById('quickBookForm');
-                if (!quickBookForm) return;
-
-                const dateInput = quickBookForm.querySelector('input[name="date"]');
-                const timeSelect = quickBookForm.querySelector('select[name="time"]');
-                const serviceSelect = quickBookForm.querySelector('select[name="service_id"]');
-
-                function formatTime12(timeStr) {
-                    if (!timeStr) return '';
-                    const parts = timeStr.split(':');
-                    const hour = parseInt(parts[0], 10);
-                    const minute = parts[1] || '00';
-                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                    const hour12 = hour % 12 || 12;
-                    return `${hour12}:${minute} ${ampm}`;
-                }
-
-                const slotsBaseUrl = "{{ route('customer.api.appointments.available-slots', ['salon_slug' => request()->route('salon_slug') ?? optional(auth()->user()->salon)->slug ?? 'default']) }}";
-
-                function loadTimeSlots() {
-                    if (!dateInput.value || !serviceSelect.value) return;
-
-                    timeSelect.disabled = true;
-                    timeSelect.innerHTML = '<option value="">Loading available slots...</option>';
-
-                    fetch(`${slotsBaseUrl}?date=${encodeURIComponent(dateInput.value)}&service_id=${encodeURIComponent(serviceSelect.value)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            timeSelect.innerHTML = '<option value="">Select a time</option>';
-
-                            if (!data || data.length === 0) {
-                                timeSelect.innerHTML = '<option value="">No available slots</option>';
-                                return;
-                            }
-
-                            let availableCount = 0;
-                            data.forEach(slot => {
-                                if (slot.available) {
-                                    availableCount++;
-                                    timeSelect.innerHTML += `<option value="${slot.time}">${formatTime12(slot.time)}</option>`;
-                                }
-                            });
-
-                            if (availableCount === 0) {
-                                timeSelect.innerHTML = '<option value="">No available slots on this date</option>';
-                            } else {
-                                timeSelect.disabled = false;
-                            }
-                        })
-                        .catch(error => {
-                            timeSelect.innerHTML = '<option value="">Error loading slots</option>';
-                        });
-                }
-
-                dateInput.addEventListener('change', loadTimeSlots);
-                serviceSelect.addEventListener('change', function () {
-                    if (dateInput.value) {
-                        loadTimeSlots();
-                    }
-                });
-
-                quickBookForm.addEventListener('submit', function (e) {
-                    e.preventDefault();
-
-                    const formData = new FormData(this);
-                    const submitButton = this.querySelector('button[type="submit"]');
-                    const originalButtonText = submitButton.innerHTML;
-
-                    const timeVal = formData.get('time');
-                    if (!timeVal) {
-                        alert('Please select an appointment time.');
-                        return;
-                    }
-
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Booking...';
-
-                    fetch(this.action, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            service_id: formData.get('service_id'),
-                            date: formData.get('date'),
-                            time: timeVal,
-                            notes: formData.get('notes')
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('quickBookModal'));
-                            if (modal) modal.hide();
-
-                            if (window.notifications) {
-                                window.notifications.show('Appointment booked successfully!', 'success');
-                            } else if (window.showModalAlert) {
-                                window.showModalAlert('Appointment booked successfully!', 'success');
-                            }
-
-                            if (data.redirect) {
-                                window.location.href = data.redirect;
-                            } else {
-                                window.location.reload();
-                            }
-                        } else {
-                            throw new Error(data.message || 'Failed to book appointment');
-                        }
-                    })
-                    .catch(error => {
-                        const errMsg = error.message || 'Failed to book appointment. Please try again.';
-                        if (window.notifications) {
-                            window.notifications.show(errMsg, 'error');
-                        } else if (window.showModalAlert) {
-                            window.showModalAlert(errMsg, 'error');
-                        } else {
-                            alert(errMsg);
-                        }
-                    })
-                    .finally(() => {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = originalButtonText;
-                    });
-                });
-            });
+            window.customerDashboardConfig = {
+                rateUrlTemplate: "{{ route('customer.appointments.rate', ['salon_slug' => $salonSlug, 'booking' => ':id']) }}",
+                slotsBaseUrl: "{{ route('customer.api.appointments.available-slots', ['salon_slug' => $salonSlug]) }}",
+                pendingFeedbackBookingId: {{ !empty($pendingFeedbackBooking) ? $pendingFeedbackBooking->id : 'null' }}
+            };
         </script>
+        <script src="{{ asset('js/customer-dashboard.js') }}"></script>
     @endpush
 
 @endsection

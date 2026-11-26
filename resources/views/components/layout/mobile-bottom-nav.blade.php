@@ -47,10 +47,17 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span>Appts</span>
                 </a>
-                <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="fas fa-user"></i>
-                    <span>Profile</span>
-                </a>
+                @if(\App\Helpers\ModuleHelper::loyaltyEnabled())
+                    <a href="{{ route('customer.points.index', ['salon_slug' => $custMobSalonSlug]) }}" class="mobile-bottom-nav-item {{ request()->routeIs('customer.points.*') ? 'active' : '' }}">
+                        <i class="fas fa-coins text-warning"></i>
+                        <span>Points</span>
+                    </a>
+                @else
+                    <a href="{{ route('profile.edit') }}" class="mobile-bottom-nav-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                @endif
                 <a href="javascript:void(0)" class="mobile-bottom-nav-item" id="mobileMenuBtn">
                     <i class="fas fa-bars"></i>
                     <span>Menu</span>

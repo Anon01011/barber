@@ -114,6 +114,7 @@ trait HandlesSalonSettings
             'default_tip_percentage' => 'nullable|integer|min:0|max:100',
             'pos_receipt_arabic' => 'nullable|boolean',
             'pos_receipt_arabic_button' => 'nullable|boolean',
+            'pos_receipt_printer_width' => 'nullable|string|in:80mm,58mm,a4',
 
             // Interface Settings
             'enable_language_toggle' => 'nullable|boolean',
@@ -308,6 +309,7 @@ trait HandlesSalonSettings
                 'tax_number',
                 'currency_code',
                 'currency_symbol',
+                'pos_receipt_printer_width',
                 'default_tip_percentage',
                 'timezone',
                 'language',

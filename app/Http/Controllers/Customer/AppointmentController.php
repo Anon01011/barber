@@ -161,9 +161,12 @@ class AppointmentController extends Controller
                     ->get();
             }
 
+            $salonSlug = request()->route('salon_slug') ?? optional($salon)->slug ?? optional(auth()->user()->salon)->slug ?? 'default';
+
             return view('customer.dashboard', compact(
                 'customer',
                 'salon',
+                'salonSlug',
                 'stats',
                 'upcomingAppointments',
                 'completedAppointments',
@@ -180,6 +183,99 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error loading customer dashboard: ' . $e->getMessage());
             return redirect()->route('customer.appointments.index', ['salon_slug' => request()->route('salon_slug') ?? 'default']);
+        }
+    }
+
+    /**
+     * Display customer loyalty points & full transaction history log.
+     */
+    public function points(Request $request)
+    {
+        try {
+            $customer = $this->resolveCustomer();
+            if (!$customer) {
+                return redirect()->route('login')
+                    ->with('error', 'Customer profile could not be located. Please log in again.');
+            }
+
+            $salonId = $this->resolveSalonId();
+            $salon = $customer->salon ?? \App\Models\Salon::find($salonId);
+            $isOnTrial = $salon && method_exists($salon, 'isOnTrial') && $salon->isOnTrial();
+            $hasLoyalty = \App\Helpers\ModuleHelper::loyaltyEnabled() && $salon && ($salon->hasLoyaltyProgram() || $isOnTrial);
+
+            $loyaltyPoints = (int)($customer->loyalty_points ?? 0);
+            $loyaltySettings = $salon ? app(\App\Services\LoyaltyService::class)->getSettings($salon) : [];
+            $pointRate = (float)($loyaltySettings['redemption_rate'] ?? 0.05);
+            $loyaltyValue = round($loyaltyPoints * $pointRate, 2);
+            $minPointsToRedeem = (int)($loyaltySettings['min_points_to_redeem'] ?? 50);
+            $pointsPerCurrency = (int)($loyaltySettings['points_per_currency'] ?? 1);
+            $maxDiscountPct = (int)($loyaltySettings['max_discount_percentage'] ?? 50);
+
+            // Fetch paginated transactions strictly scoped to this authenticated customer and salon (IDOR-safe)
+            $transactionsQuery = \App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
+                ->where('salon_id', $salonId)
+                ->with(['booking.service', 'posSale'])
+                ->orderBy('id', 'desc');
+
+            if ($request->filled('type') && in_array($request->type, ['earned', 'redeemed', 'adjusted', 'expired'])) {
+                $transactionsQuery->where('type', $request->type);
+            }
+
+            $transactions = $transactionsQuery->paginate(15)->withQueryString();
+
+            // Lifetime summaries
+            $totalEarned = (int)\App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
+                ->where('salon_id', $salonId)
+                ->where('points', '>', 0)
+                ->sum('points');
+
+            $totalRedeemed = (int)abs(\App\Models\LoyaltyTransaction::where('customer_id', $customer->id)
+                ->where('salon_id', $salonId)
+                ->where('points', '<', 0)
+                ->sum('points'));
+
+            // Tier calculation based on lifetime points
+            $tier = 'Bronze';
+            $tierBadge = 'bg-secondary';
+            $nextTierPoints = 500;
+            if ($totalEarned >= 2500) {
+                $tier = 'VIP Platinum';
+                $tierBadge = 'bg-dark text-warning border border-warning';
+                $nextTierPoints = null;
+            } elseif ($totalEarned >= 1000) {
+                $tier = 'Gold Member';
+                $tierBadge = 'bg-warning text-dark';
+                $nextTierPoints = 2500;
+            } elseif ($totalEarned >= 500) {
+                $tier = 'Silver Member';
+                $tierBadge = 'bg-info text-white';
+                $nextTierPoints = 1000;
+            }
+
+            $salonSlug = request()->route('salon_slug') ?? optional($salon)->slug ?? 'default';
+
+            return view('customer.loyalty.index', compact(
+                'customer',
+                'salon',
+                'hasLoyalty',
+                'loyaltyPoints',
+                'loyaltyValue',
+                'pointRate',
+                'minPointsToRedeem',
+                'pointsPerCurrency',
+                'maxDiscountPct',
+                'transactions',
+                'totalEarned',
+                'totalRedeemed',
+                'tier',
+                'tierBadge',
+                'nextTierPoints',
+                'salonSlug'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Error loading customer points log: ' . $e->getMessage());
+            return redirect()->route('customer.dashboard', ['salon_slug' => request()->route('salon_slug') ?? 'default'])
+                ->with('error', 'Could not load points log at this time.');
         }
     }
 
@@ -367,12 +463,45 @@ class AppointmentController extends Controller
 
         $customer = $this->resolveCustomer();
 
+        // Load services with their categories
         $services = Service::where('salon_id', $salonId)
             ->where('status', 'active')
+            ->with('category')
             ->orderBy('name')
             ->get();
 
-        return view('customer.appointments.create', compact('services', 'customer'));
+        // Load categories that have active services
+        $categories = \App\Models\ServiceCategory::where('salon_id', $salonId)
+            ->where('status', 'active')
+            ->whereHas('services', fn($q) => $q->where('status', 'active'))
+            ->orderBy('name')
+            ->get();
+
+        // Available staff
+        $staffMembers = User::role('employee')
+            ->where('salon_id', $salonId)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $salonSlug = request()->route('salon_slug') ?? app('current_salon')?->slug ?? 'default';
+
+        $settingsService = app(SettingsService::class);
+        $salonTimezone = $settingsService->get('timezone', 'UTC', $salonId);
+        $todayInSalonTz = Carbon::now($salonTimezone)->format('Y-m-d');
+        $advanceBookingDays = (int) $settingsService->get('advance_booking_days', 30, $salonId);
+        $maxDateInSalonTz = Carbon::now($salonTimezone)->addDays($advanceBookingDays)->format('Y-m-d');
+
+        return view('customer.appointments.create', compact(
+            'services',
+            'categories',
+            'staffMembers',
+            'customer',
+            'salonSlug',
+            'salonTimezone',
+            'todayInSalonTz',
+            'maxDateInSalonTz'
+        ));
     }
 
     /**
@@ -400,21 +529,31 @@ class AppointmentController extends Controller
             }
         }
 
+        // Normalise: service_ids[] array OR single service_id
+        $serviceIds = $request->input('service_ids', []);
+        if (empty($serviceIds) && $request->filled('service_id')) {
+            $serviceIds = [$request->input('service_id')];
+        }
+        $request->merge(['service_ids' => $serviceIds]);
+
         $salonId = $this->resolveSalonId();
+
         $validated = $request->validate([
-            'service_id' => [
+            'service_ids'   => 'required|array|min:1',
+            'service_ids.*' => [
                 'required',
                 'exists:services,id',
                 function ($attribute, $value, $fail) use ($salonId) {
                     $service = Service::find($value);
                     if ($service && $salonId && $service->salon_id !== $salonId) {
-                        $fail('The selected service is not available.');
+                        $fail('One or more selected services are not available.');
                     }
                 },
             ],
-            'date' => 'required|date|after_or_equal:today',
-            'time' => 'required|date_format:H:i',
-            'notes' => 'nullable|string'
+            'staff_id' => 'nullable|exists:users,id',
+            'date'     => 'required|date|after_or_equal:today',
+            'time'     => 'required|date_format:H:i',
+            'notes'    => 'nullable|string|max:1000',
         ]);
 
         // Defensive check for customer record
@@ -425,12 +564,10 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        // Check if the combined date and time is in the past
-        // We need to check this using the salon's timezone
         $settingsService = app(SettingsService::class);
         $timezone = $settingsService->get('timezone', 'UTC', $customer->salon_id);
 
-        // Check advance booking days setting
+        // Check advance booking limit
         $advanceBookingDays = (int) $settingsService->get('advance_booking_days', 30, $customer->salon_id);
         $bookingDate = Carbon::parse($validated['date'], $timezone)->startOfDay();
         $maxDate = Carbon::now($timezone)->startOfDay()->addDays($advanceBookingDays);
@@ -440,7 +577,7 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        // Parse date and time in the salon's timezone to avoid conversion issues
+        // Parse start datetime in salon timezone
         $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['date'] . ' ' . $validated['time'], $timezone);
 
         if ($startDateTime->isPast()) {
@@ -449,47 +586,92 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+        // Validate staff belongs to salon if provided
+        $staffId = null;
+        if (!empty($validated['staff_id'])) {
+            $staff = User::where('id', $validated['staff_id'])->where('salon_id', $salonId)->first();
+            if ($staff) {
+                $staffId = $staff->id;
+            }
+        }
+
         try {
             DB::beginTransaction();
 
-            $service = Service::findOrFail($validated['service_id']);
+            // Load all selected services and compute cumulative duration & total amount
+            $services = Service::whereIn('id', $validated['service_ids'])
+                ->where('salon_id', $salonId)
+                ->where('status', 'active')
+                ->get();
 
-            // Parse date and time separately in the salon's timezone
-            $dateString = $validated['date'];
-            $timeString = $validated['time'];
-            $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateString . ' ' . $timeString, $timezone);
-
-            $startTime = $startDateTime;
-            $endTime = $startTime->copy()->addMinutes((int) $service->duration);
-
-            // Calculate amount with tax if tax_enabled_services is true
-            $amount = (float) $service->price;
-            if ($settingsService->get('tax_enabled_services', false, $customer->salon_id)) {
-                $taxRate = (float) $settingsService->get('tax_rate', 0, $customer->salon_id);
-                $amount += $amount * ($taxRate / 100);
+            if ($services->isEmpty()) {
+                return response()->json(['message' => 'None of the selected services are available.'], 422);
             }
 
+            $taxEnabled = (bool) $settingsService->get('tax_enabled_services', false, $customer->salon_id);
+            $taxRate    = (float) $settingsService->get('tax_rate', 0, $customer->salon_id);
+
             // Respect auto_confirm_bookings setting
-            $autoConfirm = (bool) $settingsService->get('auto_confirm_bookings', false, $customer->salon_id);
+            $autoConfirm   = (bool) $settingsService->get('auto_confirm_bookings', false, $customer->salon_id);
             $initialStatus = $autoConfirm ? 'confirmed' : 'pending';
 
-            // Create booking
-            $booking = Booking::create([
-                'salon_id' => $customer->salon_id,
-                'customer_id' => $customer->id,
-                'created_by' => auth()->id(),
-                'service_id' => $validated['service_id'],
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'notes' => $validated['notes'],
-                'amount' => $amount,
-                'status' => $initialStatus,
-                'source' => 'online',
-                'staff_assignment_status' => 'pending',
-                'time_confirmation_status' => $autoConfirm ? 'confirmed' : 'pending'
-            ]);
+            $isGroup = $services->count() > 1;
+            $bookingGroupId = $isGroup ? (string) \Illuminate\Support\Str::uuid() : null;
+            $createdBookings = [];
+            $currentStartTime = $startDateTime->copy();
+
+            foreach ($services as $idx => $svc) {
+                $svcDuration = (int) ($svc->duration ?? 30);
+                $serviceEndTime = $currentStartTime->copy()->addMinutes($svcDuration);
+
+                $svcAmount = (float) $svc->price;
+                if ($taxEnabled) {
+                    $svcAmount += $svcAmount * ($taxRate / 100);
+                }
+
+                $bNotes = $validated['notes'] ?? null;
+                if ($isGroup && $idx > 0) {
+                    $bNotes = ($bNotes ? $bNotes . ' · ' : '') . "Sequential service in group (#" . ($idx + 1) . ")";
+                }
+
+                $b = Booking::create([
+                    'salon_id'                 => $customer->salon_id,
+                    'booking_group_id'         => $bookingGroupId,
+                    'customer_id'              => $customer->id,
+                    'created_by'               => auth()->id(),
+                    'service_id'               => $svc->id,
+                    'staff_id'                 => $staffId,
+                    'start_time'               => $currentStartTime,
+                    'end_time'                 => $serviceEndTime,
+                    'notes'                    => $bNotes,
+                    'amount'                   => round($svcAmount, 2),
+                    'status'                   => $initialStatus,
+                    'source'                   => 'online',
+                    'staff_assignment_status'  => $staffId ? 'assigned' : 'pending',
+                    'time_confirmation_status' => $autoConfirm ? 'confirmed' : 'pending',
+                ]);
+
+                $createdBookings[] = $b;
+                $currentStartTime = $serviceEndTime; // Next service starts when this one finishes
+            }
+
+            $booking = $createdBookings[0];
 
             DB::commit();
+
+            // Send notification to salon admins (email & system) and customer
+            try {
+                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService->sendBookingConfirmation($booking);
+                if ($staffId) {
+                    $notificationService->notifyStaffOfNewBooking($booking);
+                }
+            } catch (\Exception $notifEx) {
+                \Illuminate\Support\Facades\Log::warning('Failed to dispatch notifications for online booking', [
+                    'booking_id' => $booking->id,
+                    'error' => $notifEx->getMessage()
+                ]);
+            }
 
             $successMsg = $autoConfirm
                 ? 'Appointment booked and confirmed successfully!'
@@ -544,30 +726,35 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Get available time slots for a service
+     * Get available time slots for a service (or cumulative multi-service duration).
+     * Accepts: date, service_id, duration (override), staff_id (optional filter).
      */
     public function getAvailableSlots(Request $request)
     {
-        $date = $request->get('date');
+        $date      = $request->get('date');
         $serviceId = $request->get('service_id');
 
         if (!$date || !$serviceId) {
             return response()->json(['error' => 'Date and service are required'], 400);
         }
 
-        $service = Service::findOrFail($serviceId);
-
         $salonId = $this->resolveSalonId();
         if (!$salonId) {
             return response()->json(['error' => 'Salon not found'], 404);
         }
 
-        // Verify service belongs to customer's salon
-        if ($service->salon_id !== $salonId) {
-            return response()->json(['error' => 'Service not available'], 403);
+        // Query service strictly within the customer's salon context
+        $service = Service::where('id', $serviceId)->where('salon_id', $salonId)->first();
+        if (!$service) {
+            return response()->json(['error' => 'Service not available'], 404);
         }
 
-        $duration = $service->duration;
+        // Allow cumulative duration override from multi-service selections
+        $durationOverride = (int) $request->get('duration', 0);
+        $duration = $durationOverride > 0 ? $durationOverride : (int) $service->duration;
+
+        // Optional: filter by specific staff member
+        $requestedStaffId = (int) $request->get('staff_id', 0);
 
         // Get salon timezone and settings
         $settings = app(\App\Services\SettingsService::class);
@@ -578,11 +765,14 @@ class AppointmentController extends Controller
         $bufferTime = (int) $settings->get('appointment_buffer_time', 15, $salonId);
         $allowOverlapping = (bool) $settings->get('allow_overlapping_bookings', false, $salonId);
 
-        // Get all active staff members
-        $staffMembers = User::role('employee')
+        // Get active staff members; optionally filter by requested staff_id
+        $staffQuery = User::role('employee')
             ->where('salon_id', $salonId)
-            ->where('status', 'active')
-            ->get();
+            ->where('status', 'active');
+        if (!empty($requestedStaffId)) {
+            $staffQuery->where('id', $requestedStaffId);
+        }
+        $staffMembers = $staffQuery->get();
 
         if ($staffMembers->isEmpty()) {
             return response()->json(['error' => 'No staff available'], 404);
@@ -893,10 +1083,11 @@ class AppointmentController extends Controller
 
             // Create the rating
             $rating = new Rating([
+                'salon_id' => $booking->salon_id,
                 'booking_id' => $booking->id,
                 'customer_id' => $customer->id, // Use Customer record ID, not auth User ID
                 'service_id' => $booking->service_id,
-                'employee_id' => $booking->staff_id,
+                'employee_id' => $booking->staff_id ?: null,
                 'rating' => $validated['rating'],
                 'comment' => $validated['comment'] ?? null,
             ]);
@@ -905,8 +1096,31 @@ class AppointmentController extends Controller
             $booking->update([
                 'is_rated' => true,
                 'rating' => (int) $validated['rating'],
-                'feedback' => $validated['comment'] ?? null,
             ]);
+
+            // Notify staff and salon admins of the new rating
+            try {
+                $recipients = collect();
+                if ($booking->staff) {
+                    $recipients->push($booking->staff);
+                }
+                $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', ['salon_admin', 'manager'])->pluck('id');
+                $admins = \App\Models\User::where('salon_id', $booking->salon_id)
+                    ->whereHas('roles', fn($q) => $q->whereIn('roles.id', $existingRoles))
+                    ->get();
+                if ($booking->salon && $booking->salon->owner) {
+                    $admins->push($booking->salon->owner);
+                }
+                $recipients = $recipients->merge($admins)->filter()->unique('id');
+                if ($recipients->isNotEmpty()) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $recipients,
+                        new \App\Notifications\RatingReceivedNotification($rating, $booking)
+                    );
+                }
+            } catch (\Exception $notifEx) {
+                \Log::warning('Rating notification dispatch failed: ' . $notifEx->getMessage(), ['booking_id' => $booking->id]);
+            }
 
             // Commit the transaction
             DB::commit();

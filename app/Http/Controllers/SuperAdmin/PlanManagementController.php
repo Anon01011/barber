@@ -25,7 +25,7 @@ class PlanManagementController extends Controller
 
     public function create()
     {
-        $enabledModules = $this->settingsService->get('enabled_modules', [], null, null);
+        $enabledModules = $this->settingsService->get('enabled_modules', [], false, false);
         return view('super-admin.plans.create', compact('enabledModules'));
     }
 
@@ -112,7 +112,7 @@ class PlanManagementController extends Controller
     public function edit($id)
     {
         $plan = Plan::findOrFail($id);
-        $enabledModules = $this->settingsService->get('enabled_modules', [], null, null);
+        $enabledModules = $this->settingsService->get('enabled_modules', [], false, false);
         return view('super-admin.plans.edit', compact('plan', 'enabledModules'));
     }
 

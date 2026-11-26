@@ -114,12 +114,36 @@ class RatingController extends Controller
                 'booking_id' => $booking->id,
                 'customer_id' => $booking->customer->user_id ?? $booking->customer_id,
                 'service_id' => $booking->service_id,
-                'employee_id' => $booking->staff_id,
+                'employee_id' => $booking->staff_id ?: null,
                 'rating' => $validated['rating'],
                 'comment' => $validated['comment'] ?? null,
             ]);
 
             $rating->save();
+
+            // Notify staff and salon admins of the rating
+            try {
+                $recipients = collect();
+                if ($booking->staff) {
+                    $recipients->push($booking->staff);
+                }
+                $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', ['salon_admin', 'manager'])->pluck('id');
+                $admins = \App\Models\User::where('salon_id', $booking->salon_id)
+                    ->whereHas('roles', fn($q) => $q->whereIn('roles.id', $existingRoles))
+                    ->get();
+                if ($booking->salon && $booking->salon->owner) {
+                    $admins->push($booking->salon->owner);
+                }
+                $recipients = $recipients->merge($admins)->filter()->unique('id');
+                if ($recipients->isNotEmpty()) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $recipients,
+                        new \App\Notifications\RatingReceivedNotification($rating, $booking)
+                    );
+                }
+            } catch (\Exception $notifEx) {
+                Log::warning('Rating notification dispatch failed: ' . $notifEx->getMessage(), ['booking_id' => $booking->id]);
+            }
 
             DB::commit();
 

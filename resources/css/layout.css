@@ -14,7 +14,7 @@
     /* Lightest Gray */
     --sidebar-width: 250px;
     --sidebar-collapsed-width: 70px;
-    --header-height: 60px;
+    --header-height: 64px;
     /* Updated color variables to match luxury theme */
     --primary-color: var(--theme-accent, #c5a880);
     --secondary-color: var(--dark);
@@ -372,10 +372,12 @@ body {
     right: 0;
     left: var(--sidebar-width);
     height: var(--header-height);
-    background: white;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    background: #ffffff !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.12);
     transition: all 0.3s ease;
-    z-index: 999;
+    z-index: 1050 !important;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .header.collapsed {
@@ -664,6 +666,39 @@ body.mobile-drawer-open {
 }
 
 /* Mobile App Bottom Navigation Bar */
+/* Floating Action Button (FAB) for Mobile Client Portal */
+.floating-book-fab {
+    position: fixed;
+    bottom: 76px;
+    right: 18px;
+    z-index: 1045;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, #9b7a50 100%);
+    color: #ffffff !important;
+    padding: 11px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none !important;
+    box-shadow: 0 8px 24px rgba(197, 168, 128, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.floating-book-fab:hover,
+.floating-book-fab:focus {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(197, 168, 128, 0.55);
+    color: #ffffff !important;
+}
+.floating-book-fab:active {
+    transform: translateY(0) scale(0.98);
+}
+.floating-book-fab i {
+    font-size: 1rem;
+}
+
 .mobile-bottom-nav {
     display: none;
     position: fixed;
@@ -732,7 +767,40 @@ body.mobile-drawer-open {
 
 /* Tablet & Mobile Breakpoints (< 992px) */
 @media (max-width: 991.98px) {
-    .mobile-bottom-nav {
+    /* Floating Action Button (FAB) for Mobile Client Portal */
+.floating-book-fab {
+    position: fixed;
+    bottom: 76px;
+    right: 18px;
+    z-index: 1045;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--theme-accent, #c5a880) 0%, #9b7a50 100%);
+    color: #ffffff !important;
+    padding: 11px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none !important;
+    box-shadow: 0 8px 24px rgba(197, 168, 128, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.floating-book-fab:hover,
+.floating-book-fab:focus {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(197, 168, 128, 0.55);
+    color: #ffffff !important;
+}
+.floating-book-fab:active {
+    transform: translateY(0) scale(0.98);
+}
+.floating-book-fab i {
+    font-size: 1rem;
+}
+
+.mobile-bottom-nav {
         display: flex;
     }
 

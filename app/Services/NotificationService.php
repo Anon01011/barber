@@ -167,15 +167,7 @@ class NotificationService
                 }
             }
 
-            // Notify staff
-            if ($booking->staff) {
-                \Illuminate\Support\Facades\Notification::send(
-                    $booking->staff,
-                    new \App\Notifications\BookingNotification($booking, 'rescheduled')
-                );
-            }
-
-            // Notify salon admins
+            // Notify salon admins & assigned staff
             $this->notifySalonAdmins($booking, 'rescheduled');
 
             Log::info('Booking rescheduled notifications sent', [
@@ -196,6 +188,9 @@ class NotificationService
     {
         try {
             $status = $booking->status;
+
+            // Ensure related models are loaded
+            $booking->loadMissing(['staff', 'service', 'customer', 'customer.user', 'salon', 'salon.owner']);
 
             // 1. Logic for specific statuses
             if ($status === 'cancelled') {
@@ -222,17 +217,38 @@ class NotificationService
 
             // 5. Notify Staff/Admins
             $notifiables = collect();
-            if ($booking->staff)
+            if ($booking->staff) {
                 $notifiables->push($booking->staff);
+            }
 
-            $admins = User::role(['super_admin', 'salon_admin', 'manager'])
-                ->where('salon_id', $booking->salon_id)
+            $targetRoles = ['salon_admin', 'manager'];
+            $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', $targetRoles)->pluck('id');
+            $admins = User::where('salon_id', $booking->salon_id)
+                ->whereHas('roles', function ($q) use ($existingRoles) {
+                    $q->whereIn('roles.id', $existingRoles);
+                })
                 ->get();
 
-            $notifiables = $notifiables->merge($admins)->unique('id');
+            if ($booking->salon && $booking->salon->owner) {
+                $admins->push($booking->salon->owner);
+            }
+
+            $notifiables = $notifiables->merge($admins)->filter()->unique('id');
 
             if ($notifiables->isNotEmpty()) {
                 \Illuminate\Support\Facades\Notification::send($notifiables, new \App\Notifications\BookingNotification($booking, $status));
+            }
+
+            // Also notify the customer via database notification
+            if ($booking->customer && $booking->customer->user) {
+                try {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $booking->customer->user,
+                        new \App\Notifications\BookingNotification($booking, $status)
+                    );
+                } catch (\Exception $custNotifEx) {
+                    Log::warning('Customer status notification failed: ' . $custNotifEx->getMessage(), ['booking_id' => $booking->id]);
+                }
             }
 
             Log::info('Booking status update notifications sent', ['booking_id' => $booking->id, 'status' => $status]);
@@ -282,6 +298,14 @@ class NotificationService
             // WhatsApp notification
             if ($this->isChannelEnabled($booking->salon, 'whatsapp') && $booking->customer && $booking->customer->phone) {
                 $this->sendBookingCompletedWhatsapp($booking);
+            }
+
+            // System & email notification to staff member who performed the service
+            if ($booking->staff) {
+                \Illuminate\Support\Facades\Notification::send(
+                    $booking->staff,
+                    new \App\Notifications\BookingNotification($booking, 'completed')
+                );
             }
 
             Log::info('Booking completed notifications sent', [
@@ -630,20 +654,20 @@ class NotificationService
         $this->sendSMS($salon->phone, $message, $salon);
     }
 
-    private function notifyStaffOfNewBooking(Booking $booking)
+    public function notifyStaffOfNewBooking(Booking $booking)
     {
         $salonTz = salon_timezone();
         $startTime = $booking->start_time->copy()->setTimezone($salonTz);
         // Staff notification might need its own template type if customizable
-        $message = "New booking assigned: {$booking->customer->name} - {$booking->service->name} on {$startTime->format('M j, Y g:i A')}";
+        $message = "New appointment assigned: {$booking->customer->name} - {$booking->service->name} on {$startTime->format('M j, Y g:i A')}";
 
         if ($booking->staff && $booking->staff->phone) {
             $this->sendSMS($booking->staff->phone, $message, $booking->salon);
         }
 
-        // Send email notification to staff
+        // Send email & system notification to staff
         if ($booking->staff) {
-            \Illuminate\Support\Facades\Notification::send($booking->staff, new \App\Notifications\BookingNotification($booking, 'created'));
+            \Illuminate\Support\Facades\Notification::send($booking->staff, new \App\Notifications\BookingNotification($booking, 'assigned', $message));
         }
     }
 
@@ -1052,23 +1076,56 @@ class NotificationService
     /**
      * Notify salon admins of booking events
      */
-    private function notifySalonAdmins(Booking $booking, string $eventType)
+    public function notifySalonAdmins(Booking $booking, string $eventType)
     {
         try {
-            $admins = User::role(['super_admin', 'salon_admin', 'manager'])
-                ->where('salon_id', $booking->salon_id)
+            $salonId = $booking->salon_id;
+            if (!$salonId) {
+                return;
+            }
+
+            // Dynamically query only roles that exist in database for this salon
+            $targetRoleNames = ['salon_admin', 'manager', 'receptionist', 'admin'];
+            $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', $targetRoleNames)->pluck('id');
+
+            $recipients = User::where('salon_id', $salonId)
+                ->whereHas('roles', function ($q) use ($existingRoles) {
+                    $q->whereIn('roles.id', $existingRoles);
+                })
                 ->get();
 
-            if ($admins->isNotEmpty()) {
+            // Include Salon Owner
+            if ($booking->salon && $booking->salon->owner) {
+                $recipients->push($booking->salon->owner);
+            } elseif ($booking->salon && $booking->salon->owner_id) {
+                $owner = User::find($booking->salon->owner_id);
+                if ($owner) {
+                    $recipients->push($owner);
+                }
+            }
+
+            // Include assigned staff if present on booking
+            if ($booking->staff_id) {
+                $staff = $booking->staff ?? User::find($booking->staff_id);
+                if ($staff && $staff->salon_id == $salonId) {
+                    $recipients->push($staff);
+                }
+            }
+
+            $recipients = $recipients->filter()->unique('id');
+
+            if ($recipients->isNotEmpty()) {
                 \Illuminate\Support\Facades\Notification::send(
-                    $admins,
+                    $recipients,
                     new \App\Notifications\BookingNotification($booking, $eventType)
                 );
 
-                Log::info('Salon admin notifications sent', [
+                Log::info('Salon scoped notifications sent', [
                     'booking_id' => $booking->id,
+                    'salon_id' => $salonId,
                     'event_type' => $eventType,
-                    'admin_count' => $admins->count()
+                    'recipients_count' => $recipients->count(),
+                    'recipients' => $recipients->pluck('name', 'id')
                 ]);
             }
         } catch (Exception $e) {

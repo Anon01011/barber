@@ -38,6 +38,7 @@ class ModuleEntitlementService
         'ai' => ['AI Insights & Automation', 'ai', 'AI Copilot'],
         'loyalty' => ['Loyalty Program', 'loyalty_program', 'loyalty'],
         'feedback' => ['Customer Feedback & Reviews', 'feedback_reviews', 'feedback'],
+        'data_backup' => ['Data Backup & Safety', 'data_backup', 'Data Backup', 'Backup System', 'salon_backup', 'backup'],
     ];
 
     /**
@@ -63,6 +64,7 @@ class ModuleEntitlementService
         'ai' => [],
         'loyalty' => ['customers', 'pos'],
         'feedback' => ['appointments'],
+        'data_backup' => [],
     ];
 
     /**
@@ -251,6 +253,7 @@ class ModuleEntitlementService
             'commissions'  => 'commissions.view',
             'roles'        => 'roles.view',
             'feedback'     => 'marketing.manage_reviews',
+            'data_backup'  => 'salon.manage_settings',
         ];
 
         if (isset($modulePermissions[$module])) {

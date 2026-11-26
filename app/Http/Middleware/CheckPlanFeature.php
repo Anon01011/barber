@@ -43,7 +43,7 @@ class CheckPlanFeature
             }
 
             $salonSlug = $request->route('salon_slug') ?? ($salon?->slug);
-            return redirect()->route('admin.dashboard', ['salon_slug' => $salonSlug])
+            return redirect()->route('dashboard', ['salon_slug' => $salonSlug])
                 ->with('error', "The '{$feature}' module is currently disabled by the system administrator.");
         }
 

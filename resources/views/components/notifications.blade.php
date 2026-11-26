@@ -156,48 +156,109 @@
 
 @push('scripts')
     <script>
-        // Synthesized Web Audio API Chime (Zero External Files, Zero Latency)
-        function playAppAudioChime(type) {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                const ctx = new AudioCtx();
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+        // ─── Shared AudioContext (singleton) ─────────────────────────────────────
+        // Browsers require user interaction before allowing AudioContext playback.
+        // We use a single shared context and resume it lazily on first user gesture.
+        let _sharedAudioCtx = null;
+        let _audioUnlocked = false;
+        let _pendingChimes = [];
 
-                if (type === 'success') {
-                    // Soft dual-harmonic luxury chime: C5 (523.25Hz) -> E5 (659.25Hz)
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523.25, now);
-                    osc.frequency.setValueAtTime(659.25, now + 0.12);
-                    gain.gain.setValueAtTime(0.14, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-                    osc.start(now);
-                    osc.stop(now + 0.45);
-                } else if (type === 'error' || type === 'warning') {
-                    // Gentle low alert tone
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(260, now);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
-                    osc.start(now);
-                    osc.stop(now + 0.32);
-                } else {
-                    // Soft subtle notification note
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(440, now);
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-                }
-            } catch (e) {
-                // AudioContext autoplay rules or unsupported environment — silent fallback
+        function _getOrCreateAudioCtx() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            if (!_sharedAudioCtx) {
+                try { _sharedAudioCtx = new AC(); } catch (e) { return null; }
+            }
+            return _sharedAudioCtx;
+        }
+
+        function _unlockAudio() {
+            if (_audioUnlocked) return;
+            const ctx = _getOrCreateAudioCtx();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(() => {
+                    _audioUnlocked = true;
+                    // Drain any queued chimes
+                    _pendingChimes.forEach(t => _playChimeNow(t));
+                    _pendingChimes = [];
+                }).catch(() => {});
+            } else {
+                _audioUnlocked = true;
+                _pendingChimes.forEach(t => _playChimeNow(t));
+                _pendingChimes = [];
             }
         }
+
+        // Unlock on any user interaction
+        ['click', 'keydown', 'touchstart', 'mousedown'].forEach(ev => {
+            document.addEventListener(ev, _unlockAudio, { once: false, passive: true });
+        });
+
+        function _playChimeNow(type) {
+            try {
+                const ctx = _getOrCreateAudioCtx();
+                if (!ctx) return;
+
+                const runChime = () => {
+                    const now = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    if (type === 'success') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(523.25, now);
+                        osc.frequency.setValueAtTime(659.25, now + 0.12);
+                        gain.gain.setValueAtTime(0.14, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                        osc.start(now); osc.stop(now + 0.45);
+                    } else if (type === 'error' || type === 'danger') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(280, now);
+                        gain.gain.setValueAtTime(0.16, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                        osc.start(now); osc.stop(now + 0.35);
+                    } else if (type === 'warning') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.setValueAtTime(350, now + 0.1);
+                        gain.gain.setValueAtTime(0.14, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                        osc.start(now); osc.stop(now + 0.35);
+                    } else {
+                        // info / default — pleasant double-ping
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(660, now);
+                        osc.frequency.setValueAtTime(880, now + 0.08);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                        osc.start(now); osc.stop(now + 0.3);
+                    }
+                };
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(runChime).catch(() => {});
+                } else {
+                    runChime();
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        // Public API — plays immediately if unlocked, queues otherwise
+        function playAppAudioChime(type) {
+            if (_audioUnlocked) {
+                _playChimeNow(type);
+            } else {
+                _pendingChimes.push(type);
+                // Try to unlock in case context was created before any gesture
+                _unlockAudio();
+            }
+        }
+
+        // Also expose for inline callers
+        window.playAppAudioChime = playAppAudioChime;
 
         // Global Modal Alert (replaces native alert with luxury SweetAlert2 dialog)
         window.showModalAlert = function (message, type = 'info', title = null, callback = null) {
@@ -384,6 +445,118 @@
             @if(session('info'))
                 window.notifications.show(@json(session('info')), 'info');
             @endif
+
+            // ─── Real-Time Notification Polling ───────────────────────────────
+            (function () {
+                // Only run when the user is authenticated (page has the meta CSRF token)
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (!csrfMeta) return;
+
+                let lastSeenCount = parseInt(
+                    document.querySelector('[data-unread-count]')?.dataset.unreadCount ?? '0',
+                    10
+                );
+                const authUserId = '{{ auth()->id() ?? "guest" }}';
+                const storageKey = 'agy_last_notif_id_' + authUserId;
+                let lastSeenId = localStorage.getItem(storageKey) || null;
+                let pollFailures = 0;
+
+                async function pollUnread() {
+                    try {
+                        const resp = await fetch('/notifications/unread', {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (!resp.ok) { pollFailures++; return; }
+                        pollFailures = 0;
+
+                        const data = await resp.json();
+                        if (!data.success) return;
+
+                        // Update bell badge
+                        const badge = document.getElementById('notif-unread-badge');
+                        if (badge) {
+                            if (data.count > 0) {
+                                badge.textContent = data.count > 99 ? '99+' : data.count;
+                                badge.style.display = '';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+
+                        // Fire toast + chime for each genuinely new notification
+                        if (data.items && data.items.length > 0) {
+                            const newestId = data.items[0].id;
+                            if (lastSeenId === null) {
+                                // First poll — set baseline silently
+                                lastSeenId = newestId;
+                                localStorage.setItem(storageKey, newestId);
+                                return;
+                            }
+
+                            if (newestId !== lastSeenId) {
+                                // Show only genuinely new items (those we haven't seen yet)
+                                const newItems = [];
+                                for (const item of data.items) {
+                                    if (item.id === lastSeenId) break;
+                                    newItems.push(item);
+                                }
+
+                                // Show up to 3 toasts so we don't spam
+                                const toShow = newItems.slice(0, 3).reverse();
+                                toShow.forEach(item => {
+                                    if (window.notifications && typeof window.notifications.show === 'function') {
+                                        // Format clean, compact message for toast (not huge card dump)
+                                        let compactMsg = '';
+                                        const notifTitle = item.title || (item.data && item.data.title) || 'New Notification';
+                                        if (item.message) {
+                                            const tempD = document.createElement('div');
+                                            tempD.innerHTML = item.message;
+                                            const plain = tempD.textContent.trim().replace(/\s+/g, ' ');
+                                            const snippet = plain.length > 65 ? plain.substring(0, 65) + '...' : plain;
+                                            compactMsg = `<div class="fw-bold text-dark mb-0" style="font-size:0.86rem;">${notifTitle}</div><div class="small text-muted" style="font-size:0.75rem;">${snippet}</div>`;
+                                        } else {
+                                            compactMsg = `<div class="fw-bold text-dark mb-0">${notifTitle}</div>`;
+                                        }
+
+                                        const notifEl = window.notifications.show(compactMsg, item.type || 'info', 6000);
+
+                                        // Allow clicking toast to open notification details!
+                                        if (notifEl && typeof window.showNotificationDetail === 'function') {
+                                            notifEl.style.cursor = 'pointer';
+                                            notifEl.addEventListener('click', function(e) {
+                                                if (e.target.closest('.notification-close')) return;
+                                                window.showNotificationDetail(item);
+                                            });
+                                        }
+                                    }
+                                });
+
+                                lastSeenId = newestId;
+                                localStorage.setItem(storageKey, newestId);
+                            }
+                        }
+                    } catch (err) {
+                        pollFailures++;
+                    }
+
+                    // Back-off: if 5 consecutive failures, slow down to every 5 minutes
+                    if (pollFailures > 5) {
+                        setTimeout(pollUnread, 5 * 60 * 1000);
+                    }
+                }
+
+                // Initial poll after 5 seconds (let page fully load), then every 30 seconds
+                setTimeout(function () {
+                    pollUnread();
+                    setInterval(pollUnread, 30 * 1000);
+                }, 5000);
+            })();
+            // ─────────────────────────────────────────────────────────────────
         });
     </script>
 @endpush

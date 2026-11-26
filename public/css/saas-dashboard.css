@@ -1,0 +1,379 @@
+/**
+ * SaaS Super Admin Command Center Dashboard Styles
+ * Fully Responsive for Mobile, Tablet, Laptop & Desktop screens
+ */
+
+/* Color Utility Tokens */
+.bg-primary-light { background-color: rgba(78, 115, 223, 0.1) !important; }
+.bg-success-light { background-color: rgba(16, 185, 129, 0.12) !important; }
+.bg-info-light { background-color: rgba(56, 189, 248, 0.12) !important; }
+.bg-danger-light { background-color: rgba(239, 68, 68, 0.12) !important; }
+.bg-warning-light { background-color: rgba(245, 158, 11, 0.12) !important; }
+.text-purple { color: #7c3aed !important; }
+
+/* Executive SaaS Metric Cards (Stripe / Linear inspired) */
+.saas-metric-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    padding: 1.15rem 1.25rem !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.saas-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.saas-metric-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.saas-metric-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-top: 0.25rem;
+}
+
+/* Executive Table Cards for Operations Hub */
+.saas-table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.saas-table-card:hover {
+    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.06);
+}
+
+/* New semantic header for saas-table-card */
+.saas-table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.9rem 1.25rem;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.01em;
+}
+
+.saas-table-card .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1rem 1.25rem;
+}
+
+.saas-table-card .table {
+    margin-bottom: 0;
+}
+
+.saas-table-card .table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.saas-table-card .table tbody td {
+    padding: 0.85rem 1.25rem;
+    vertical-align: middle;
+    font-size: 0.82rem;
+    color: #1e293b;
+    border-top: 1px solid #f1f5f9;
+}
+
+.saas-table-card .table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Salon Avatar initials badge */
+.saas-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.saas-avatar.saas-avatar-green {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.saas-avatar.saas-avatar-indigo {
+    background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+}
+
+/* Micro Status Chips */
+.chip-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.chip-pill-success {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.chip-pill-neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.chip-pill-amber {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.chip-pill-blue {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+/* High-Contrast Accessible Color Tokens (Eliminates pale yellow on white) */
+.text-amber-accessible { color: #b45309 !important; font-weight: 700; }
+.text-warning-accessible { color: #b45309 !important; font-weight: 700; }
+.text-success-accessible { color: #047857 !important; font-weight: 700; }
+.text-info-accessible { color: #0284c7 !important; font-weight: 700; }
+.text-danger-accessible { color: #b91c1c !important; font-weight: 700; }
+
+.badge-warning-accessible { 
+    background-color: #fef3c7 !important; 
+    color: #92400e !important; 
+    border: 1px solid #fde68a !important; 
+    font-weight: 700 !important; 
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+}
+.badge-success-accessible { 
+    background-color: #d1fae5 !important; 
+    color: #065f46 !important; 
+    border: 1px solid #a7f3d0 !important; 
+    font-weight: 700 !important; 
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+}
+.badge-info-accessible { 
+    background-color: #e0f2fe !important; 
+    color: #0369a1 !important; 
+    border: 1px solid #bae6fd !important; 
+    font-weight: 700 !important; 
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+}
+.badge-danger-accessible { 
+    background-color: #fee2e2 !important; 
+    color: #991b1b !important; 
+    border: 1px solid #fecaca !important; 
+    font-weight: 700 !important; 
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+}
+
+.btn-warning-accessible { 
+    background-color: #f59e0b !important; 
+    border-color: #d97706 !important; 
+    color: #1e293b !important; 
+    font-weight: 700 !important; 
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);
+}
+.btn-warning-accessible:hover {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+}
+
+/* Super Admin Active Sidebar Fix (High-Contrast) */
+#sidebar .sidebar-item.active {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+    font-weight: 600;
+}
+#sidebar .sidebar-item.active .sidebar-icon {
+    color: #ffffff !important;
+}
+
+/* Micro-Typography */
+.x-small { font-size: 0.75rem; }
+.btn-xs { padding: 0.25rem 0.55rem; font-size: 0.72rem; border-radius: 6px; }
+.btn-white { background: #ffffff; border: 1px solid #e3e6f0; color: #64748b; }
+.btn-white:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+
+/* Dashboard Cards with Responsive Lift */
+.card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Quick Navigation Toolbar */
+.quick-action-pill {
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 0.78rem;
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+}
+.quick-action-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+    background-color: #f1f5f9 !important;
+}
+
+/* Custom Tabs */
+.custom-data-tabs {
+    border-bottom: 2px solid #f1f5f9;
+}
+.custom-data-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.25s ease;
+    border-radius: 0;
+}
+.custom-data-tabs .nav-link:hover {
+    background: #f8fafc;
+    color: #4e73df;
+}
+.custom-data-tabs .nav-link.active {
+    color: #4e73df;
+    border-bottom: 3px solid #4e73df;
+    background: transparent;
+}
+
+/* Timeline Components */
+.timeline-item {
+    position: relative;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+}
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    z-index: 1;
+    border: 2px solid #ffffff;
+}
+
+/* Data Tables */
+.table thead th {
+    border-top: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 0.75rem 0.5rem;
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.72rem;
+}
+.table td {
+    border-top: 1px solid #f8fafc;
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+}
+.border-start {
+    border-left-width: 3px !important;
+}
+
+/* Tooltip & Icons */
+.fa-info-circle {
+    cursor: help;
+    opacity: 0.65;
+    transition: opacity 0.2s, color 0.2s;
+}
+.fa-info-circle:hover {
+    opacity: 1;
+    color: #4e73df !important;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Media Queries
+   ========================================================================== */
+
+/* Mobile Phones (max-width: 575.98px) */
+@media (max-width: 575.98px) {
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    .custom-data-tabs .nav-link {
+        font-size: 0.75rem;
+        padding: 0.6rem 0.4rem;
+    }
+    .quick-action-pill {
+        font-size: 0.72rem;
+        padding: 0.25rem 0.6rem;
+    }
+    .h4 {
+        font-size: 1.15rem;
+    }
+}
+
+/* Tablets & Small Laptops (min-width: 576px) and (max-width: 991.98px) */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .custom-data-tabs .nav-link {
+        font-size: 0.8rem;
+    }
+}
+
+/* High DPI / Large Screens (min-width: 1400px) */
+@media (min-width: 1400px) {
+    .card {
+        border-radius: 14px;
+    }
+}

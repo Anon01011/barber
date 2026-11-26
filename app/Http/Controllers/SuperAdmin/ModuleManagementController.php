@@ -3,22 +3,24 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Services\SettingsService;
+use Illuminate\Http\Request;
 
 class ModuleManagementController extends Controller
 {
-    protected $settingsService;
+    protected SettingsService $settingsService;
 
     public function __construct(SettingsService $settingsService)
     {
-        $this->middleware(['auth', 'verified', 'role:super_admin']);
         $this->settingsService = $settingsService;
     }
 
-    public function index()
+    /**
+     * Get the authoritative list of all platform modules.
+     */
+    public function getAvailableModules(): array
     {
-        $availableModules = [
+        return [
             'branches' => [
                 'name' => 'Multi-Branch Management',
                 'icon' => 'fa-code-branch',
@@ -109,13 +111,23 @@ class ModuleManagementController extends Controller
                 'icon' => 'fa-comments',
                 'description' => 'Customer post-service star ratings and reviews',
             ],
+            'data_backup' => [
+                'name' => 'Data Backup & Safety',
+                'icon' => 'fa-database',
+                'description' => 'Automated snapshot replicas, selective salon data exports and restore',
+            ],
         ];
+    }
 
-        // Get current enabled modules from settings
-        $enabledModules = $this->settingsService->get('enabled_modules', [], null, null);
+    public function index()
+    {
+        $availableModules = $this->getAvailableModules();
 
-        // Get module statuses from settings
-        $moduleStatuses = $this->settingsService->get('module_statuses', [], null, null);
+        // Get current enabled modules from settings (global)
+        $enabledModules = $this->settingsService->get('enabled_modules', [], false, false);
+
+        // Get module statuses from settings (global)
+        $moduleStatuses = $this->settingsService->get('module_statuses', [], false, false);
 
         // Default missing module keys to enabled (matching ModuleHelper::isEnabled())
         foreach (array_keys($availableModules) as $key) {
@@ -136,54 +148,37 @@ class ModuleManagementController extends Controller
 
     public function update(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => 'boolean',
             'module_statuses' => 'nullable|array',
             'module_statuses.*' => 'in:stable,beta,alpha,development',
         ]);
 
-        // Get all module keys dynamically from available modules list
-        $allModules = [
-            'branches',
-            'inventory',
-            'pos',
-            'appointments',
-            'customers',
-            'services',
-            'staff',
-            'reports',
-            'packages',
-            'memberships',
-            'commissions',
-            'roles',
-            'marketing',
-            'sms',
-            'whatsapp',
-            'ai',
-            'loyalty',
-            'feedback'
-        ];
+        $availableModules = $this->getAvailableModules();
 
-        // Build the enabled modules array
+        // Build the enabled modules array dynamically from all available modules
         $enabledModules = [];
-        foreach ($allModules as $module) {
-            $enabledModules[$module] = $request->has("enabled_modules.{$module}")
-                ? (bool) $request->input("enabled_modules.{$module}")
-                : false;
+        $submitted = $request->input('enabled_modules', []);
+        foreach (array_keys($availableModules) as $module) {
+            $enabledModules[$module] = !empty($submitted[$module]);
         }
 
-        // Save enabled modules to settings
-        $this->settingsService->set('enabled_modules', $enabledModules, null, null);
+        // Save enabled modules to global settings
+        $this->settingsService->set('enabled_modules', $enabledModules, false, false);
 
-        // Save module statuses to settings
+        // Save module statuses to global settings
         if ($request->has('module_statuses')) {
-            $this->settingsService->set('module_statuses', $request->input('module_statuses'), null, null);
+            $this->settingsService->set('module_statuses', $request->input('module_statuses'), false, false);
         }
 
-        // Clear cache
+        // Clear cache across all layers
+        $this->settingsService->clearCache('enabled_modules', false, null);
         $this->settingsService->clearCache('enabled_modules', null, null);
+        $this->settingsService->clearCache('module_statuses', false, null);
         $this->settingsService->clearCache('module_statuses', null, null);
+        \Illuminate\Support\Facades\Cache::forget('settings_enabled_modules');
+        \Illuminate\Support\Facades\Cache::forget('settings_module_statuses');
 
         return redirect()->route('admin.modules.index')
             ->with('success', 'Module settings updated successfully.');

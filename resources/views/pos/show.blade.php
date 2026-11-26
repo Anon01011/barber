@@ -74,9 +74,19 @@
                         <a href="{{ $posSalonSlug ? route('admin.pos.sales.index', ['salon_slug' => $posSalonSlug]) : '#' }}" class="btn btn-outline-secondary me-2">
                             <i class="fas fa-arrow-left me-1"></i> Back to History
                         </a>
-                        <a href="{{ route('admin.pos.receipt', $sale->id) }}" target="_blank" class="btn btn-primary">
-                            <i class="fas fa-print me-1"></i> Print Receipt
-                        </a>
+                        <div class="btn-group">
+                            <a href="{{ route('admin.pos.receipt', $sale->id) }}" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-print me-1"></i> Print Receipt
+                            </a>
+                            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Size options</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=80mm" target="_blank"><i class="fas fa-print me-2 small"></i>80mm Thermal (Standard)</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=58mm" target="_blank"><i class="fas fa-print me-2 small"></i>58mm Thermal (Mini)</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=a4" target="_blank"><i class="fas fa-file-alt me-2 small"></i>A4 Full Page</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -307,6 +317,15 @@
                 <a href="{{ route('admin.pos.receipt', $sale->id) }}" target="_blank" class="btn btn-outline-secondary">
                     <i class="fas fa-print me-1"></i> Print Receipt
                 </a>
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Size options</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=80mm" target="_blank"><i class="fas fa-print me-2 small"></i>80mm Thermal (Standard)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=58mm" target="_blank"><i class="fas fa-print me-2 small"></i>58mm Thermal (Mini)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.pos.receipt', $sale->id) }}?width=a4" target="_blank"><i class="fas fa-file-alt me-2 small"></i>A4 Full Page</a></li>
+                </ul>
+            </div>
                 @if($sale->status !== 'cancelled')
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
                         data-bs-target="#cancelSaleModal">

@@ -3,11 +3,12 @@
 <div class="nav-item dropdown" x-data="{ open: false }" @click.away="open = false">
     <button class="nav-link position-relative" @click="open = !open">
         <i class="fas fa-bell"></i>
-        @if($notifications->count() > 0)
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ $notifications->count() }}
-            </span>
-        @endif
+        <span id="notif-unread-badge"
+              data-unread-count="{{ $notifications->count() }}"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="{{ $notifications->count() === 0 ? 'display:none;' : '' }}">
+            {{ $notifications->count() > 99 ? '99+' : $notifications->count() }}
+        </span>
     </button>
 
     <div class="dropdown-menu dropdown-menu-end shadow-lg border-0" x-show="open"

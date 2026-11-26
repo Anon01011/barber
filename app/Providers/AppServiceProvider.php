@@ -113,6 +113,12 @@ class AppServiceProvider extends ServiceProvider
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
 
+        // Ensure critical storage framework cache directory exists
+        $cacheDir = storage_path('framework/cache/data');
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
+        }
+
         // Set error handler
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             if (!(error_reporting() & $errno)) {
@@ -122,6 +128,12 @@ class AppServiceProvider extends ServiceProvider
             // Do not convert deprecation notices to fatal exceptions
             if ($errno === E_DEPRECATED || $errno === E_USER_DEPRECATED) {
                 \Log::warning("PHP Deprecation: {$errstr} in {$errfile} on line {$errline}");
+                return true;
+            }
+
+            // Prevent cache lock / stream warnings from crashing the application with 500 error
+            if (str_contains($errstr, 'storage/framework/cache') || str_contains($errfile, 'LockableFile.php')) {
+                \Log::warning("Cache Storage Warning: {$errstr} in {$errfile}:{$errline}");
                 return true;
             }
 

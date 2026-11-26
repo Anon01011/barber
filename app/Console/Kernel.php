@@ -11,6 +11,8 @@ class Kernel extends ConsoleKernel
         Commands\AssignSuperAdminPermissions::class,
         Commands\SendBookingReminders::class,
         Commands\SendDailySummary::class,
+        Commands\SalonDailyBackupCommand::class,
+        Commands\DatabaseSnapshotCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -27,6 +29,12 @@ class Kernel extends ConsoleKernel
         // Send daily summary emails
         // Runs every minute to check if any salon's daily_summary_time has arrived in their timezone
         $schedule->command('salon:send-daily-summary')->everyMinute();
+
+        // 24-Hour Automated Salon Data Backup & Email to Salon Admins
+        $schedule->command('salon:daily-backup')->dailyAt('02:00');
+
+        // Automated Database Snapshot & Replica Maintenance (Daily at 03:00)
+        $schedule->command('db:snapshot')->dailyAt('03:00');
     }
 
     protected function commands()

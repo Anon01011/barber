@@ -587,6 +587,45 @@ class Salon extends Model
     }
 
     /**
+     * Get maximum backup size limit in MB from active plan (null or <= 0 means unlimited).
+     */
+    public function getBackupSizeLimitMb(): ?int
+    {
+        $subscription = $this->activeSubscription;
+        if (!$subscription || !$subscription->plan) {
+            return null; // Unlimited if no subscription
+        }
+        $limit = $subscription->plan->getLimit('max_backup_size_mb');
+        return ($limit !== null && $limit > 0) ? (int) $limit : null;
+    }
+
+    /**
+     * Check if a backup file size in bytes exceeds the plan's backup size limit.
+     */
+    public function isBackupSizeExceeded(int $fileSizeBytes): bool
+    {
+        $limitMb = $this->getBackupSizeLimitMb();
+        if ($limitMb === null || $limitMb <= 0) {
+            return false;
+        }
+        $fileSizeMb = $fileSizeBytes / (1024 * 1024);
+        return $fileSizeMb > $limitMb;
+    }
+
+    /**
+     * Get maximum number of backup snapshots allowed to be retained.
+     */
+    public function getMaxBackupSnapshotsLimit(): ?int
+    {
+        $subscription = $this->activeSubscription;
+        if (!$subscription || !$subscription->plan) {
+            return null;
+        }
+        $limit = $subscription->plan->getLimit('max_backup_snapshots');
+        return ($limit !== null && $limit > 0) ? (int) $limit : null;
+    }
+
+    /**
      * Check if salon can add more bookings this month
      */
     public function canAddBooking(): bool

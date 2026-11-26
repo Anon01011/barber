@@ -162,7 +162,7 @@
             <div class="card-body p-4 p-md-5">
                 <div class="row align-items-center g-4">
                     <div class="col-lg-8">
-                        <span class="badge bg-white bg-opacity-20 text-white px-3 py-1 rounded-pill mb-2">
+                        <span class="badge shadow-none px-3 py-1 rounded-pill mb-2" style="background: rgba(255, 255, 255, 0.2) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.3) !important;">
                             <i class="fas fa-gift me-1"></i> FREE TRIAL PERIOD
                         </span>
                         <h2 class="display-6 fw-bold mb-2">Welcome to Your Free Trial</h2>

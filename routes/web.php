@@ -164,6 +164,13 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::post('/system-settings/test-email', [App\Http\Controllers\SuperAdmin\SuperAdminSettingsController::class, 'testEmail'])->name('system-settings.test-email');
         Route::post('/system-settings/clear-cache', [App\Http\Controllers\SuperAdmin\SuperAdminSettingsController::class, 'clearCache'])->name('system-settings.clear-cache');
 
+        // System Health, Server Inspection & Database Backups
+        Route::get('/system-health', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'index'])->name('system-health.index');
+        Route::get('/system-health/metrics', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'liveMetrics'])->name('system-health.metrics');
+        Route::post('/system-health/backup', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'createBackup'])->name('system-health.backup.create');
+        Route::get('/system-health/backup/download/{filename}', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'downloadBackup'])->name('system-health.backup.download');
+        Route::delete('/system-health/backup/{filename}', [App\Http\Controllers\SuperAdmin\SystemHealthController::class, 'deleteBackup'])->name('system-health.backup.delete');
+
         // Module Management
         Route::get('/modules', [App\Http\Controllers\SuperAdmin\ModuleManagementController::class, 'index'])->name('modules.index');
         Route::put('/modules', [App\Http\Controllers\SuperAdmin\ModuleManagementController::class, 'update'])->name('modules.update');
@@ -233,8 +240,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Notification routes
+    Route::get('/notifications/unread', [\App\Http\Controllers\NotificationController::class, 'getUnread'])->name('notifications.unread');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::match(['GET', 'POST'], '/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::match(['GET', 'POST'], '/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 // Public Customer Rating & Feedback Routes (Tokenized)
@@ -281,8 +290,16 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
 
 
 
-        // Salon Admin Routes
-        Route::prefix('admin')->name('admin.')->middleware(['subscription', 'restrict.admin.writes'])->group(function () {
+        // Salon Admin Routes (Restricted strictly to staff/admins — customers forbidden)
+        Route::prefix('admin')->name('admin.')->middleware(['subscription', 'restrict.admin.writes', 'role:super_admin|salon_admin|manager|employee|staff|pos_staff|inventory_staff'])->group(function () {
+            // Salon Data Backup (Export / Import / Email) - Restricted strictly to salon_admin & super_admin
+            Route::middleware(['role:salon_admin|super_admin'])->group(function () {
+                Route::get('/backup', [App\Http\Controllers\Admin\SalonBackupController::class, 'index'])->name('backup.index');
+                Route::post('/backup/export', [App\Http\Controllers\Admin\SalonBackupController::class, 'export'])->name('backup.export');
+                Route::post('/backup/email', [App\Http\Controllers\Admin\SalonBackupController::class, 'sendToEmail'])->name('backup.email');
+                Route::post('/backup/import', [App\Http\Controllers\Admin\SalonBackupController::class, 'import'])->name('backup.import');
+            });
+
             // Recent bookings
             Route::get('/bookings/recent', [BookingController::class, 'getRecentBookings'])->name('bookings.recent');
             Route::get('/bookings/employee/{employeeId}', [BookingController::class, 'getEmployeeBookings'])->name('bookings.employee');
@@ -395,6 +412,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
                 Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
                 Route::get('/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit')->middleware('permission:bookings.edit');
                 Route::put('/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update')->middleware('permission:bookings.edit');
+                Route::post('/bookings/{booking}/assign', [BookingController::class, 'assign'])->name('bookings.assign')->middleware('permission:bookings.edit');
                 Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status.update')->middleware('permission:bookings.edit');
                 Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy')->middleware('permission:bookings.delete');
 
@@ -765,11 +783,12 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
     // Customer Routes
     Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/dashboard', [CustomerAppointmentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/points', [CustomerAppointmentController::class, 'points'])->name('points.index');
         Route::get('/appointments', [CustomerAppointmentController::class, 'index'])->name('appointments.index');
-        Route::post('/appointments/{booking}/rate', [CustomerAppointmentController::class, 'rate'])->name('appointments.rate');
+        Route::post('/appointments/{booking}/rate', [CustomerAppointmentController::class, 'rate'])->name('appointments.rate')->middleware('throttle:30,1');
         Route::get('/appointments/create', [CustomerAppointmentController::class, 'create'])->name('appointments.create');
         Route::get('/appointments/calendar', [CustomerAppointmentController::class, 'calendar'])->name('appointments.calendar');
-        Route::post('/appointments', [CustomerAppointmentController::class, 'store'])->name('appointments.store');
+        Route::post('/appointments', [CustomerAppointmentController::class, 'store'])->name('appointments.store')->middleware('throttle:30,1');
         Route::get('/appointments/{booking}', [CustomerAppointmentController::class, 'show'])->name('appointments.show');
         Route::delete('/appointments/{booking}', [CustomerAppointmentController::class, 'destroy'])->name('appointments.destroy');
         Route::get('/appointments/events', [CustomerAppointmentController::class, 'index'])->name('appointments.events');
@@ -778,7 +797,7 @@ Route::prefix('{salon_slug}')->middleware([\App\Http\Middleware\CheckSalonSlug::
         Route::get('/api/staff', [CustomerAppointmentController::class, 'getStaff'])->name('api.staff');
         Route::get('/api/appointments', [CustomerAppointmentController::class, 'apiAppointments'])->name('api.appointments.index');
         Route::get('/api/appointments/{id}', [CustomerAppointmentController::class, 'apiAppointmentDetails'])->name('api.appointments.show');
-        Route::post('/appointments/{booking}/reschedule', [CustomerAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+        Route::post('/appointments/{booking}/reschedule', [CustomerAppointmentController::class, 'reschedule'])->name('appointments.reschedule')->middleware('throttle:30,1');
     });
 
     // Employee Routes (Group 2)

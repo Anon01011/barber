@@ -75,9 +75,17 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{{ route('admin.pos.receipt', $sale->id) }}" target="_blank"
-                                                class="btn btn-sm btn-outline-secondary" title="Print Receipt">
+                                                class="btn btn-sm btn-outline-secondary" title="Print Receipt (80mm)">
                                                 <i class="fas fa-print"></i>
                                             </a>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Select print size">
+                                                <span class="visually-hidden">Size</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 180px;">
+                                                <li><a class="dropdown-item small" href="{{ route('admin.pos.receipt', $sale->id) }}?width=80mm" target="_blank"><i class="fas fa-print me-2"></i>80mm Thermal</a></li>
+                                                <li><a class="dropdown-item small" href="{{ route('admin.pos.receipt', $sale->id) }}?width=58mm" target="_blank"><i class="fas fa-print me-2"></i>58mm Mini</a></li>
+                                                <li><a class="dropdown-item small" href="{{ route('admin.pos.receipt', $sale->id) }}?width=a4" target="_blank"><i class="fas fa-file-alt me-2"></i>A4 Sheet</a></li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

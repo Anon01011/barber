@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    $salonSlug = $salonSlug ?? request()->route('salon_slug') ?? optional($booking->salon)->slug ?? optional(auth()->user()?->salon)->slug ?? 'default';
+@endphp
+
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
@@ -17,7 +21,7 @@
                                         <i class="fas fa-times me-1"></i> Cancel
                                     </button>
                                 @endif
-                                <a href="{{ route('customer.appointments.index') }}" class="btn btn-outline-primary">
+                                <a href="{{ route('customer.appointments.index', ['salon_slug' => $salonSlug]) }}" class="btn btn-outline-primary">
                                     <i class="fas fa-arrow-left me-1"></i> Back
                                 </a>
                             </div>
@@ -340,7 +344,7 @@
         <script>
             function cancelAppointment() {
                 if (confirm('Are you sure you want to cancel this appointment?')) {
-                    fetch('{{ route("customer.appointments.destroy", $booking->id) }}', {
+                    fetch('{{ route("customer.appointments.destroy", ["salon_slug" => $salonSlug, "booking" => $booking->id]) }}', {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -350,7 +354,7 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                window.location.href = '{{ route("customer.appointments.index") }}';
+                                window.location.href = '{{ route("customer.appointments.index", ["salon_slug" => $salonSlug]) }}';
                             } else {
                                 alert(data.message || 'Failed to cancel appointment');
                             }

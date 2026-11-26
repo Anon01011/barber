@@ -304,70 +304,93 @@
                         @endif
 
 
-                        <!-- Notification Bell -->
-                        @if(isset($system_notifications))
-                            <div class="notification-dropdown dropdown me-2 me-md-3">
-                                <a href="#" class="text-dark position-relative" id="notificationDropdown" aria-label="Notifications" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <i class="fas fa-bell fa-lg"></i>
-                                    @if(count($system_notifications) > 0)
-                                        <span id="notificationBadge"
-                                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            {{ count($system_notifications) }}
-                                            <span class="visually-hidden">unread messages</span>
-                                        </span>
+                        <!-- Notification Bell (Always Available for Authenticated Users) -->
+                        @php
+                            $headerNotifications = auth()->user()->unreadNotifications()->latest()->take(10)->get();
+                            $headerUnreadCount = $headerNotifications->count();
+                        @endphp
+                        <div class="notification-dropdown dropdown me-2 me-md-3">
+                            <a href="#" class="text-dark position-relative d-inline-flex align-items-center justify-content-center shadow-sm" 
+                               id="notificationDropdown" aria-label="Notifications" data-bs-toggle="dropdown" aria-expanded="false"
+                               style="width: 36px; height: 36px; border-radius: 50%; background: #ffffff; border: 1px solid #e2e8f0; text-decoration: none; transition: all 0.2s ease;">
+                                <i class="fas fa-bell" style="font-size: 0.95rem; color: #475569;"></i>
+                                <span id="notif-unread-badge"
+                                    data-unread-count="{{ $headerUnreadCount }}"
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                    style="{{ $headerUnreadCount === 0 ? 'display:none;' : '' }} font-size: 0.65rem; padding: 0.25em 0.52em;">
+                                    {{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}
+                                    <span class="visually-hidden">unread notifications</span>
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 shadow-lg p-0"
+                                aria-labelledby="notificationDropdown"
+                                style="width: 340px; max-height: 420px; overflow-y: auto; border-radius: 12px;">
+                                <li class="dropdown-header bg-white py-3 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-dark" style="font-size: 0.88rem;">
+                                        <i class="fas fa-bell text-primary me-1"></i> Notifications
+                                    </h6>
+                                    @if($headerUnreadCount > 0)
+                                        <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline m-0 p-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link btn-xs text-primary text-decoration-none p-0 fw-semibold" style="font-size: 0.72rem;">
+                                                Mark all as read
+                                            </button>
+                                        </form>
                                     @endif
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in border-0 shadow-lg"
-                                    aria-labelledby="notificationDropdown"
-                                    style="width: 320px; max-height: 400px; overflow-y: auto;">
-                                    <li class="dropdown-header bg-white py-3 px-3 border-bottom">
-                                        <h6 class="m-0 font-weight-bold text-primary">Notifications</h6>
-                                    </li>
-                                    @if(count($system_notifications) > 0)
-                                        @foreach($system_notifications as $notification)
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-start px-3 py-2 border-bottom" href="#"
-                                                    onclick='event.preventDefault(); showNotificationDetail(@json($notification));'>
-                                                    <div class="me-2 flex-shrink-0">
-                                                        <div class="rounded-circle bg-{{ $notification->type }} bg-opacity-10 text-{{ $notification->type }} d-flex align-items-center justify-content-center"
-                                                            style="width: 32px; height: 32px;">
-                                                            <i
-                                                                class="fas fa-{{ $notification->type == 'info' ? 'info' : ($notification->type == 'success' ? 'check' : ($notification->type == 'warning' ? 'exclamation' : 'exclamation-triangle')) }} fa-sm"></i>
-                                                        </div>
+                                </li>
+                                <div id="headerNotificationList">
+                                    @forelse($headerNotifications as $notification)
+                                        @php
+                                            $nData = $notification->data ?? [];
+                                            $nType = $nData['type'] ?? 'info';
+                                            $nTitle = $nData['title'] ?? 'Notification';
+                                            $nMsg = $nData['message'] ?? '';
+                                            $nLink = $nData['link'] ?? null;
+                                        @endphp
+                                        <li class="border-bottom" data-notification-id="{{ $notification->id }}">
+                                            <button type="button" class="dropdown-item d-flex align-items-start px-3 py-2 text-wrap w-100 text-start bg-transparent border-0" style="white-space: normal;"
+                                                onclick="if (typeof window.showNotificationDetail === 'function') {
+                                                    window.showNotificationDetail({
+                                                        id: '{{ $notification->id }}',
+                                                        booking_id: @js($nData['booking_id'] ?? null),
+                                                        is_group_booking: @js($nData['is_group_booking'] ?? false),
+                                                        title: @js($nTitle),
+                                                        message: @js($nMsg),
+                                                        type: @js($nType),
+                                                        link: @js($nLink),
+                                                        created_at: @js($notification->created_at->toIso8601String())
+                                                    });
+                                                } else {
+                                                    window.location.href = @js($nLink ?? route('notifications.mark-read', $notification->id));
+                                                }">
+                                                <div class="me-2 flex-shrink-0 mt-1">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                        style="width: 28px; height: 28px; background: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                                                        <i class="fas fa-{{ $nType === 'danger' || $nType === 'error' ? 'exclamation-circle text-danger' : ($nType === 'success' ? 'check-circle text-success' : ($nType === 'warning' ? 'exclamation-triangle text-warning' : 'info-circle text-primary')) }} fa-xs"></i>
                                                     </div>
-                                                    <div class="flex-grow-1">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="font-weight-bold text-dark text-wrap small"
-                                                                style="line-height: 1.2;">{{ $notification->title }}</span>
-                                                            <small class="text-muted"
-                                                                style="font-size: 0.7rem;">{{ $notification->created_at->diffForHumans(null, true, true) }}</small>
-                                                        </div>
-                                                        <div class="small text-secondary text-truncate"
-                                                            style="max-width: 200px; font-size: 0.75rem;">
-                                                            {{ Str::limit(strip_tags($notification->message), 50) }}
-                                                        </div>
+                                                </div>
+                                                <div class="flex-grow-1" style="min-width: 0;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="font-weight-bold text-dark small text-truncate" style="max-width: 170px;">{{ $nTitle }}</span>
+                                                        <small class="text-muted" style="font-size: 0.68rem;">{{ $notification->created_at->diffForHumans(null, true, true) }}</small>
                                                     </div>
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                    @else
-                                        <li>
-                                            <div class="dropdown-item text-center small text-muted py-4">No new notifications</div>
-                                        </li>
-                                    @endif
-                                    @if(count($system_notifications) > 0)
-                                        <li class="dropdown-divider"></li>
-                                        <li>
-                                            <button class="dropdown-item text-center small text-primary fw-bold py-2"
-                                                id="markAllReadBtn">
-                                                <i class="fas fa-check-double me-1"></i> Mark All as Read
+                                                    <div class="small text-muted text-truncate" style="max-width: 220px; font-size: 0.73rem;">
+                                                        {{ Str::limit(strip_tags($nMsg), 55) }}
+                                                    </div>
+                                                </div>
                                             </button>
                                         </li>
-                                    @endif
-                                </ul>
-                            </div>
-                        @endif
+                                    @empty
+                                        <li>
+                                            <div class="dropdown-item text-center small text-muted py-4">
+                                                <i class="far fa-bell-slash fa-2x d-block mb-2 text-muted opacity-50"></i>
+                                                No unread notifications
+                                            </div>
+                                        </li>
+                                    @endforelse
+                                </div>
+                            </ul>
+                        </div>
 
                         @if(($portalContext === 'customer' || auth()->user()->hasRole('customer')) && \App\Helpers\ModuleHelper::loyaltyEnabled() && (optional(auth()->user()->salon)->hasLoyaltyProgram() || (method_exists(optional(auth()->user()->salon), 'isOnTrial') && optional(auth()->user()->salon)->isOnTrial())))
                             @php
