@@ -1,3 +1,53 @@
+<style>
+/* ====== Product Purpose & Classification Cards ====== */
+.purpose-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+.purpose-icon-badge.bg-primary  { background: #2563eb !important; color: #fff !important; }
+.purpose-icon-badge.bg-emerald  { background: #059669 !important; color: #fff !important; }
+.purpose-icon-badge.bg-amber    { background: #d97706 !important; color: #fff !important; }
+
+.purpose-card {
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    cursor: pointer;
+    padding: 10px 12px !important;
+}
+.purpose-card:hover {
+    border-color: #94a3b8 !important;
+    background: #f8fafc !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07) !important;
+}
+
+/* Retail — blue accent when selected */
+.btn-check:checked + .purpose-btn-retail {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+}
+/* Backbar — green accent when selected */
+.btn-check:checked + .purpose-btn-backbar {
+    border-color: #059669 !important;
+    background: #ecfdf5 !important;
+    box-shadow: 0 0 0 3px rgba(5,150,105,0.15) !important;
+}
+/* Dual-Use — amber accent when selected */
+.btn-check:checked + .purpose-btn-dual {
+    border-color: #d97706 !important;
+    background: #fffbeb !important;
+    box-shadow: 0 0 0 3px rgba(217,119,6,0.15) !important;
+}
+</style>
+
 <!-- Modern Luxury Item Edit Modal -->
 <div class="modal fade" id="editInventoryModal" tabindex="-1" aria-labelledby="editInventoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-height: calc(100vh - 2.5rem);">
